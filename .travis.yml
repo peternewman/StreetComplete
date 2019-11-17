@@ -1,3 +1,7 @@
+#See also:
+#https://travis-ci.org/westnordost/StreetComplete
+#https://travis-ci.org/westnordost/StreetComplete/jobs/552200171/config
+
 language: android
 dist: xenial
 jdk: oraclejdk8
