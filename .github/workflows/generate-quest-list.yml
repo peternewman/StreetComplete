@@ -25,7 +25,7 @@ jobs:
       - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
       - run: sed -i -e s/values/values-en-rGB/g .github/generate-quest-list.main.kts
       - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
-      - run: git checkout -- .github
+      - run: " git checkout -- .github/generate-quest-list.main.kts"
       - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
       - uses: actions/upload-artifact@v2
         with:
