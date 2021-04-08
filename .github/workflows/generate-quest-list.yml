@@ -1,8 +1,6 @@
 name: Generate quest list
 on:
-  push:
-    branches:
-      - master
+  [push, pull_request]
 
 jobs:
   generate-quest-list:
