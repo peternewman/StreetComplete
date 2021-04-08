@@ -20,6 +20,8 @@ jobs:
       #- run: sudo tree .
       #- run: kotlinc -script -Xplugin=/snap/kotlin/current/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
       - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
+      - run: touch .github/generate-quest-list.main.kts
+      - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
       - uses: actions/upload-artifact@v2
         with:
           name: quest-list.csv
