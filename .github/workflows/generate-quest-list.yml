@@ -14,6 +14,7 @@ jobs:
       #- run: sudo snap install kotlin --channel=1.4/stable --classic
       - run: wget https://github.com/JetBrains/kotlin/releases/download/v1.4.31/kotlin-compiler-1.4.31.zip
       - run: unzip kotlin-compiler-1.4.31.zip
+      - run: rm kotlin-compiler-1.4.31.zip
       - run: sudo mkdir -p /foo/bar/
       - run: sudo mv kotlinc /foo/bar/
       #- run: sudo apt-get install tree
