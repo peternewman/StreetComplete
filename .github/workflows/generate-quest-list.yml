@@ -14,11 +14,12 @@ jobs:
       #- run: sudo snap install kotlin --channel=1.4/stable --classic
       - run: wget https://github.com/JetBrains/kotlin/releases/download/v1.4.31/kotlin-compiler-1.4.31.zip
       - run: unzip kotlin-compiler-1.4.31.zip
-      - run: sudo mv kotlinc ../
-      - run: sudo apt-get install tree
-      - run: sudo tree .
+      - run: sudo mkdir -p /foo/bar/
+      - run: sudo mv kotlinc /foo/bar/
+      #- run: sudo apt-get install tree
+      #- run: sudo tree .
       #- run: kotlinc -script -Xplugin=/snap/kotlin/current/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
-      - run: ../kotlinc/bin/kotlinc -script -Xplugin=../kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
+      - run: /foo/bar/kotlinc/bin/kotlinc -script -Xplugin=/foo/bar/kotlinc/lib/kotlinx-serialization-compiler-plugin.jar .github/generate-quest-list.main.kts
       - uses: actions/upload-artifact@v2
         with:
           name: quest-list.csv
