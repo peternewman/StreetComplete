@@ -218,22 +218,33 @@ fun Iterable<LatLon>.enclosingBoundingBox(): BoundingBox {
     var minLonOffset = 0.0
     var maxLatOffset = 0.0
     var maxLonOffset = 0.0
+    var minLat = origin.latitude
+    var minLon = origin.longitude
+    var maxLat = origin.latitude
+    var maxLon = origin.longitude
     while (it.hasNext()) {
         val pos = it.next()
         // calculate with offsets here to properly handle 180th meridian
-        val lat = pos.latitude - origin.latitude
-        val lon = normalizeLongitude(pos.longitude - origin.longitude)
-        if (lat < minLatOffset) minLatOffset = lat
-        if (lon < minLonOffset) minLonOffset = lon
-        if (lat > maxLatOffset) maxLatOffset = lat
-        if (lon > maxLonOffset) maxLonOffset = lon
+        val latOffset = pos.latitude - origin.latitude
+        val lonOffset = normalizeLongitude(pos.longitude - origin.longitude)
+        if (latOffset < minLatOffset) {
+            minLatOffset = latOffset
+            minLat = pos.latitude
+        }
+        if (lonOffset < minLonOffset) {
+            minLonOffset = lonOffset
+            minLon = pos.longitude
+        }
+        if (latOffset > maxLatOffset) {
+            maxLatOffset = latOffset
+            maxLat = pos.latitude
+        }
+        if (lonOffset > maxLonOffset) {
+            maxLonOffset = lonOffset
+            maxLon = pos.longitude
+        }
     }
-    return BoundingBox(
-        origin.latitude + minLatOffset,
-        normalizeLongitude(origin.longitude + minLonOffset),
-        origin.latitude + maxLatOffset,
-        normalizeLongitude(origin.longitude + maxLonOffset)
-    )
+    return BoundingBox(minLat, minLon, maxLat, maxLon)
 }
 
 /** Returns the distance covered by this polyline */
@@ -274,7 +285,15 @@ fun List<LatLon>.centerPointOfPolyline(globeRadius: Double = EARTH_RADIUS): LatL
  * Returns the point the distance into the polyline. Null if the polyline is not long enough.
  */
 fun List<LatLon>.pointOnPolylineFromStart(distance: Double): LatLon? {
-    return pointOnPolyline(distance, false)
+    return pointsOnPolyline(false, distance).firstOrNull()
+}
+
+/**
+ * Returns the points the distances into the polyline. Returns less points if the polyline is not
+ * long enough.
+ */
+fun List<LatLon>.pointsOnPolylineFromStart(distances: List<Double>): List<LatLon> {
+    return pointsOnPolyline(false, *distances.toDoubleArray())
 }
 
 /**
@@ -282,25 +301,31 @@ fun List<LatLon>.pointOnPolylineFromStart(distance: Double): LatLon? {
  * not long enough.
  */
 fun List<LatLon>.pointOnPolylineFromEnd(distance: Double): LatLon? {
-    return pointOnPolyline(distance, true)
+    return pointsOnPolyline(true, distance).firstOrNull()
 }
 
-private fun List<LatLon>.pointOnPolyline(distance: Double, fromEnd: Boolean): LatLon? {
+private fun List<LatLon>.pointsOnPolyline(fromEnd: Boolean, vararg distances: Double): List<LatLon> {
+    if (distances.isEmpty()) return emptyList()
     val list = if (fromEnd) this.asReversed() else this
+    distances.sort()
+    var i = 0
     var d = 0.0
+    val result = ArrayList<LatLon>(distances.size)
     list.forEachLine { first, second ->
         val segmentDistance = first.distanceTo(second)
         if (segmentDistance > 0) {
             d += segmentDistance
-            if (d >= distance) {
-                val ratio = (d - distance) / segmentDistance
+            while (d >= distances[i]) {
+                val ratio = (d - distances[i]) / segmentDistance
                 val lat = second.latitude - ratio * (second.latitude - first.latitude)
                 val lon = normalizeLongitude(second.longitude - ratio * normalizeLongitude(second.longitude - first.longitude))
-                return LatLon(lat, lon)
+                result.add(LatLon(lat, lon))
+                ++i
+                if (i == distances.size) return result
             }
         }
     }
-    return null
+    return result
 }
 
 /* --------------------------------- Polygon extension functions -------------------------------- */
@@ -551,10 +576,10 @@ private fun Double.toRadians() = this / 180.0 * PI
 private fun Double.toDegrees() = this / PI * 180.0
 
 fun normalizeLongitude(lon: Double): Double {
-    var lon = lon % 360 // lon is now -360..360
-    lon = (lon + 360) % 360 // lon is now 0..360
-    if (lon > 180) lon -= 360 // lon is now -180..180
-    return lon
+    var normalizedLon = lon % 360 // normalizedLon is -360..360
+    if (normalizedLon < -180) normalizedLon += 360
+    else if (normalizedLon > 180) normalizedLon -= 360
+    return normalizedLon
 }
 
 /* The following formulas have been adapted from this excellent source:

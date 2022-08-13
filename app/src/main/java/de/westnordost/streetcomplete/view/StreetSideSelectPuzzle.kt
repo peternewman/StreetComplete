@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isGone
 import de.westnordost.streetcomplete.R
@@ -207,21 +208,6 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
         binding.strut.layoutParams = params
     }
 
-    fun setOnlyLeftSideClickable() {
-        binding.leftSideContainer.isClickable = true
-        binding.rightSideContainer.isClickable = false
-    }
-
-    fun setOnlyRightSideClickable() {
-        binding.rightSideContainer.isClickable = true
-        binding.leftSideContainer.isClickable = false
-    }
-
-    fun setBothSidesClickable() {
-        binding.rightSideContainer.isClickable = true
-        binding.leftSideContainer.isClickable = true
-    }
-
     private fun replace(image: Image?, imgView: ImageView, flip180Degrees: Boolean) {
         val width = if (onlyShowingOneSide) binding.rotateContainer.width else binding.rotateContainer.width / 2
         if (width == 0) return
@@ -240,14 +226,14 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
 
     private fun scaleToWidth(drawable: BitmapDrawable, width: Int, flip180Degrees: Boolean): BitmapDrawable {
         val m = Matrix()
-        val scale = width.toFloat() / drawable.intrinsicWidth
+        val scale = width.toFloat() / drawable.bitmap.width
         m.postScale(scale, scale)
         if (flip180Degrees) m.postRotate(180f)
         val bitmap = Bitmap.createBitmap(
             drawable.bitmap, 0, 0,
-            drawable.intrinsicWidth, drawable.intrinsicHeight, m, true
+            drawable.bitmap.width, drawable.bitmap.height, m, true
         )
-        return BitmapDrawable(resources, bitmap)
+        return bitmap.toDrawable(resources)
     }
 }
 

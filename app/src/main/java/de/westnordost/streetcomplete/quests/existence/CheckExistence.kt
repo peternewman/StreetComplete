@@ -6,10 +6,10 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.OUTDOORS
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.OUTDOORS
 import de.westnordost.streetcomplete.osm.LAST_CHECK_DATE_KEYS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.updateCheckDate
 import java.util.concurrent.FutureTask
 
@@ -23,7 +23,9 @@ class CheckExistence(
             amenity = atm
             or amenity = telephone
             or amenity = vending_machine and vending !~ fuel|parking_tickets|public_transport_tickets
+            or amenity = parcel_locker
             or amenity = public_bookcase
+            or barrier = log
           )
           and (${lastChecked(2.0)})
         ) or (
@@ -51,7 +53,7 @@ class CheckExistence(
             amenity = bench
             or amenity = lounger
             or amenity = waste_basket
-            or traffic_calming ~ bump|hump|island|cushion|choker|rumble_strip|chicane|dip
+            or traffic_calming ~ bump|mini_bumps|hump|cushion|rumble_strip|dip|double_dip
             or traffic_calming = table and !highway and !crossing
             or amenity = recycling and recycling_type = container
             or amenity = toilets
@@ -84,10 +86,10 @@ class CheckExistence(
     *  so asking about this anyway would be a good idea.
     * */
 
-    override val changesetComment = "Check if element still exists"
+    override val changesetComment = "Survey if places still exist"
     override val wikiLink: String? = null
     override val icon = R.drawable.ic_quest_check
-    override val questTypeAchievements = listOf(CITIZEN, OUTDOORS)
+    override val achievements = listOf(CITIZEN, OUTDOORS)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_existence_title2
 

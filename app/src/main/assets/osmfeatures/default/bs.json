@@ -501,10 +501,6 @@
                     "name": "Pozorište",
                     "terms": "teatar,pozorište"
                 },
-                "amenity/toilets": {
-                    "name": "Toaleti",
-                    "terms": "kupatila,toaleti,wc-i"
-                },
                 "amenity/townhall": {
                     "name": "Gradska vijećnica",
                     "terms": "gradska vijećnica,vijećnica"
@@ -1398,10 +1394,6 @@
                     "name": "Video klub",
                     "terms": "videoklub,videoteka"
                 },
-                "tourism/alpine_hut": {
-                    "name": "Planinski dom",
-                    "terms": "alpska koliba,planinarski dom,planinarska kuća"
-                },
                 "tourism/artwork": {
                     "name": "Umjetničko djelo",
                     "terms": "umjetničko djelo,umjetnina"
@@ -1532,9 +1524,6 @@
                 "waterway/river": {
                     "name": "Rijeka",
                     "terms": "rijeka,riječni tok"
-                },
-                "waterway/riverbank": {
-                    "name": "Riječno korito"
                 },
                 "waterway/stream": {
                     "name": "Potok",

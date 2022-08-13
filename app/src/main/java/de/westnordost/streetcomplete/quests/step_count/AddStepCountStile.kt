@@ -5,8 +5,8 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.OUTDOORS
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.OUTDOORS
+import de.westnordost.streetcomplete.osm.Tags
 
 class AddStepCountStile : OsmElementQuestType<Int> {
 
@@ -37,10 +37,10 @@ class AddStepCountStile : OsmElementQuestType<Int> {
     override fun isApplicableTo(element: Element): Boolean? =
         if (!stileNodeFilter.matches(element)) false else null
 
-    override val changesetComment = "Add step count to stiles"
+    override val changesetComment = "Specify stiles step count"
     override val wikiLink = "Key:step_count"
     override val icon = R.drawable.ic_quest_steps_count_brown
-    override val questTypeAchievements = listOf(OUTDOORS)
+    override val achievements = listOf(OUTDOORS)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_step_count_title
 

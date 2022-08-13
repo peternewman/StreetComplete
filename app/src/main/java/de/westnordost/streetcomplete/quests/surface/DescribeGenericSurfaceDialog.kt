@@ -10,13 +10,13 @@ import de.westnordost.streetcomplete.databinding.QuestSurfaceDetailedAnswerImpos
 class DescribeGenericSurfaceDialog(
     context: Context,
     onSurfaceDescribed: (txt: String) -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+) : AlertDialog(context) {
     init {
         val binding = QuestSurfaceDetailedAnswerImpossibleBinding.inflate(LayoutInflater.from(context))
 
         setTitle(context.resources.getString(R.string.quest_surface_detailed_answer_impossible_title))
 
-        setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.yes)) { _, _ ->
+        setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.ok)) { _, _ ->
             val txt = binding.explanationInput.text.toString().trim()
 
             if (txt.isEmpty()) {

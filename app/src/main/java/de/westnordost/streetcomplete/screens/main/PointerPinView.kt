@@ -12,6 +12,8 @@ import android.view.View.MeasureSpec.getMode
 import android.view.View.MeasureSpec.getSize
 import android.view.ViewOutlineProvider
 import androidx.core.content.withStyledAttributes
+import androidx.core.graphics.applyCanvas
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.withRotation
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.util.ktx.dpToPx
@@ -59,8 +61,9 @@ class PointerPinView @JvmOverloads constructor(
         context.withStyledAttributes(attrs, R.styleable.PointerPinView) {
             pinRotation = getFloat(R.styleable.PointerPinView_pinRotation, 0f)
             val resId = getResourceId(R.styleable.PointerPinView_iconSrc, 0)
-            if (resId != 0)
+            if (resId != 0) {
                 setPinIconResource(resId)
+            }
         }
         outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
@@ -97,15 +100,14 @@ class PointerPinView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         pointerPinBitmap?.recycle()
 
-        if (w <= 0 || h <= 0) {
-            pointerPinBitmap = null
+        pointerPinBitmap = if (w <= 0 || h <= 0) {
+            null
         } else {
             val size = min(width, height)
-            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bmp)
-            pointerPin.setBounds(0, 0, size, size)
-            pointerPin.draw(canvas)
-            pointerPinBitmap = bmp
+            createBitmap(size, size, Bitmap.Config.ARGB_8888).applyCanvas {
+                pointerPin.setBounds(0, 0, size, size)
+                pointerPin.draw(this)
+            }
         }
     }
 

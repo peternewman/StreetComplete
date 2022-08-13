@@ -4,8 +4,8 @@ import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.data.meta.CountryInfos
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestType
-import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
+import de.westnordost.streetcomplete.quests.accepts_cards.AddAcceptsCards
 import de.westnordost.streetcomplete.quests.accepts_cash.AddAcceptsCash
 import de.westnordost.streetcomplete.quests.address.AddAddressStreet
 import de.westnordost.streetcomplete.quests.address.AddHousenumber
@@ -23,9 +23,15 @@ import de.westnordost.streetcomplete.quests.bench_backrest.AddBenchBackrest
 import de.westnordost.streetcomplete.quests.bike_parking_capacity.AddBikeParkingCapacity
 import de.westnordost.streetcomplete.quests.bike_parking_cover.AddBikeParkingCover
 import de.westnordost.streetcomplete.quests.bike_parking_type.AddBikeParkingType
+import de.westnordost.streetcomplete.quests.bike_rental_capacity.AddBikeRentalCapacity
+import de.westnordost.streetcomplete.quests.bike_rental_type.AddBikeRentalType
+import de.westnordost.streetcomplete.quests.bike_shop.AddBikeRepairAvailability
+import de.westnordost.streetcomplete.quests.bike_shop.AddSecondHandBicycleAvailability
 import de.westnordost.streetcomplete.quests.board_type.AddBoardType
 import de.westnordost.streetcomplete.quests.bollard_type.AddBollardType
 import de.westnordost.streetcomplete.quests.bridge_structure.AddBridgeStructure
+import de.westnordost.streetcomplete.quests.building_entrance.AddEntrance
+import de.westnordost.streetcomplete.quests.building_entrance_reference.AddEntranceReference
 import de.westnordost.streetcomplete.quests.building_levels.AddBuildingLevels
 import de.westnordost.streetcomplete.quests.building_type.AddBuildingType
 import de.westnordost.streetcomplete.quests.building_underground.AddIsBuildingUnderground
@@ -71,6 +77,7 @@ import de.westnordost.streetcomplete.quests.max_height.AddMaxHeight
 import de.westnordost.streetcomplete.quests.max_height.AddMaxPhysicalHeight
 import de.westnordost.streetcomplete.quests.max_speed.AddMaxSpeed
 import de.westnordost.streetcomplete.quests.max_weight.AddMaxWeight
+import de.westnordost.streetcomplete.quests.memorial_type.AddMemorialType
 import de.westnordost.streetcomplete.quests.motorcycle_parking_capacity.AddMotorcycleParkingCapacity
 import de.westnordost.streetcomplete.quests.motorcycle_parking_cover.AddMotorcycleParkingCover
 import de.westnordost.streetcomplete.quests.oneway.AddOneway
@@ -118,7 +125,8 @@ import de.westnordost.streetcomplete.quests.step_count.AddStepCount
 import de.westnordost.streetcomplete.quests.step_count.AddStepCountStile
 import de.westnordost.streetcomplete.quests.steps_incline.AddStepsIncline
 import de.westnordost.streetcomplete.quests.steps_ramp.AddStepsRamp
-import de.westnordost.streetcomplete.quests.summit_register.AddSummitRegister
+import de.westnordost.streetcomplete.quests.summit.AddSummitCross
+import de.westnordost.streetcomplete.quests.summit.AddSummitRegister
 import de.westnordost.streetcomplete.quests.surface.AddCyclewayPartSurface
 import de.westnordost.streetcomplete.quests.surface.AddFootwayPartSurface
 import de.westnordost.streetcomplete.quests.surface.AddPathSurface
@@ -170,7 +178,7 @@ fun questTypeRegistry(
     countryInfos: CountryInfos,
     countryBoundariesFuture: FutureTask<CountryBoundaries>,
     arSupportChecker: ArSupportChecker
-) = QuestTypeRegistry(listOf<QuestType<*>>(
+) = QuestTypeRegistry(listOf(
 
     /* The quest types are primarily sorted by how easy they can be solved:
     1. quests that are solvable from a distance or while passing by (fast)
@@ -204,7 +212,7 @@ fun questTypeRegistry(
     /* ↓ 1. solvable from a distance or while passing by -----------------------------------  */
 
     // bus stop quests
-    AddBusStopShelter(),  // used by at least OsmAnd
+    AddBusStopShelter(), // used by at least OsmAnd
     AddBenchStatusOnBusStop(), // can be seen from across the street
     AddBinStatusOnBusStop(), // can be seen from across the street
     AddTactilePavingBusStop(), // requires you to be very close to it
@@ -240,6 +248,8 @@ fun questTypeRegistry(
     AddStepsRamp(),
     AddStepsIncline(), // can be gathered while walking perpendicular to the way e.g. the other side of the road or when running/cycling past, confuses some people, so not as high as it theoretically should be
 
+    AddMemorialType(), // sometimes a bit hard to decide between the different types (something something sculpture)
+
     AddReligionToPlaceOfWorship(), // icons on maps are different - OSM Carto, mapy.cz, OsmAnd, Sputnik etc
     AddReligionToWaysideShrine(),
 
@@ -247,13 +257,12 @@ fun questTypeRegistry(
 
     AddIsBuildingUnderground(), // should be before AddHousenumber to avoid asking for underground buildings
 
-    // air pump
-    AddAirCompressor(),
-    AddBicyclePump(),
-
     // motorcycle parking
     AddMotorcycleParkingCover(),
     AddMotorcycleParkingCapacity(), // counting + number input required but usually well visible
+
+    // air pump, may require some checking within a garage forecourt
+    AddAirCompressor(),
 
     // recycling containers
     AddRecyclingType(),
@@ -286,7 +295,7 @@ fun questTypeRegistry(
     AddPlaygroundAccess(),
 
     /* pulled up in priority to be before CheckExistence because this is basically the check
-whether the postbox is still there in countries in which it is enabled */
+       whether the postbox is still there in countries in which it is enabled */
     AddPostboxCollectionTimes(),
     CheckExistence(featureDictionaryFuture),
 
@@ -295,9 +304,9 @@ whether the postbox is still there in countries in which it is enabled */
     AddBarrierType(), // basically any more detailed rendering and routing: OSM Carto, mapy.cz, OSMand for start
     AddBarrierOnPath(),
     AddBarrierOnRoad(),
+    AddBicycleBarrierType(),
     AddStileType(),
     AddStepCountStile(), // here to keep stile quest together - this quest will appear in low quest density anyway
-    AddBicycleBarrierType(),
 
     AddBollardType(), // useful for first responders
 
@@ -315,11 +324,13 @@ whether the postbox is still there in countries in which it is enabled */
 
     /* ↓ 2.solvable when right in front of it but takes longer to input --------------------- */
 
-    // bike parking: would be higher up if not for bike parking capacity which is usually not solvable when moving past
+    // bike parking/rental: would be higher up if not for bike parking/rental capacity which is usually not solvable when moving past
     AddBikeParkingCover(), // used by OsmAnd in the object description
+    AddBikeRentalType(), // generally less overlap of possible types/fewer choices/simpler to answer
     AddBikeParkingType(), // used by OsmAnd
     AddBikeParkingAccess(),
     AddBikeParkingFee(),
+    AddBikeRentalCapacity(), // less ambiguous than bike parking
     AddBikeParkingCapacity(), // used by cycle map layer on osm.org, OsmAnd
 
     // address: usually only visible when just in front + sometimes requires to take "other answer"
@@ -328,11 +339,12 @@ whether the postbox is still there in countries in which it is enabled */
 
     // shops: text input / opening hours input take longer than other quests
     CheckOpeningHoursSigned(featureDictionaryFuture),
-    AddPlaceName(featureDictionaryFuture),
-    SpecifyShopType(),
+    SpecifyShopType(), // above add place name as some brand presets will set the name too
     CheckShopType(),
+    AddPlaceName(featureDictionaryFuture),
     AddOpeningHours(featureDictionaryFuture),
     AddSeating(), // easily visible from outside, but only seasonally
+    AddBicyclePump(), // visible from the outside, but only during opening hours
 
     AddAtmOperator(),
 
@@ -343,7 +355,7 @@ whether the postbox is still there in countries in which it is enabled */
 
     // postboxes (collection times are further up, see comment)
     AddPostboxRoyalCypher(), // can be glanced across the road (if postbox facing the right way)
-    AddPostboxRef(), // requires text input
+    AddPostboxRef(), // requires text input and to be very close to the collection plate
 
     AddWheelchairAccessOutside(),
 
@@ -355,6 +367,9 @@ whether the postbox is still there in countries in which it is enabled */
     AddOneway(),
     AddSuspectedOneway(trafficFlowSegmentsApi, trafficFlowDao),
 
+    AddEntrance(),
+    AddEntranceReference(),
+
     /* ↓ 3.quests that may need some exploration / walking around --------------------------- */
 
     // ferry: usually visible from looking at the boat, but not always...
@@ -365,7 +380,8 @@ whether the postbox is still there in countries in which it is enabled */
 
     MarkCompletedHighwayConstruction(), // need to look the whole way
 
-    AddSummitRegister(), // the summit register is not necessarily directly at the peak, need to look around
+    AddSummitCross(), // summit markings are not necessarily directly at the peak, need to look around
+    AddSummitRegister(), // register is harder to find than cross
 
     AddForestLeafType(), // need to walk around in the highlighted section
 
@@ -373,9 +389,9 @@ whether the postbox is still there in countries in which it is enabled */
 
     AddLevel(), // requires to search for the place on several levels (or at least find a mall map)
 
-    AddSmoking(), // often marked on the entrance, if not, visible/smellable inside
+    AddAirConditioning(), // often visible from the outside across the street, if not, visible/feelable inside
 
-    AddAirConditioning(), // often visible from the outside, if not, visible/feelable inside
+    AddSmoking(), // often marked on the entrance, if not, visible/smellable inside
 
     /* ↓ 4.quests that may need to go inside ------------------------------------------------ */
 
@@ -391,13 +407,16 @@ whether the postbox is still there in countries in which it is enabled */
     AddWheelchairAccessToilets(), // used by wheelmap, OsmAnd, Organic Maps
 
     // shop
-    AddAcceptsCash(),
-    AddVegetarian(),
+    AddBikeRepairAvailability(),
+    AddSecondHandBicycleAvailability(),
+    AddVegetarian(), // menus are often posted externally
     AddVegan(),
     AddHalal(), // there are ~ 100 times more Muslims than Jews
     AddKosher(),
     AddWheelchairAccessBusiness(), // used by wheelmap, OsmAnd, Organic Maps
     AddInternetAccess(), // used by OsmAnd
+    AddAcceptsCards(), // this will often involve going inside and near the till
+    AddAcceptsCash(),
 
     AddFuelSelfService(),
 

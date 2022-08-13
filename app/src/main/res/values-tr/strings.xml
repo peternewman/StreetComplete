@@ -59,6 +59,8 @@
 
     <!-- Fuzzy -->
     <string name="quest_leave_new_note_description">"Bu konumda, diğer haritacıların yorum yapabileceği ya da sonradan çözebileceği bir not bırakabilirsin. İstersen de görevi kendine saklayabilirsin"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_leave_new_note_yes">"Tamam"</string>
 
     <!-- Fuzzy -->
@@ -164,7 +166,7 @@
     <string name="quest_openingHours_public_holidays_short">"RT"</string>
     <string name="quest_openingHours_open_end">"Belirsiz"</string>
     <string name="quest_openingHours_answer_247">"7/24 açık"</string>
-    <string name="quest_openingHours_answer_seasonal_opening_hours">"Aydan aya değişiyor..."</string>
+    <string name="quest_openingHours_answer_seasonal_opening_hours">"Aydan aya değişiyor…"</string>
     <string name="quest_openingHours_answer_no_regular_opening_hours">"Düzenli açılış saatleri yok…"</string>
 
     <!-- Fuzzy -->
@@ -264,6 +266,8 @@ Girdiğiniz bilgiler başka bir düzenleyici kullanmak zorunda kalmaksızın ad�
     <string name="quest_name_answer_noName_confirmation_title">"Gerçekten adı yok mu?"</string>
     <string name="quest_name_noName_confirmation_positive">"Evet, adı yok"</string>
     <string name="quest_openingHours_add_times">"Açılış saatlerini ekle"</string>
+
+    <!-- Fuzzy -->
     <string name="crash_message">"Hata raporunu geliştiriciye gönderebilir misin?"</string>
     <string name="crash_title">"Ah hayır, StreetComplete geçen sefer çöktü!"</string>
 
@@ -285,6 +289,8 @@ Girdiğiniz bilgiler başka bir düzenleyici kullanmak zorunda kalmaksızın ad�
     <!-- Generic strings used in various quests -->
     <string name="quest_generic_hasFeature_yes">"Evet"</string>
     <string name="quest_generic_hasFeature_no">"Hayır"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_bikeParkingCapacity_title">"Buraya kaç bisiklet park edilebilir?"</string>
 
     <!-- Fuzzy -->
@@ -479,7 +485,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
 
     <!-- As in "Person A, Person B, Person C and more..." -->
     <!-- Fuzzy -->
-    <string name="credits_and_more">"ve dahası..."</string>
+    <string name="credits_and_more">"ve dahası…"</string>
 
     <!-- Fuzzy -->
     <string name="quest_maxspeed_answer_living_street">"Bu yaşayan bir sokak"</string>
@@ -565,12 +571,6 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="produce_vanilla">"Vanilya"</string>
     <string name="produce_walnuts">"Ceviz"</string>
     <string name="produce_sisal">"Sisal"</string>
-
-    <!-- Fuzzy -->
-    <string name="quest_way_lit_automatic">"Harekete duyarlı"</string>
-
-    <!-- Fuzzy -->
-    <string name="quest_way_lit_24_7">"Gece gündüz yanıyor"</string>
 
     <!-- Fuzzy -->
     <string name="cannot_find_bbox_or_reduce_tilt">"Burada tarama yapamıyorum.  Daha fazla yakınlaştırmayı deneyin veya haritayı daha az eğin."</string>
@@ -689,7 +689,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="quest_hasFeature_only">"Sadece"</string>
 
     <!-- Fuzzy -->
-    <string name="quest_dietType_explanation_vegan">"Vegan gıdalarda hayvan ürünü bulunmaz (et, süt ürünleri, yumurta...)"</string>
+    <string name="quest_dietType_explanation_vegan">"Vegan gıdalarda hayvan ürünü bulunmaz (et, süt ürünleri, yumurta…)"</string>
 
     <!-- Fuzzy -->
     <string name="quest_dietType_explanation_vegetarian">"Vejetaryen gıdalarda et türleri bulunmaz."</string>
@@ -838,7 +838,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="quest_housenumber_multiple_numbers">"Birden fazla ev numarasına sahip"</string>
 
     <!-- Fuzzy -->
-    <string name="quest_housenumber_multiple_numbers_description">"Virgülle ayrılmış ev numaralarını veya aralıklarını girebilirsiniz. Örneğin 1,3 veya 2-6."</string>
+    <string name="quest_housenumber_multiple_numbers_description">"Virgülle ayrılmış ev numaralarını veya aralıklarını girebilirsiniz. Örneğin 1,3 veya 2–6."</string>
 
     <!-- Fuzzy -->
     <string name="quest_bicycle_parking_type_stand">"Stand (bisiklet çerçevesini destekler)"</string>
@@ -971,6 +971,8 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
 
     <!-- Fuzzy -->
     <string name="quest_buildingType_mosque">"Cami"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_buildingType_temple">"İbadethane"</string>
     <string name="quest_buildingType_pagoda">"Pagoda"</string>
 
@@ -1055,7 +1057,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="quest_buildingType_hangar">"Hangar"</string>
     <string name="quest_buildingType_hangar_description">"Uçaklar, helikopterler veya uzay araçları için depo"</string>
     <string name="quest_buildingType_bunker">"Sığınak"</string>
-    <string name="quest_address_answer_no_housenumber">"Ev numarası yok..."</string>
+    <string name="quest_address_answer_no_housenumber">"Ev numarası yok…"</string>
 
     <!-- Fuzzy -->
     <string name="quest_address_answer_no_housenumber_message1">"Bina şu şekilde etiketlendi:"</string>
@@ -1232,6 +1234,8 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="create_new_note_hint">"Notu en iyi konuşulan yerel dilde veya İngilizce yazınız."</string>
     <string name="quest_leafType_title">"Buradaki ağaçlar iğne mi yoksa geniş yapraklı mı?"</string>
     <string name="quest_leaf_type_needles">"İğne yapraklı"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_leaf_type_broadleaved">"Geniş yapraklı"</string>
 
     <!-- Fuzzy -->
@@ -1240,7 +1244,11 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <!-- Fuzzy -->
     <string name="quest_cyclewayPartSurface_title">"Buradaki bisiklet yolunun yüzey nasıldır?"</string>
     <string name="quest_generic_answer_differs_along_the_way">"Yol boyunca değişiyor."</string>
+
+    <!-- Fuzzy -->
     <string name="quest_split_way_description">"Yol boyunca farklılık gösteriyorsa, ilk adım yolu bölmektir. Bundan sonra, her bölünmüş kısım için görev ayrı ayrı cevaplanabilir."</string>
+
+    <!-- Fuzzy -->
     <string name="quest_split_way_tutorial">"Cevabın farklı olduğu noktalarda bölmek için yola dokunun. Mümkün olduğunca hassas olmaya çalışın, her zamanki gibi yakınlaştırabilirsiniz."</string>
     <string name="quest_split_way_too_imprecise">"Lütfen daha fazla yakınlaştırın"</string>
 
@@ -1359,7 +1367,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="tutorial_welcome_to_osm">"OpenStreetMap'e hoşgeldin"</string>
     <string name="tutorial_welcome_to_osm_subtitle">"özgür dünya haritası wikisi."</string>
     <string name="tutorial_intro">"StreetComplete, OpenStreetMap'e katkıda bulunmayı kolaylaştırır.
-Çevrenizdeki eksik ayrıntıları otomatik olarak arar: bisiklet yolları, ev numaraları, çalışma saatleri ve çok daha fazlası..."</string>
+Çevrenizdeki eksik ayrıntıları otomatik olarak arar: bisiklet yolları, ev numaraları, çalışma saatleri ve çok daha fazlası…"</string>
     <string name="tutorial_happy_mapping">"İyi haritalamalar!"</string>
     <string name="achievements_empty">"Henüz başarımınız yok"</string>
 
@@ -1368,6 +1376,7 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="unsynced_quests_not_logged_in_description">"Henüz yayınlanmamış %d değişikliğiniz var. Yüklemek için giriş yapmanız gerekiyor."</string>
 
     <!-- User screen -->
+    <!-- Fuzzy -->
     <string name="user_quests_title">"Çözülmüş Görevler"</string>
     <string name="user_achievements_title">"Başarımlar"</string>
     <string name="user_links_title">"Bağlantı Koleksyonu"</string>
@@ -1386,6 +1395,8 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="link_category_showcase_title">"Vitrin"</string>
     <string name="link_category_showcase_description">"OpenStreetMap tabanlı hizmetler ve uygulamalar"</string>
     <string name="link_cyclosm_description">"Bisikletçiler için bir harita"</string>
+
+    <!-- Fuzzy -->
     <string name="link_osm_buildings_description">"Binaları 3D olarak gösteren bir harita"</string>
     <string name="link_openvegemap_description">"Şehrinizdeki vejetaryen ve vegan lokantaları keşfedin"</string>
     <string name="link_mapy_tactile_description">"Görme engelliler için çeşitli ölçeklerde dokunsal haritalar"</string>
@@ -1407,6 +1418,8 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <!-- Fuzzy -->
     <string name="link_weeklyosm_description">"OpenStreetMap dünyasında olup bitenlerle ilgili haftalık haber blogu"</string>
     <string name="achievement_first_edit_title">"İlk Görev Çözüldü"</string>
+
+    <!-- Fuzzy -->
     <string name="achievement_first_edit_description">"OpenStreetMap topluluğuna hoş geldiniz! Profil ekranınızda, çözdüğünüz her görev türü için daha fazla bilgi görebilirsiniz."</string>
     <string name="achievement_surveyor_solved_X">"%d görevi çözdünüz! OSMye ve haritayla ilgili diğer uygulamalara ve projelere bağlantılar içeren daha fazla başarının kilidini açmaya devam edin!"</string>
     <string name="achievement_regular_title">"Düzenli"</string>
@@ -1415,8 +1428,12 @@ Vurgulu alandaki cadde boyunca hiçbir işaret yoksa varsayılan hız sınırlar
     <string name="achievement_bicyclist_solved_X">"Bisikletçilere yardımı dokunan %d görev çözdün!"</string>
     <string name="achievement_wheelchair_solved_X">"Tekerlekli sandalye kullananlara yardımı dokunan %d görev çözdünüz!"</string>
     <string name="achievement_postman_title">"Postacı"</string>
+
+    <!-- Fuzzy -->
     <string name="achievement_postman_solved_X">"%d adres girdiniz!
 Bu veri yalnızca postacılar için değil navigasyon sistemleri için de çok önemlidir."</string>
+
+    <!-- Fuzzy -->
     <string name="achievement_building_solved_X">"Binalarla ilgili %d görev çözdünüz.
 Şunu unutmayın ki bu uygulama binaların numaralarını yalnızca bina türü belirtildikten sonra sorar."</string>
     <string name="achievement_blind_title">"Altıncı His"</string>
@@ -1439,6 +1456,8 @@ Bu veri yalnızca postacılar için değil navigasyon sistemleri için de çok �
     <!-- User statistics screen -->
     <string name="stats_are_syncing">"İstatistikleriniz hala senkronize ediliyor. Bu ekranı daha sonra kontrol edin."</string>
     <string name="user_statistics_filter_by_country">"ülkeye göre"</string>
+
+    <!-- Fuzzy -->
     <string name="user_statistics_filter_by_quest_type">"görev türüne göre"</string>
     <string name="user_profile_global_rank">"Küresel sıralama"</string>
     <string name="quest_address_street_no_named_streets">"Adlandırılmış bir sokağa ait değil"</string>
@@ -1460,7 +1479,7 @@ Bu veri yalnızca postacılar için değil navigasyon sistemleri için de çok �
     <string name="quest_board_type_title">"Bu bilgi panosunun konusu nedir?"</string>
     <string name="quest_board_type_map">"Bu bir harita"</string>
     <string name="quest_board_type_map_description">"Pano belirli bir konu hakkındaysa, lütfen bir harita içerip içermediğine bakılmaksızın bunu belirtin. Örneğin, bir toplu taşıma panosunun bir otobüs güzergah haritası olabilir. Konu mevcut cevaplar arasında listelenmemişse, lütfen bunun yerine bir not bırakın."</string>
-    <string name="quest_surface_detailed_answer_impossible">"Bir kaç yüzey..."</string>
+    <string name="quest_surface_detailed_answer_impossible">"Bir kaç yüzey…"</string>
 
     <!-- Fuzzy -->
     <string name="quest_surface_detailed_answer_impossible_description">"Lütfen burada yüzeyin yapısını kısaca belirtin, örneğin \"arnavut kaldırımlı yer yer kumlu\". Metin uzunluğu 255 karakterle sınırlıdır."</string>
@@ -1493,6 +1512,8 @@ Bu veri yalnızca postacılar için değil navigasyon sistemleri için de çok �
     <string name="quest_charging_station_operator_title">"Bu şarj istasyonunun operatörü kimdir?"</string>
     <string name="link_indoorequal_description">"Alışveriş merkezlerinin, tren istasyonlarının vb. kapalı alan haritalarını keşfedin."</string>
     <string name="achievement_rare_title">"Hazine avı"</string>
+
+    <!-- Fuzzy -->
     <string name="achievement_rare_solved_X">"Gerçekten nadiren tamamlanan %d görev buldunuz ve çözdünüz, tebrikler!"</string>
     <string name="achievement_citizen_title">"Vatandaş"</string>
     <string name="quest_generic_answer_noSign">"İşaret yok"</string>
@@ -1512,6 +1533,8 @@ Bu veri yalnızca postacılar için değil navigasyon sistemleri için de çok �
 
     <!-- Fuzzy -->
     <string name="quest_charging_station_capacity_title">"Bu şarj istasyonunda aynı anda kaç araba şarj edilebilir?"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_lanes_title">"Bu yolda arabalar için kaç şerit var?"</string>
     <string name="quest_lanes_answer_lanes">"İşaretli şeritler"</string>
     <string name="quest_lanes_answer_noLanes">"İşaretli şerit yok"</string>
@@ -1541,8 +1564,10 @@ Herhangi bir şerit otobüs için ayrılmışsa, lütfen bunun yerine bir not b�
 
     <!-- Fuzzy -->
     <string name="quest_maxheight_answer_noSign_question_no">"Uzun kamyonlar sığmaz"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_address_street_hint">"Haritada yola dokunun"</string>
-    <string name="quest_generic_answer_does_not_exist">"Böyle bir şey yok..."</string>
+    <string name="quest_generic_answer_does_not_exist">"Böyle bir şey yok…"</string>
     <string name="osm_element_gone_confirmation">"Böyle bir şey yok"</string>
     <string name="leave_note">"Not bırak"</string>
 
@@ -1551,20 +1576,30 @@ Herhangi bir şerit otobüs için ayrılmışsa, lütfen bunun yerine bir not b�
 
     <!-- Fuzzy -->
     <string name="quest_shop_gone_vacant_answer">"Boş"</string>
-    <string name="quest_shop_gone_replaced_answer">"Bir..."</string>
+    <string name="quest_shop_gone_replaced_answer">"Bir…"</string>
     <string name="quest_shop_gone_replaced_answer_hint">"Buraya bir tür yer yazın"</string>
 
     <!-- Fuzzy -->
     <string name="quest_shop_vacant_type_title">"Bu dükkan boştu. Şimdi burada ne var?"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_lanes_answer_lanes_odd2">"Şerit sayısı iki taraf için farklı"</string>
     <string name="default_disabled_msg_go_inside_regional_warning">"Bu görev türü varsayılan olarak devre dışı bırakılmıştır çünkü bazı bölgelerde kullanışlı değildir ve bu türden bir görevi cevaplayabilmek için büyük olasılıkla bir yere girmeniz gerekecektir."</string>
+
+    <!-- Fuzzy -->
     <string name="quest_cycleway_answer_no_bicycle_infrastructure">"Hiç bisiklet yolu yok"</string>
     <string name="quest_construction_completed_at_known_date">"Şu tarihte bitecek…"</string>
     <string name="quest_construction_completion_date_title">"Ne zaman tamamlanacak?"</string>
     <string name="quest_surface_value_clay">"Kil"</string>
     <string name="quest_surface_value_artificial_turf">"Suni çim"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_bicycle_parking_fee_title">"Buraya bisiklet park etmek için ödeme yapmanız gerekiyor mu?"</string>
+
+    <!-- Fuzzy -->
     <string name="quest_buildingType_fire_station">"İtfaiye"</string>
+
+    <!-- Fuzzy -->
     <string name="team_mode">"Takım Kipi"</string>
 
     <!-- Team mode -->

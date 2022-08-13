@@ -107,7 +107,7 @@ class AddSidewalkTest {
         val mapData = TestMapDataWithGeometry(listOf(road, footway))
         val p1 = p(0.0, 0.0)
         val p2 = p1.translate(50.0, 45.0)
-        val p3 = p1.translate(13.0, 135.0)
+        val p3 = p1.translate(12.999, 135.0)
         val p4 = p3.translate(50.0, 45.0)
 
         mapData.wayGeometriesById[1L] = ElementPolylinesGeometry(listOf(listOf(p1, p2)), p1)
@@ -158,6 +158,36 @@ class AddSidewalkTest {
         mapData.wayGeometriesById[1L] = ElementPolylinesGeometry(listOf(listOf(p1, p2)), p1)
         mapData.wayGeometriesById[2L] = ElementPolylinesGeometry(listOf(listOf(p3, p4)), p3)
 
+        assertEquals(1, questType.getApplicableElements(mapData).toList().size)
+        assertNull(questType.isApplicableTo(road))
+    }
+
+    @Test fun `not applicable to motorways`() {
+        val road = way(tags = mapOf(
+            "highway" to "motorway",
+        ))
+        val mapData = TestMapDataWithGeometry(listOf(road))
+        assertEquals(0, questType.getApplicableElements(mapData).toList().size)
+        assertEquals(false, questType.isApplicableTo(road))
+    }
+
+    @Test fun `applicable to motorways marked as legally accessible to pedestrians`() {
+        val road = way(tags = mapOf(
+            "highway" to "motorway",
+            "foot" to "yes"
+        ))
+        val mapData = TestMapDataWithGeometry(listOf(road))
+        assertEquals(1, questType.getApplicableElements(mapData).toList().size)
+        assertNull(questType.isApplicableTo(road))
+    }
+
+    @Test fun `applicable to motorways marked as legally accessible to pedestrians and with tagged speed limit`() {
+        val road = way(tags = mapOf(
+            "highway" to "motorway",
+            "foot" to "yes",
+            "maxspeed" to "65 mph",
+        ))
+        val mapData = TestMapDataWithGeometry(listOf(road))
         assertEquals(1, questType.getApplicableElements(mapData).toList().size)
         assertNull(questType.isApplicableTo(road))
     }

@@ -8,8 +8,8 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.hasCheckDateForKey
 import de.westnordost.streetcomplete.osm.removeCheckDatesForKey
 import de.westnordost.streetcomplete.osm.updateCheckDateForKey
@@ -27,11 +27,11 @@ class AddRecyclingContainerMaterials : OsmElementQuestType<RecyclingContainerMat
           and access !~ private|no
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add recycled materials to container"
+    override val changesetComment = "Specify what can be recycled in recycling containers"
     override val wikiLink = "Key:recycling"
     override val icon = R.drawable.ic_quest_recycling_container
     override val isDeleteElementEnabled = true
-    override val questTypeAchievements = listOf(CITIZEN)
+    override val achievements = listOf(CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_recycling_materials_title
 

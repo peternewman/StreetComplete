@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isGone
-import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.GridLayoutManager
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.DialogTeamModeBinding
@@ -15,7 +15,7 @@ import de.westnordost.streetcomplete.screens.main.teammode.TeamModeColorCircleVi
 class TeamModeDialog(
     context: Context,
     onEnableTeamMode: (Int, Int) -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+) : AlertDialog(context) {
 
     private var selectedTeamSize: Int? = null
     private var selectedIndexInTeam: Int? = null
@@ -32,7 +32,7 @@ class TeamModeDialog(
         binding.colorCircles.adapter = adapter
         binding.colorCircles.layoutManager = GridLayoutManager(context, 3)
 
-        binding.teamSizeInput.addTextChangedListener { editable ->
+        binding.teamSizeInput.doAfterTextChanged { editable ->
             selectedTeamSize = parseTeamSize(editable.toString())
             updateOkButtonEnablement()
 

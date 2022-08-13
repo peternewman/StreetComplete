@@ -2,8 +2,8 @@ package de.westnordost.streetcomplete.quests.self_service
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.self_service.SelfServiceLaundry.NO
 import de.westnordost.streetcomplete.quests.self_service.SelfServiceLaundry.ONLY
 import de.westnordost.streetcomplete.quests.self_service.SelfServiceLaundry.OPTIONAL
@@ -11,11 +11,11 @@ import de.westnordost.streetcomplete.quests.self_service.SelfServiceLaundry.OPTI
 class AddSelfServiceLaundry : OsmFilterQuestType<SelfServiceLaundry>() {
 
     override val elementFilter = "nodes, ways with shop = laundry and !self_service"
-    override val changesetComment = "Add self service info"
+    override val changesetComment = "Survey whether laundries provide self-service"
     override val wikiLink = "Tag:shop=laundry"
     override val icon = R.drawable.ic_quest_laundry
     override val isReplaceShopEnabled = true
-    override val questTypeAchievements = listOf(CITIZEN)
+    override val achievements = listOf(CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_laundrySelfService_title2
 

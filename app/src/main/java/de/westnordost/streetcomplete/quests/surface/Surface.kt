@@ -27,6 +27,7 @@ import de.westnordost.streetcomplete.quests.surface.Surface.UNHEWN_COBBLESTONE
 import de.westnordost.streetcomplete.quests.surface.Surface.UNPAVED_AREA
 import de.westnordost.streetcomplete.quests.surface.Surface.UNPAVED_ROAD
 import de.westnordost.streetcomplete.quests.surface.Surface.WOOD
+import de.westnordost.streetcomplete.quests.surface.Surface.WOODCHIPS
 
 enum class Surface(val osmValue: String) {
     ASPHALT("asphalt"),
@@ -38,7 +39,6 @@ enum class Surface(val osmValue: String) {
     COMPACTED("compacted"),
     DIRT("dirt"),
     SETT("sett"),
-    // https://forum.openstreetmap.org/viewtopic.php?id=61042
     UNHEWN_COBBLESTONE("unhewn_cobblestone"),
     GRASS_PAVER("grass_paver"),
     WOOD("wood"),
@@ -67,7 +67,7 @@ val PAVED_SURFACES = listOf(
 )
 
 val UNPAVED_SURFACES = listOf(
-    COMPACTED, FINE_GRAVEL, GRAVEL, PEBBLES
+    COMPACTED, FINE_GRAVEL, GRAVEL, PEBBLES, WOODCHIPS
 )
 
 val GROUND_SURFACES = listOf(

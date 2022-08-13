@@ -4,10 +4,10 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.meta.CountryInfo
 
 val CountryInfo.advisorySpeedLimitSignLayoutResId: Int? get() = when (advisorySpeedLimitSignStyle) {
-    "blue"  -> R.layout.quest_maxspeed_advisory_blue
-    "yellow"  -> R.layout.quest_maxspeed_advisory_yellow
-    "white"  -> R.layout.quest_maxspeed_advisory_white
-    else    -> null
+    "blue" -> R.layout.quest_maxspeed_advisory_blue
+    "yellow" -> R.layout.quest_maxspeed_advisory_yellow
+    "white" -> R.layout.quest_maxspeed_advisory_white
+    else -> null
 }
 
 val CountryInfo.livingStreetSignDrawableResId: Int? get() = when (livingStreetSignStyle) {
@@ -20,6 +20,17 @@ val CountryInfo.livingStreetSignDrawableResId: Int? get() = when (livingStreetSi
     else        -> null
 }
 
+val CountryInfo.noEntrySignDrawableResId: Int get() = when (noEntrySignStyle) {
+    "default"           -> R.drawable.ic_no_entry_sign_default
+    "yellow"            -> R.drawable.ic_no_entry_sign_yellow
+    "arrow"             -> R.drawable.ic_no_entry_sign_arrow
+    "do not enter"      -> R.drawable.ic_no_entry_sign_do_not_enter
+    "no entry"          -> R.drawable.ic_no_entry_sign_no_entry
+    "no entre"          -> R.drawable.ic_no_entry_sign_no_entre
+    "no entry on white" -> R.drawable.ic_no_entry_sign_no_entry_on_white
+    else                -> R.drawable.ic_no_entry_sign_default
+}
+
 val CountryInfo.noStandingSignDrawableResId: Int? get() = when (noStandingSignStyle) {
     "mutcd text standing" -> R.drawable.ic_no_standing_mutcd_text
     "mutcd text waiting"  -> R.drawable.ic_no_waiting_mutcd_text
@@ -28,7 +39,7 @@ val CountryInfo.noStandingSignDrawableResId: Int? get() = when (noStandingSignSt
 
 val CountryInfo.noParkingSignDrawableResId: Int get() = when (noParkingSignStyle) {
     "vienna"             -> R.drawable.ic_no_parking
-    "vienna variant"     -> R.drawable.ic_no_parking_vienna
+    "vienna variant"     -> R.drawable.ic_no_parking_vienna_variant
     "mutcd"              -> R.drawable.ic_no_parking_mutcd
     "mutcd text"         -> R.drawable.ic_no_parking_mutcd_text
     "mutcd latin"        -> R.drawable.ic_no_parking_mutcd_latin_america
@@ -40,16 +51,17 @@ val CountryInfo.noParkingSignDrawableResId: Int get() = when (noParkingSignStyle
 }
 
 val CountryInfo.noStoppingSignDrawableResId: Int get() = when (noStoppingSignStyle) {
-    "vienna"      -> R.drawable.ic_no_stopping
-    "mutcd"       -> R.drawable.ic_no_stopping_mutcd
-    "mutcd latin" -> R.drawable.ic_no_stopping_mutcd_latin_america
-    "mutcd text"  -> R.drawable.ic_no_stopping_mutcd_text
-    "sadc"        -> R.drawable.ic_no_stopping_sadc
-    "australia"   -> R.drawable.ic_no_stopping_australia
-    "colombia"    -> R.drawable.ic_no_stopping_colombia
-    "canada"      -> R.drawable.ic_no_stopping_canada
-    "israel"      -> R.drawable.ic_no_stopping_israel
-    else          -> R.drawable.ic_no_stopping
+    "vienna"             -> R.drawable.ic_no_stopping
+    "mutcd"              -> R.drawable.ic_no_stopping_mutcd
+    "mutcd latin"        -> R.drawable.ic_no_stopping_mutcd_latin_america
+    "mutcd text"         -> R.drawable.ic_no_stopping_mutcd_text
+    "mutcd text spanish" -> R.drawable.ic_no_stopping_mutcd_text_spanish
+    "sadc"               -> R.drawable.ic_no_stopping_sadc
+    "australia"          -> R.drawable.ic_no_stopping_australia
+    "colombia"           -> R.drawable.ic_no_stopping_colombia
+    "canada"             -> R.drawable.ic_no_stopping_canada
+    "israel"             -> R.drawable.ic_no_stopping_israel
+    else                 -> R.drawable.ic_no_stopping
 }
 
 val CountryInfo.noParkingLineStyleResId: Int? get() = noParkingLineStyle.asLineStyleResId
@@ -74,4 +86,14 @@ private val String?.asLineStyleResId: Int? get() = when (this) {
     "red-white on curb"      -> R.drawable.ic_street_marking_red_white_dashes_on_curb
     "yellow-white on curb"   -> R.drawable.ic_street_marking_yellow_white_dashes_on_curb
     else -> null
+}
+
+val CountryInfo.shoulderLineStyleResId: Int get() = when (edgeLineStyle) {
+    "white" -> R.drawable.ic_shoulder_white_line
+    "yellow" -> R.drawable.ic_shoulder_yellow_line
+    "short white dashes" -> R.drawable.ic_shoulder_short_white_dashes
+    "white dashes" -> R.drawable.ic_shoulder_white_dashes
+    "short yellow dashes" -> R.drawable.ic_shoulder_short_yellow_dashes
+    "two yellow lines" -> R.drawable.ic_shoulder_two_yellow_lines
+    else -> R.drawable.ic_shoulder_white_line
 }

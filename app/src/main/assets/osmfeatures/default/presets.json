@@ -55,7 +55,6 @@
             "attraction",
             "operator",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "charge_fee"
         ],
@@ -66,8 +65,7 @@
             "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -308,10 +306,8 @@
             "power": "*"
         },
         "fields": [
-            "power"
-        ],
-        "moreFields": [
-            "material"
+            "power",
+            "operator"
         ],
         "searchable": false
     },
@@ -742,8 +738,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area",
@@ -882,8 +877,7 @@
             "width"
         ],
         "geometry": [
-            "line",
-            "area"
+            "line"
         ],
         "tags": {
             "aeroway": "runway"
@@ -1010,10 +1004,12 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid"
+        ],
+        "moreFields": [
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -1036,7 +1032,6 @@
             "email",
             "fax",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1112,7 +1107,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "animal_boarding"
         ],
         "moreFields": [
@@ -1120,9 +1114,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1141,7 +1135,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "animal_breeding"
         ],
         "moreFields": [
@@ -1149,8 +1142,8 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1169,7 +1162,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "animal_shelter"
         ],
         "moreFields": [
@@ -1177,8 +1169,8 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1196,7 +1188,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website"
         ],
         "moreFields": [
@@ -1209,6 +1200,7 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "website",
@@ -1233,6 +1225,7 @@
         ],
         "moreFields": [
             "branch_brand",
+            "ref",
             "brand",
             "covered",
             "height",
@@ -1240,7 +1233,6 @@
             "level",
             "lit",
             "manufacturer",
-            "name",
             "opening_hours",
             "opening_hours/covid19",
             "wheelchair"
@@ -1261,7 +1253,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "atm",
             "drive_through"
         ],
@@ -1277,9 +1268,9 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "phone",
             "ref/vatin",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1297,7 +1288,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "min_age",
             "brewery"
         ],
@@ -1311,13 +1301,14 @@
             "internet_access/ssid",
             "level",
             "microbrewery",
+            "opening_hours/covid19",
             "operator",
             "outdoor_seating",
             "payment_multi",
             "phone",
             "ref/vatin",
             "smoking",
-            "website",
+            "sport_pub",
             "wheelchair"
         ],
         "geometry": [
@@ -1384,7 +1375,7 @@
         }
     },
     "amenity/bicycle_parking": {
-        "icon": "maki-bicycle",
+        "icon": "temaki-bicycle_parked",
         "fields": [
             "bicycle_parking",
             "capacity",
@@ -1416,8 +1407,11 @@
         "fields": [
             "{amenity/bicycle_parking}",
             "opening_hours",
-            "opening_hours/covid19",
             "building_area"
+        ],
+        "moreFields": [
+            "{amenity/bicycle_parking}",
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -1486,7 +1480,6 @@
             "opening_hours",
             "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1504,7 +1497,6 @@
             "operator",
             "brand",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
             "charge_fee",
@@ -1516,7 +1508,8 @@
             "covered",
             "indoor",
             "level",
-            "manufacturer"
+            "manufacturer",
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -1532,14 +1525,14 @@
             "name",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "outdoor_seating",
             "brewery"
         ],
         "moreFields": [
             "{amenity/bar}",
             "building_area",
-            "cuisine"
+            "cuisine",
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -1583,7 +1576,6 @@
             "operator",
             "operator/type",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
             "charge_fee"
@@ -1593,8 +1585,8 @@
             "address",
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1638,7 +1630,6 @@
             "opening_hours",
             "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1657,7 +1648,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "outdoor_seating",
             "internet_access",
             "internet_access/fee",
@@ -1679,6 +1669,7 @@
             "level",
             "min_age",
             "not/name",
+            "opening_hours/covid19",
             "payment_multi",
             "ref/vatin",
             "reservation",
@@ -1734,14 +1725,13 @@
             "capacity",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "lit"
         ],
         "moreFields": [
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1759,7 +1749,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
@@ -1767,8 +1756,8 @@
             "brand",
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1797,7 +1786,6 @@
             "fax",
             "lit",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1816,7 +1804,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi",
             "self_service",
             "automated"
@@ -1825,8 +1812,8 @@
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1845,7 +1832,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "gambling",
             "smoking"
         ],
@@ -1859,10 +1845,10 @@
             "internet_access/ssid",
             "level",
             "min_age",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "ref/vatin",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1908,7 +1894,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website"
         ],
         "moreFields": [
@@ -1924,6 +1909,7 @@
             "max_age",
             "min_age",
             "not/name",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "wheelchair"
@@ -1944,7 +1930,6 @@
             "screen",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
@@ -1956,8 +1941,8 @@
             "gnis/feature_id-US",
             "level",
             "min_age",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -1977,8 +1962,7 @@
             "healthcare/speciality",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "air_conditioning",
@@ -1988,9 +1972,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2128,7 +2112,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website"
         ],
         "moreFields": [
@@ -2137,6 +2120,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "phone",
             "polling_station",
             "wheelchair"
@@ -2242,7 +2226,6 @@
             "phone",
             "polling_station",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2260,7 +2243,6 @@
             "website",
             "phone",
             "opening_hours",
-            "opening_hours/covid19",
             "wheelchair"
         ],
         "moreFields": [
@@ -2269,6 +2251,7 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "phone",
             "website",
             "wheelchair"
@@ -2289,17 +2272,16 @@
             "healthcare/speciality",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2326,7 +2308,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "scuba_diving"
         ],
         "moreFields": [
@@ -2334,9 +2315,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2355,17 +2336,16 @@
             "healthcare/speciality",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2407,17 +2387,16 @@
             "sport",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2486,17 +2465,16 @@
             "operator/type",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2579,7 +2557,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "drive_through",
             "phone",
             "website"
@@ -2597,7 +2574,6 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "outdoor_seating",
             "payment_multi",
@@ -2796,7 +2772,6 @@
             "phone",
             "polling_station",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2815,7 +2790,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid"
@@ -2828,10 +2802,10 @@
             "gnis/feature_id-US",
             "level",
             "not/name",
+            "opening_hours/covid19",
             "outdoor_seating",
             "phone",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2888,7 +2862,6 @@
             "payment_multi",
             "phone",
             "ref/vatin",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -2921,9 +2894,7 @@
             "name",
             "operator",
             "opening_hours",
-            "opening_hours/covid19",
-            "access_simple",
-            "website"
+            "access_simple"
         ],
         "moreFields": [
             "address",
@@ -2936,6 +2907,7 @@
             "level",
             "lit",
             "location",
+            "opening_hours/covid19",
             "phone",
             "ref",
             "wheelchair"
@@ -2958,8 +2930,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -3008,7 +2979,6 @@
             "internet_access/fee",
             "internet_access/ssid",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3049,7 +3019,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "outdoor_seating"
         ],
         "moreFields": [
@@ -3063,10 +3032,10 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "takeaway",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3122,7 +3091,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website"
         ],
         "moreFields": [
@@ -3132,6 +3100,7 @@
             "gnis/feature_id-US",
             "level",
             "min_age",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "ref/vatin",
@@ -3171,7 +3140,6 @@
             "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3187,8 +3155,10 @@
         "fields": [
             "kneipp_water_cure_multi",
             "opening_hours",
-            "opening_hours/covid19",
             "fee"
+        ],
+        "moreFields": [
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -3211,7 +3181,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "language_multi"
         ],
         "moreFields": [
@@ -3222,9 +3191,9 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3291,6 +3260,7 @@
             "operator",
             "operator/type",
             "building_area",
+            "opening_hours",
             "address",
             "ref/isil",
             "internet_access",
@@ -3306,12 +3276,10 @@
             "gnis/feature_id-US",
             "level",
             "not/name",
-            "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
             "phone",
             "polling_station",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3389,7 +3357,6 @@
             "phone",
             "ref/vatin",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3407,15 +3374,14 @@
             "operator",
             "address",
             "building",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3439,7 +3405,6 @@
             "fax",
             "gnis/feature_id-US",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3457,6 +3422,7 @@
             "brand",
             "address",
             "building_area",
+            "opening_hours",
             "payment_multi",
             "currency_multi"
         ],
@@ -3465,10 +3431,8 @@
             "email",
             "fax",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3522,7 +3486,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
@@ -3530,8 +3493,8 @@
             "brand",
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3549,17 +3512,16 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3578,7 +3540,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "min_age",
             "smoking"
         ],
@@ -3589,8 +3550,8 @@
             "gnis/feature_id-US",
             "level",
             "payment_multi",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair",
             "fee"
         ],
@@ -3616,15 +3577,21 @@
     "amenity/parcel_locker": {
         "icon": "temaki-vending_lockers",
         "fields": [
+            "operator",
             "parcel_pickup",
             "parcel_dropoff",
-            "operator",
+            "opening_hours",
             "payment_multi",
             "ref"
         ],
+        "moreFields": [
+            "brand",
+            "colour"
+        ],
         "geometry": [
             "point",
-            "vertex"
+            "vertex",
+            "area"
         ],
         "tags": {
             "amenity": "parcel_locker"
@@ -3699,14 +3666,12 @@
             "email",
             "fax",
             "maxstay",
-            "name",
             "opening_hours",
             "opening_hours/covid19",
             "park_ride",
             "phone",
             "ref",
             "supervised",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3821,7 +3786,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
@@ -3830,8 +3794,8 @@
             "email",
             "fax",
             "level",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3849,15 +3813,16 @@
             "brand",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
             "branch_brand",
+            "ref",
             "covered",
             "currency_multi",
             "indoor",
             "level",
+            "opening_hours/covid19",
             "wheelchair"
         ],
         "geometry": [
@@ -3875,7 +3840,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "dispensing",
             "drive_through"
         ],
@@ -3886,9 +3850,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -3952,7 +3916,6 @@
             "opening_hours/covid19",
             "phone",
             "polling_station",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4186,8 +4149,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "air_conditioning",
@@ -4196,9 +4158,9 @@
             "fax",
             "fee",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "payment_multi_fee",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4216,17 +4178,16 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "phone",
             "polling_station",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4245,7 +4206,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "building_area"
         ],
         "moreFields": [
@@ -4257,8 +4217,8 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4319,7 +4279,6 @@
             "gnis/feature_id-US",
             "opening_hours",
             "opening_hours/covid19",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4337,8 +4296,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "branch_brand",
@@ -4350,10 +4308,10 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "polling_station",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4371,17 +4329,16 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4405,7 +4362,6 @@
             "fax",
             "gnis/feature_id-US",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4423,7 +4379,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "smoking",
             "brewery"
         ],
@@ -4440,12 +4395,13 @@
             "level",
             "microbrewery",
             "min_age",
+            "opening_hours/covid19",
             "outdoor_seating",
             "payment_multi",
             "phone",
             "ref/vatin",
             "real_fire-GB-IE",
-            "website",
+            "sport_pub",
             "wheelchair"
         ],
         "geometry": [
@@ -4524,7 +4480,6 @@
             "opening_hours/covid19",
             "payment_multi_fee",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4541,10 +4496,7 @@
             "name",
             "public_bookcase/type",
             "operator",
-            "opening_hours",
-            "opening_hours/covid19",
             "capacity",
-            "website",
             "lit"
         ],
         "moreFields": [
@@ -4557,6 +4509,8 @@
             "indoor",
             "level",
             "location",
+            "opening_hours",
+            "opening_hours/covid19",
             "phone",
             "ref",
             "wheelchair"
@@ -4576,8 +4530,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
@@ -4586,8 +4539,8 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4607,7 +4560,6 @@
             "address",
             "building",
             "opening_hours",
-            "opening_hours/covid19",
             "recycling_accepts"
         ],
         "moreFields": [
@@ -4615,9 +4567,9 @@
             "email",
             "fax",
             "fee",
+            "opening_hours/covid19",
             "payment_multi_fee",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -4639,7 +4591,6 @@
             "operator",
             "recycling_accepts",
             "opening_hours",
-            "opening_hours/covid19",
             "collection_times"
         ],
         "moreFields": [
@@ -4649,6 +4600,7 @@
             "level",
             "manufacturer",
             "material",
+            "opening_hours/covid19",
             "ref"
         ],
         "geometry": [
@@ -4722,8 +4674,7 @@
         "moreFields": [
             "internet_access",
             "internet_access/fee",
-            "internet_access/ssid",
-            "website"
+            "internet_access/ssid"
         ],
         "geometry": [
             "point",
@@ -4769,7 +4720,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -4791,11 +4741,13 @@
             "microbrewery",
             "min_age",
             "not/name",
+            "opening_hours/covid19",
             "outdoor_seating",
             "payment_multi",
             "ref/vatin",
             "reservation",
             "smoking",
+            "sport_pub",
             "stars",
             "takeaway",
             "wheelchair",
@@ -5243,7 +5195,6 @@
         "icon": "temaki-shower",
         "fields": [
             "opening_hours",
-            "opening_hours/covid19",
             "access_simple",
             "fee",
             "payment_multi_fee",
@@ -5257,6 +5208,7 @@
             "address",
             "gender",
             "level",
+            "opening_hours/covid19",
             "operator"
         ],
         "geometry": [
@@ -5275,13 +5227,13 @@
             "shelter",
             "bin",
             "bench",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "covered",
             "level",
             "lit",
+            "opening_hours/covid19",
             "wheelchair"
         ],
         "geometry": [
@@ -5316,7 +5268,6 @@
             "level",
             "phone",
             "polling_station",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -5350,7 +5301,6 @@
             "opening_hours",
             "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -5638,6 +5588,26 @@
             "theatre:type": "amphi"
         }
     },
+    "amenity/ticket_validator": {
+        "icon": "temaki-vending_machine",
+        "fields": [
+            "ref",
+            "operator"
+        ],
+        "moreFields": [
+            "colour",
+            "covered",
+            "indoor",
+            "level",
+            "support"
+        ],
+        "geometry": [
+            "point"
+        ],
+        "tags": {
+            "amenity": "ticket_validator"
+        }
+    },
     "amenity/toilets": {
         "icon": "maki-toilet",
         "fields": [
@@ -5753,7 +5723,6 @@
             "phone",
             "polling_station",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -5785,12 +5754,11 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "level",
-            "website",
+            "opening_hours/covid19",
             "wheelchair"
         ],
         "geometry": [
@@ -5799,6 +5767,29 @@
         ],
         "tags": {
             "amenity": "toy_library"
+        }
+    },
+    "amenity/trolley_bay": {
+        "icon": "fas-shopping-cart",
+        "fields": [
+            "capacity",
+            "deposit/trolley",
+            "payment_multi_fee"
+        ],
+        "moreFields": [
+            "brand",
+            "covered",
+            "fee",
+            "indoor",
+            "opening_hours",
+            "operator"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "amenity": "trolley_bay"
         }
     },
     "amenity/university": {
@@ -5849,16 +5840,15 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -5879,6 +5869,7 @@
             "currency_multi"
         ],
         "moreFields": [
+            "ref",
             "blind",
             "branch_brand",
             "brand",
@@ -5896,6 +5887,21 @@
             "amenity": "vending_machine"
         },
         "matchScore": 0.9
+    },
+    "amenity/vending_machine/bicycle_tube": {
+        "icon": "temaki-vending_machine",
+        "geometry": [
+            "point",
+            "vertex"
+        ],
+        "tags": {
+            "amenity": "vending_machine",
+            "vending": "bicycle_tube"
+        },
+        "reference": {
+            "key": "vending",
+            "value": "bicycle_tube"
+        }
     },
     "amenity/vending_machine/bottle_return": {
         "icon": "temaki-vending_machine",
@@ -6193,6 +6199,21 @@
         },
         "matchScore": 0.94
     },
+    "amenity/vending_machine/pizza": {
+        "icon": "temaki-vending_machine",
+        "geometry": [
+            "point",
+            "vertex"
+        ],
+        "tags": {
+            "amenity": "vending_machine",
+            "vending": "pizza"
+        },
+        "reference": {
+            "key": "vending",
+            "value": "pizza"
+        }
+    },
     "amenity/vending_machine/public_transport_tickets": {
         "icon": "temaki-vending_tickets",
         "geometry": [
@@ -6245,8 +6266,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "charge_fee",
@@ -6255,9 +6275,9 @@
             "fee",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "payment_multi_fee",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -6324,7 +6344,6 @@
             "waste",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
             "charge_fee"
@@ -6332,8 +6351,8 @@
         "moreFields": [
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -6371,13 +6390,13 @@
             "fee",
             "payment_multi_fee",
             "charge_fee",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "covered",
             "drinking_water",
             "lit",
+            "opening_hours/covid19",
             "ref"
         ],
         "geometry": [
@@ -6396,7 +6415,9 @@
             "fee",
             "payment_multi_fee",
             "charge_fee",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -6791,6 +6812,17 @@
         ],
         "matchScore": 0.4
     },
+    "barrier/ditch": {
+        "icon": "temaki-trench",
+        "geometry": [
+            "line",
+            "area"
+        ],
+        "tags": {
+            "barrier": "ditch"
+        },
+        "matchScore": 0.25
+    },
     "barrier/entrance": {
         "icon": "maki-entrance-alt1",
         "geometry": [
@@ -6798,6 +6830,45 @@
         ],
         "tags": {
             "barrier": "entrance"
+        },
+        "searchable": false
+    },
+    "barrier/handrail": {
+        "icon": "temaki-railing",
+        "geometry": [
+            "line"
+        ],
+        "tags": {
+            "barrier": "handrail"
+        },
+        "searchable": false
+    },
+    "barrier/log": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "access"
+        ],
+        "geometry": [
+            "vertex",
+            "line"
+        ],
+        "tags": {
+            "barrier": "log"
+        },
+        "searchable": false
+    },
+    "barrier/planter": {
+        "icon": "maki-garden",
+        "fields": [
+            "access",
+            "material"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "planter",
+            "man_made": "planter"
         },
         "searchable": false
     },
@@ -6859,8 +6930,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "vertex",
@@ -6868,6 +6938,46 @@
         ],
         "tags": {
             "barrier": "border_control"
+        }
+    },
+    "barrier/bump_gate": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "access"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "bump_gate"
+        }
+    },
+    "barrier/bus_trap": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "access"
+        ],
+        "moreFields": [
+            "maxwidth"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "bus_trap"
+        }
+    },
+    "barrier/cable_barrier": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "height",
+            "material"
+        ],
+        "geometry": [
+            "line"
+        ],
+        "tags": {
+            "barrier": "cable_barrier"
         }
     },
     "barrier/cattle_grid": {
@@ -6919,17 +7029,6 @@
             "barrier": "cycle_barrier"
         }
     },
-    "barrier/ditch": {
-        "icon": "temaki-trench",
-        "geometry": [
-            "line",
-            "area"
-        ],
-        "tags": {
-            "barrier": "ditch"
-        },
-        "matchScore": 0.25
-    },
     "barrier/fence": {
         "icon": "maki-fence",
         "fields": [
@@ -6956,6 +7055,18 @@
         },
         "matchScore": 0.5
     },
+    "barrier/full-height_turnstile": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "access"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "full-height_turnstile"
+        }
+    },
     "barrier/gate": {
         "icon": "temaki-gate",
         "fields": [
@@ -6963,13 +7074,13 @@
             "locked",
             "wheelchair",
             "opening_hours",
-            "opening_hours/covid19",
             "height",
             "material"
         ],
         "moreFields": [
             "colour",
             "manufacturer",
+            "opening_hours/covid19",
             "operator",
             "ref"
         ],
@@ -6993,6 +7104,18 @@
             "barrier": "guard_rail"
         },
         "matchScore": 0.75
+    },
+    "barrier/hampshire_gate": {
+        "icon": "temaki-gate",
+        "fields": [
+            "access"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "hampshire_gate"
+        }
     },
     "barrier/hedge": {
         "icon": "temaki-hedge",
@@ -7024,6 +7147,23 @@
         ],
         "tags": {
             "barrier": "height_restrictor"
+        }
+    },
+    "barrier/jersey_barrier": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "height",
+            "material"
+        ],
+        "moreFields": [
+            "access"
+        ],
+        "geometry": [
+            "point",
+            "line"
+        ],
+        "tags": {
+            "barrier": "jersey_barrier"
         }
     },
     "barrier/kerb": {
@@ -7157,7 +7297,10 @@
         "fields": [
             "access",
             "locked",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
+            "{barrier}",
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -7166,6 +7309,21 @@
         ],
         "tags": {
             "barrier": "lift_gate"
+        }
+    },
+    "barrier/motorcycle_barrier": {
+        "icon": "maki-roadblock",
+        "fields": [
+            "access"
+        ],
+        "moreFields": [
+            "wheelchair"
+        ],
+        "geometry": [
+            "vertex"
+        ],
+        "tags": {
+            "barrier": "motorcycle_barrier"
         }
     },
     "barrier/retaining_wall": {
@@ -7180,6 +7338,19 @@
         ],
         "tags": {
             "barrier": "retaining_wall"
+        }
+    },
+    "barrier/rope": {
+        "icon": "temaki-rope_fence",
+        "fields": [
+            "access"
+        ],
+        "geometry": [
+            "vertex",
+            "line"
+        ],
+        "tags": {
+            "barrier": "rope"
         }
     },
     "barrier/sally_port": {
@@ -7250,8 +7421,7 @@
             "fax",
             "opening_hours",
             "opening_hours/covid19",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "vertex",
@@ -7300,6 +7470,22 @@
             "wall": "noise_barrier"
         },
         "matchScore": 0.27
+    },
+    "barrier/wicket_gate": {
+        "icon": "temaki-gate",
+        "geometry": [
+            "vertex",
+            "line"
+        ],
+        "fields": [
+            "access"
+        ],
+        "moreFields": [
+            "entrance"
+        ],
+        "tags": {
+            "barrier": "wicket_gate"
+        }
     },
     "boundary/administrative": {
         "fields": [
@@ -7420,6 +7606,17 @@
         "tags": {
             "building": "entrance"
         },
+        "searchable": false
+    },
+    "building/manufacture": {
+        "icon": "maki-industry",
+        "geometry": [
+            "area"
+        ],
+        "tags": {
+            "building": "manufacture"
+        },
+        "matchScore": 0.5,
         "searchable": false
     },
     "building/train_station": {
@@ -7573,8 +7770,7 @@
         ],
         "moreFields": [
             "{building}",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -7658,8 +7854,10 @@
     "building/garage": {
         "icon": "fas-warehouse",
         "fields": [
-            "{building}",
-            "capacity"
+            "{building/garages}"
+        ],
+        "moreFields": [
+            "{building/garages}"
         ],
         "geometry": [
             "area"
@@ -7672,8 +7870,14 @@
     "building/garages": {
         "icon": "fas-warehouse",
         "fields": [
-            "{building}",
             "capacity"
+        ],
+        "moreFields": [
+            "building",
+            "building/levels",
+            "height",
+            "address",
+            "{building}"
         ],
         "geometry": [
             "area"
@@ -7682,6 +7886,15 @@
             "building": "garages"
         },
         "matchScore": 0.5
+    },
+    "building/ger": {
+        "icon": "temaki-hut",
+        "geometry": [
+            "area"
+        ],
+        "tags": {
+            "building": "ger"
+        }
     },
     "building/grandstand": {
         "icon": "maki-building",
@@ -7808,8 +8021,7 @@
         ],
         "moreFields": [
             "{building}",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -8067,6 +8279,37 @@
         },
         "matchScore": 0.5
     },
+    "cemetery/grave": {
+        "icon": "maki-cemetery",
+        "fields": [
+            "name",
+            "inscription"
+        ],
+        "moreFields": [
+            "description"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "cemetery": "grave"
+        }
+    },
+    "cemetery/sector": {
+        "icon": "maki-cemetery",
+        "fields": [
+            "sector/name",
+            "ref_sector"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "cemetery": "sector"
+        }
+    },
     "club": {
         "icon": "fas-handshake",
         "fields": [
@@ -8076,7 +8319,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -8093,6 +8335,7 @@
             "level",
             "max_age",
             "min_age",
+            "opening_hours/covid19",
             "phone",
             "website",
             "wheelchair"
@@ -8129,7 +8372,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -8145,6 +8387,7 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "product",
             "ref/vatin",
             "wheelchair"
@@ -8741,6 +8984,43 @@
         },
         "searchable": false
     },
+    "disc_golf/basket": {
+        "icon": "temaki-disc_golf_basket",
+        "geometry": [
+            "point",
+            "vertex"
+        ],
+        "tags": {
+            "disc_golf": "basket"
+        }
+    },
+    "disc_golf/hole": {
+        "icon": "temaki-disc_golf_basket",
+        "fields": [
+            "name",
+            "ref_disc_golf_hole",
+            "par"
+        ],
+        "geometry": [
+            "line"
+        ],
+        "tags": {
+            "disc_golf": "hole"
+        }
+    },
+    "disc_golf/tee": {
+        "icon": "temaki-disc_golf_basket",
+        "fields": [
+            "surface"
+        ],
+        "geometry": [
+            "point",
+            "vertex"
+        ],
+        "tags": {
+            "disc_golf": "tee"
+        }
+    },
     "disused/amenity": {
         "fields": [
             "disused/amenity"
@@ -8879,7 +9159,6 @@
             "fax",
             "gnis/feature_id-US",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -8917,8 +9196,7 @@
         "moreFields": [
             "level",
             "opening_hours",
-            "access_simple",
-            "wikimedia_commons"
+            "access_simple"
         ],
         "geometry": [
             "point",
@@ -8994,6 +9272,7 @@
         "moreFields": [
             "fire_hydrant/diameter",
             "fire_hydrant/pressure",
+            "fire_hydrant/position",
             "level",
             "survey/date",
             "water_volume"
@@ -9058,6 +9337,7 @@
         "fields": [
             "name",
             "operator",
+            "seamark/rescue_station/category",
             "address",
             "building_area",
             "phone",
@@ -9075,6 +9355,9 @@
         ],
         "tags": {
             "emergency": "lifeboat_station"
+        },
+        "addTags": {
+            "seamark:type": "rescue_station"
         }
     },
     "emergency/lifeguard": {
@@ -9083,7 +9366,9 @@
             "ref",
             "operator",
             "building_area",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -9095,7 +9380,7 @@
         }
     },
     "emergency/mountain_rescue": {
-        "icon": "temaki-mountain_rescue",
+        "icon": "temaki-mountain_cross",
         "fields": [
             "name",
             "address",
@@ -9154,7 +9439,7 @@
             "emergency": "siren"
         }
     },
-    "emergency/water_reservoir covered": {
+    "emergency/water_reservoir_covered": {
         "icon": "maki-water",
         "fields": [
             "name",
@@ -9194,12 +9479,8 @@
         ],
         "tags": {
             "emergency": "water_tank",
-            "landuse": "reservoir"
-        },
-        "addTags": {
-            "emergency": "water_tank",
-            "landuse": "reservoir",
-            "natural": "water"
+            "natural": "water",
+            "water": "reservoir"
         }
     },
     "emergency/water_tank": {
@@ -9209,7 +9490,8 @@
             "ref",
             "operator",
             "water_tank/volume",
-            "drinking_water"
+            "drinking_water",
+            "building_area"
         ],
         "moreFields": [
             "covered",
@@ -9223,7 +9505,7 @@
         ],
         "tags": {
             "emergency": "water_tank",
-            "landuse": "reservoir"
+            "man_made": "storage_tank"
         },
         "addTags": {
             "emergency": "water_tank",
@@ -9276,6 +9558,7 @@
             "ref",
             "door",
             "access_simple",
+            "wheelchair",
             "level"
         ],
         "geometry": [
@@ -9288,12 +9571,6 @@
     },
     "entrance/main": {
         "icon": "maki-entrance-alt1",
-        "fields": [
-            "ref",
-            "door",
-            "access_simple",
-            "level"
-        ],
         "geometry": [
             "vertex"
         ],
@@ -9341,6 +9618,8 @@
     "golf/cartpath": {
         "icon": "temaki-golf_cart",
         "fields": [
+            "name",
+            "highway_cartpath",
             "{golf/path}",
             "maxspeed"
         ],
@@ -9352,8 +9631,8 @@
         },
         "addTags": {
             "golf": "cartpath",
-            "golf_cart": "designated",
-            "highway": "service"
+            "highway": "path",
+            "golf_cart": "yes"
         }
     },
     "golf/clubhouse": {
@@ -9377,7 +9656,6 @@
             "opening_hours",
             "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -9469,6 +9747,7 @@
             "surface",
             "width",
             "structure",
+            "access",
             "incline"
         ],
         "geometry": [
@@ -9479,8 +9758,7 @@
         },
         "addTags": {
             "golf": "path",
-            "highway": "path",
-            "foot": "designated"
+            "highway": "footway"
         }
     },
     "golf/rough": {
@@ -9598,7 +9876,7 @@
             "area"
         ],
         "tags": {
-            "healthcare": "birthing_center"
+            "healthcare": "birthing_centre"
         }
     },
     "healthcare/blood_donation": {
@@ -9671,7 +9949,10 @@
             "phone",
             "ref",
             "address",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
+            "{healthcare}",
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -9761,7 +10042,10 @@
             "website",
             "phone",
             "address",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
+            "{healthcare}",
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -9873,17 +10157,20 @@
             "construction",
             "opening_date",
             "check_date",
-            "note",
+            "access",
             "oneway",
             "structure",
-            "access"
+            "note"
         ],
         "geometry": [
             "line"
         ],
         "tags": {
+            "highway": "construction"
+        },
+        "removeTags": {
             "highway": "construction",
-            "access": "no"
+            "construction": "*"
         }
     },
     "highway/corridor": {
@@ -9911,24 +10198,24 @@
             "indoor": "yes"
         }
     },
-    "highway/crossing/zebra-raised": {
+    "highway/crossing/uncontrolled": {
         "icon": "temaki-pedestrian_crosswalk",
         "fields": [
             "crossing",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
         ],
         "geometry": [
             "vertex"
         ],
         "tags": {
             "highway": "crossing",
-            "crossing": "zebra",
-            "traffic_calming": "table"
+            "crossing": "uncontrolled"
         },
         "reference": {
-            "key": "traffic_calming",
-            "value": "table"
+            "key": "crossing",
+            "value": "uncontrolled"
         },
         "searchable": false
     },
@@ -9937,7 +10224,8 @@
         "fields": [
             "crossing",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
         ],
         "geometry": [
             "vertex"
@@ -9952,32 +10240,16 @@
         },
         "searchable": false
     },
-    "highway/crossing/marked-raised": {
-        "icon": "temaki-pedestrian_crosswalk",
-        "fields": [
-            "crossing",
-            "tactile_paving",
-            "crossing/island"
-        ],
-        "geometry": [
-            "vertex"
-        ],
-        "tags": {
-            "highway": "crossing",
-            "crossing": "marked",
-            "traffic_calming": "table"
-        },
-        "reference": {
-            "key": "traffic_calming",
-            "value": "table"
-        }
-    },
     "highway/crossing/marked": {
         "icon": "temaki-pedestrian_crosswalk",
         "fields": [
             "crossing",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
+        ],
+        "moreFields": [
+            "flashing_lights"
         ],
         "geometry": [
             "vertex"
@@ -9987,36 +10259,25 @@
             "crossing": "marked"
         },
         "reference": {
-            "key": "highway",
-            "value": "crossing"
+            "key": "crossing",
+            "value": "marked"
         }
     },
-    "highway/crossing/signals-raised": {
+    "highway/crossing/traffic_signals": {
         "icon": "temaki-railway_signals",
         "fields": [
             "crossing",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised",
+            "button_operated",
+            "traffic_signals/sound",
+            "traffic_signals/vibration"
         ],
-        "geometry": [
-            "vertex"
-        ],
-        "tags": {
-            "highway": "crossing",
-            "crossing": "traffic_signals",
-            "traffic_calming": "table"
-        },
-        "reference": {
-            "key": "traffic_calming",
-            "value": "table"
-        }
-    },
-    "highway/crossing/signals": {
-        "icon": "temaki-railway_signals",
-        "fields": [
-            "crossing",
-            "tactile_paving",
-            "crossing/island"
+        "moreFields": [
+            "traffic_signals/arrow",
+            "traffic_signals/countdown",
+            "traffic_signals/minimap"
         ],
         "geometry": [
             "vertex"
@@ -10030,32 +10291,16 @@
             "value": "traffic_signals"
         }
     },
-    "highway/crossing/unmarked-raised": {
-        "icon": "temaki-pedestrian",
-        "fields": [
-            "crossing",
-            "tactile_paving",
-            "crossing/island"
-        ],
-        "geometry": [
-            "vertex"
-        ],
-        "tags": {
-            "highway": "crossing",
-            "crossing": "unmarked",
-            "traffic_calming": "table"
-        },
-        "reference": {
-            "key": "traffic_calming",
-            "value": "table"
-        }
-    },
     "highway/crossing/unmarked": {
         "icon": "temaki-pedestrian",
         "fields": [
             "crossing",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
+        ],
+        "moreFields": [
+            "flashing_lights"
         ],
         "geometry": [
             "vertex"
@@ -10214,8 +10459,8 @@
             "crossing": "marked"
         },
         "reference": {
-            "key": "cycleway",
-            "value": "crossing"
+            "key": "crossing",
+            "value": "marked"
         },
         "matchScore": 0.95
     },
@@ -10237,10 +10482,44 @@
             "crossing": "unmarked"
         },
         "reference": {
-            "key": "cycleway",
-            "value": "crossing"
+            "key": "crossing",
+            "value": "unmarked"
         },
         "matchScore": 0.95
+    },
+    "highway/cycleway/moped_link-NL": {
+        "locationSet": {
+            "include": [
+                "nl"
+            ]
+        },
+        "icon": "fas-motorcycle",
+        "fields": [
+            "name",
+            "oneway",
+            "surface",
+            "smoothness",
+            "width",
+            "structure",
+            "access",
+            "incline"
+        ],
+        "geometry": [
+            "line"
+        ],
+        "tags": {
+            "highway": "cycleway",
+            "bicycle": "no",
+            "moped": "designated"
+        },
+        "addTags": {
+            "highway": "cycleway",
+            "bicycle": "no",
+            "moped": "designated",
+            "foot": "no",
+            "mofa": "no"
+        },
+        "matchScore": 0.9
     },
     "highway/elevator_line": {
         "icon": "temaki-elevator",
@@ -10281,6 +10560,19 @@
             "highway": "elevator"
         }
     },
+    "highway/emergency_access_point": {
+        "icon": "fas-compress-arrows-alt",
+        "geometry": [
+            "point"
+        ],
+        "fields": [
+            "ref",
+            "operator"
+        ],
+        "tags": {
+            "highway": "emergency_access_point"
+        }
+    },
     "highway/emergency_bay": {
         "icon": "maki-car",
         "geometry": [
@@ -10303,6 +10595,7 @@
         "moreFields": [
             "covered_no",
             "dog",
+            "informal",
             "lit",
             "maxweight_bridge",
             "not/name",
@@ -10339,27 +10632,36 @@
         },
         "searchable": false
     },
-    "highway/footway/zebra-raised": {
-        "icon": "temaki-pedestrian_crosswalk",
+    "highway/footway/informal": {
+        "icon": "fas-shoe-prints",
         "fields": [
-            "crossing",
-            "access",
             "surface",
-            "tactile_paving",
-            "crossing/island"
+            "width",
+            "access",
+            "trail_visibility",
+            "smoothness",
+            "incline"
+        ],
+        "moreFields": [
+            "covered_no",
+            "dog",
+            "informal",
+            "lit",
+            "maxweight_bridge",
+            "sac_scale",
+            "stroller",
+            "structure",
+            "wheelchair"
         ],
         "geometry": [
             "line"
         ],
         "tags": {
             "highway": "footway",
-            "footway": "crossing",
-            "crossing": "zebra",
-            "traffic_calming": "table"
+            "informal": "yes"
         },
         "reference": {
-            "key": "traffic_calming",
-            "value": "table"
+            "key": "informal"
         },
         "searchable": false
     },
@@ -10370,7 +10672,8 @@
             "access",
             "surface",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
         ],
         "geometry": [
             "line"
@@ -10402,7 +10705,6 @@
             "incline",
             "lit",
             "maxweight_bridge",
-            "name",
             "ref",
             "smoothness",
             "stroller",
@@ -10441,29 +10743,6 @@
             "key": "conveying"
         }
     },
-    "highway/footway/marked-raised": {
-        "icon": "temaki-pedestrian_crosswalk",
-        "fields": [
-            "crossing",
-            "access",
-            "surface",
-            "tactile_paving",
-            "crossing/island"
-        ],
-        "geometry": [
-            "line"
-        ],
-        "tags": {
-            "highway": "footway",
-            "footway": "crossing",
-            "crossing": "marked",
-            "traffic_calming": "table"
-        },
-        "reference": {
-            "key": "traffic_calming",
-            "value": "table"
-        }
-    },
     "highway/footway/marked": {
         "icon": "temaki-pedestrian_crosswalk",
         "fields": [
@@ -10471,7 +10750,11 @@
             "access",
             "surface",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
+        ],
+        "moreFields": [
+            "flashing_lights"
         ],
         "geometry": [
             "line"
@@ -10503,14 +10786,23 @@
             "value": "sidewalk"
         }
     },
-    "highway/footway/unmarked-raised": {
-        "icon": "temaki-pedestrian",
+    "highway/footway/traffic_signals": {
+        "icon": "temaki-railway_signals",
         "fields": [
             "crossing",
             "access",
             "surface",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised",
+            "button_operated",
+            "traffic_signals/sound",
+            "traffic_signals/vibration"
+        ],
+        "moreFields": [
+            "traffic_signals/arrow",
+            "traffic_signals/countdown",
+            "traffic_signals/minimap"
         ],
         "geometry": [
             "line"
@@ -10518,12 +10810,11 @@
         "tags": {
             "highway": "footway",
             "footway": "crossing",
-            "crossing": "unmarked",
-            "traffic_calming": "table"
+            "crossing": "traffic_signals"
         },
         "reference": {
-            "key": "traffic_calming",
-            "value": "table"
+            "key": "crossing",
+            "value": "traffic_signals"
         }
     },
     "highway/footway/unmarked": {
@@ -10533,7 +10824,11 @@
             "access",
             "surface",
             "tactile_paving",
-            "crossing/island"
+            "crossing/island",
+            "crossing_raised"
+        ],
+        "moreFields": [
+            "flashing_lights"
         ],
         "geometry": [
             "line"
@@ -10579,6 +10874,7 @@
             "lit",
             "maxheight",
             "maxweight_bridge",
+            "maxwidth",
             "oneway/bicycle",
             "smoothness",
             "trolley_wire",
@@ -10599,6 +10895,7 @@
         ],
         "fields": [
             "distance",
+            "ref",
             "direction_vertex"
         ],
         "moreFields": [
@@ -10656,7 +10953,7 @@
             "maxheight",
             "maxspeed",
             "maxweight_bridge",
-            "name",
+            "maxwidth",
             "ref_road_number",
             "smoothness",
             "toll",
@@ -10698,7 +10995,7 @@
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
-            "name",
+            "maxwidth",
             "ref_road_number",
             "smoothness",
             "toll",
@@ -10738,6 +11035,7 @@
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
+            "maxwidth",
             "minspeed",
             "not/name",
             "smoothness",
@@ -10917,7 +11215,7 @@
             "maxheight",
             "maxspeed",
             "maxweight_bridge",
-            "name",
+            "maxwidth",
             "oneway/bicycle",
             "ref_road_number",
             "smoothness",
@@ -10963,7 +11261,7 @@
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
-            "name",
+            "maxwidth",
             "oneway/bicycle",
             "ref_road_number",
             "smoothness",
@@ -11004,10 +11302,12 @@
             "flood_prone",
             "incline",
             "junction_line",
+            "lane_markings",
             "lit",
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
+            "maxwidth",
             "not/name",
             "oneway/bicycle",
             "smoothness",
@@ -11093,10 +11393,12 @@
             "flood_prone",
             "incline",
             "junction_line",
+            "lane_markings",
             "lit",
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
+            "maxwidth",
             "not/name",
             "oneway/bicycle",
             "smoothness",
@@ -11115,15 +11417,14 @@
         "fields": [
             "name",
             "operator",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "address",
             "email",
             "fax",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -11224,6 +11525,7 @@
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
+            "maxwidth",
             "oneway/bicycle",
             "smoothness",
             "trolley_wire",
@@ -11339,9 +11641,28 @@
             "highway": "speed_camera"
         }
     },
+    "highway/speed_display": {
+        "icon": "maki-square-stroked",
+        "geometry": [
+            "point",
+            "vertex"
+        ],
+        "fields": [
+            "direction_point",
+            "direction_vertex",
+            "maxspeed"
+        ],
+        "moreFields": [
+            "maxspeed/advisory"
+        ],
+        "tags": {
+            "highway": "speed_display"
+        }
+    },
     "highway/steps": {
         "icon": "iD-highway-steps",
         "fields": [
+            "name",
             "incline_steps",
             "access_simple",
             "handrail",
@@ -11356,7 +11677,6 @@
             "indoor",
             "level_semi",
             "lit",
-            "name",
             "ref",
             "ramp",
             "stroller",
@@ -11420,6 +11740,7 @@
         },
         "fields": [
             "lamp_type",
+            "support",
             "lamp_mount",
             "direction",
             "height",
@@ -11469,11 +11790,10 @@
             "access",
             "maxheight",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi"
         ],
         "moreFields": [
-            "website"
+            "opening_hours/covid19"
         ],
         "geometry": [
             "vertex"
@@ -11536,6 +11856,9 @@
         "fields": [
             "traffic_signals",
             "traffic_signals/direction"
+        ],
+        "moreFields": [
+            "traffic_signals/countdown"
         ]
     },
     "highway/trailhead": {
@@ -11626,6 +11949,7 @@
             "maxheight",
             "maxspeed/advisory",
             "maxweight_bridge",
+            "maxwidth",
             "minspeed",
             "not/name",
             "smoothness",
@@ -11892,8 +12216,7 @@
             "material"
         ],
         "moreFields": [
-            "{historic}",
-            "website"
+            "{historic}"
         ],
         "geometry": [
             "point",
@@ -12003,7 +12326,6 @@
         ],
         "moreFields": [
             "{historic}",
-            "start_date",
             "religion",
             "denomination"
         ],
@@ -12316,8 +12638,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "allotments"
@@ -12334,8 +12655,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12368,8 +12688,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12387,8 +12706,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12412,8 +12730,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12449,8 +12766,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12463,15 +12779,13 @@
         "icon": "maki-farm",
         "fields": [
             "name",
-            "operator",
-            "crop"
+            "operator"
         ],
         "moreFields": [
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12486,8 +12800,7 @@
             "operator"
         ],
         "moreFields": [
-            "address",
-            "name"
+            "address"
         ],
         "geometry": [
             "area"
@@ -12508,8 +12821,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12530,8 +12842,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "garages"
@@ -12569,8 +12880,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12590,8 +12900,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12607,11 +12916,11 @@
             "industrial"
         ],
         "moreFields": [
+            "operator",
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12627,7 +12936,10 @@
             "name",
             "operator",
             "address",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
+            "{landuse/industrial}",
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -12653,7 +12965,10 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
+            "opening_hours"
+        ],
+        "moreFields": [
+            "{landuse/industrial}",
             "opening_hours/covid19"
         ],
         "geometry": [
@@ -12678,14 +12993,14 @@
             "area"
         ],
         "fields": [
-            "name"
+            "name",
+            "operator"
         ],
         "moreFields": [
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "landfill"
@@ -12712,8 +13027,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12761,6 +13075,43 @@
             "military": "barracks"
         }
     },
+    "landuse/military/base": {
+        "icon": "temaki-anchor_medal",
+        "fields": [
+            "name",
+            "military_service"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "military": "base"
+        },
+        "addTags": {
+            "landuse": "military",
+            "military": "base"
+        }
+    },
+    "landuse/military/base/navy": {
+        "icon": "temaki-anchor_medal",
+        "fields": [
+            "name"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "military": "base",
+            "military_service": "navy"
+        },
+        "addTags": {
+            "landuse": "military",
+            "military": "base",
+            "military_service": "navy"
+        }
+    },
     "landuse/military/danger_area": {
         "icon": "maki-danger",
         "fields": [
@@ -12777,23 +13128,6 @@
         "addTags": {
             "landuse": "military",
             "military": "danger_area"
-        }
-    },
-    "landuse/military/naval_base": {
-        "icon": "temaki-anchor_medal",
-        "fields": [
-            "name"
-        ],
-        "geometry": [
-            "point",
-            "area"
-        ],
-        "tags": {
-            "military": "naval_base"
-        },
-        "addTags": {
-            "landuse": "military",
-            "military": "naval_base"
         }
     },
     "landuse/military/obstacle_course": {
@@ -12856,8 +13190,7 @@
             "email",
             "fax",
             "phone",
-            "species/wikidata",
-            "website"
+            "species/wikidata"
         ],
         "geometry": [
             "area"
@@ -12877,8 +13210,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -12902,8 +13234,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "quarry"
@@ -12933,8 +13264,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "recreation_ground"
@@ -12954,8 +13284,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "religious"
@@ -13010,8 +13339,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "tags": {
             "landuse": "retail"
@@ -13042,8 +13370,7 @@
             "address",
             "email",
             "fax",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area"
@@ -13120,7 +13447,6 @@
             "payment_multi",
             "phone",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -13139,8 +13465,7 @@
             "operator"
         ],
         "moreFields": [
-            "gnis/feature_id-US",
-            "website"
+            "gnis/feature_id-US"
         ],
         "geometry": [
             "point",
@@ -13156,7 +13481,6 @@
             "name",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
             "charge_fee"
@@ -13165,9 +13489,9 @@
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "phone",
-            "smoking",
-            "website"
+            "smoking"
         ],
         "geometry": [
             "point",
@@ -13183,11 +13507,10 @@
             "name",
             "building_area",
             "address",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
-            "website"
+            "opening_hours/covid19"
         ],
         "geometry": [
             "point",
@@ -13212,7 +13535,8 @@
             "name",
             "operator",
             "address",
-            "building_area"
+            "building_area",
+            "opening_hours"
         ],
         "moreFields": [
             "air_conditioning",
@@ -13224,12 +13548,10 @@
             "internet_access/ssid",
             "level",
             "min_age",
-            "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
             "phone",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -13247,8 +13569,7 @@
             "access_simple"
         ],
         "moreFields": [
-            "gnis/feature_id-US",
-            "website"
+            "gnis/feature_id-US"
         ],
         "geometry": [
             "area",
@@ -13265,6 +13586,7 @@
             "operator",
             "address",
             "building_area",
+            "opening_hours",
             "dance/style"
         ],
         "moreFields": [
@@ -13272,11 +13594,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -13293,6 +13613,7 @@
             "operator",
             "address",
             "building_area",
+            "opening_hours",
             "dance/style"
         ],
         "moreFields": [
@@ -13300,11 +13621,9 @@
             "fax",
             "gnis/feature_id-US",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -13328,8 +13647,7 @@
             "fee",
             "payment_multi_fee",
             "charge_fee",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "address",
@@ -13338,8 +13656,8 @@
             "fax",
             "gnis/feature_id-US",
             "lit",
+            "opening_hours/covid19",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -13390,7 +13708,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website",
             "fee",
             "payment_multi_fee",
@@ -13404,6 +13721,7 @@
             "email",
             "fax",
             "level",
+            "opening_hours/covid19",
             "phone",
             "smoking",
             "wheelchair"
@@ -13458,7 +13776,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -13474,6 +13791,7 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi"
         ],
         "geometry": [
@@ -13764,8 +14082,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -13811,16 +14128,15 @@
             "name",
             "operator",
             "address",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area",
@@ -13837,7 +14153,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "website",
             "fee",
             "payment_multi_fee",
@@ -13852,6 +14167,7 @@
             "fax",
             "gnis/feature_id-US",
             "level",
+            "opening_hours/covid19",
             "phone",
             "smoking",
             "wheelchair"
@@ -13879,8 +14195,7 @@
             "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -13898,7 +14213,8 @@
             "sport_ice",
             "operator",
             "address",
-            "building"
+            "building",
+            "opening_hours"
         ],
         "moreFields": [
             "email",
@@ -13908,11 +14224,9 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "area",
@@ -13929,7 +14243,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -13948,6 +14261,7 @@
             "internet_access/ssid",
             "max_age",
             "min_age",
+            "opening_hours/covid19",
             "operator",
             "payment_multi",
             "wheelchair"
@@ -13982,8 +14296,7 @@
             "internet_access/ssid",
             "phone",
             "seamark/type",
-            "vhf",
-            "website"
+            "vhf"
         ],
         "geometry": [
             "area",
@@ -14006,7 +14319,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
             "charge_fee"
@@ -14015,8 +14327,8 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "opening_hours/covid19",
+            "phone"
         ],
         "geometry": [
             "area",
@@ -14036,16 +14348,15 @@
             "name",
             "operator",
             "address",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "dog",
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "opening_hours/covid19",
+            "phone"
         ],
         "tags": {
             "leisure": "nature_reserve"
@@ -14079,17 +14390,16 @@
             "name",
             "operator",
             "address",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "dog",
             "email",
             "fax",
             "gnis/feature_id-US",
+            "opening_hours/covid19",
             "phone",
-            "smoking",
-            "website"
+            "smoking"
         ],
         "geometry": [
             "area",
@@ -14175,6 +14485,21 @@
             "value": "american_football"
         }
     },
+    "leisure/pitch/archery": {
+        "icon": "temaki-archery",
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "archery"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "archery"
+        }
+    },
     "leisure/pitch/australian_football": {
         "icon": "maki-american-football",
         "geometry": [
@@ -14192,10 +14517,6 @@
     },
     "leisure/pitch/badminton": {
         "icon": "maki-tennis",
-        "fields": [
-            "{leisure/pitch}",
-            "access_simple"
-        ],
         "geometry": [
             "area",
             "point"
@@ -14227,11 +14548,8 @@
     "leisure/pitch/basketball": {
         "icon": "maki-basketball",
         "fields": [
-            "name",
-            "surface",
-            "hoops",
-            "lit",
-            "access_simple"
+            "{leisure/pitch}",
+            "hoops"
         ],
         "geometry": [
             "area",
@@ -14364,6 +14682,36 @@
             "value": "field_hockey"
         }
     },
+    "leisure/pitch/four_square": {
+        "icon": "maki-pitch",
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "four_square"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "four_square"
+        }
+    },
+    "leisure/pitch/futsal": {
+        "icon": "maki-soccer",
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "futsal"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "futsal"
+        }
+    },
     "leisure/pitch/horseshoes": {
         "icon": "temaki-horseshoes",
         "geometry": [
@@ -14394,6 +14742,21 @@
             "value": "netball"
         }
     },
+    "leisure/pitch/padel": {
+        "icon": "maki-tennis",
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "padel"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "padel"
+        }
+    },
     "leisure/pitch/paintball": {
         "icon": "fas-crosshairs",
         "geometry": [
@@ -14411,10 +14774,6 @@
     },
     "leisure/pitch/pickleball": {
         "icon": "maki-tennis",
-        "fields": [
-            "{leisure/pitch}",
-            "access_simple"
-        ],
         "geometry": [
             "area",
             "point"
@@ -14533,6 +14892,25 @@
             "value": "softball"
         }
     },
+    "leisure/pitch/table_soccer": {
+        "fields": [
+            "name",
+            "lit",
+            "access_simple"
+        ],
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "table_soccer"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "table_soccer"
+        }
+    },
     "leisure/pitch/table_tennis": {
         "icon": "fas-table-tennis",
         "fields": [
@@ -14555,10 +14933,6 @@
     },
     "leisure/pitch/tennis": {
         "icon": "maki-tennis",
-        "fields": [
-            "{leisure/pitch}",
-            "access_simple"
-        ],
         "geometry": [
             "area",
             "point"
@@ -14570,6 +14944,21 @@
         "reference": {
             "key": "sport",
             "value": "tennis"
+        }
+    },
+    "leisure/pitch/tetherball": {
+        "icon": "maki-pitch",
+        "geometry": [
+            "area",
+            "point"
+        ],
+        "tags": {
+            "leisure": "pitch",
+            "sport": "tetherball"
+        },
+        "reference": {
+            "key": "sport",
+            "value": "tetherball"
         }
     },
     "leisure/pitch/volleyball": {
@@ -14631,8 +15020,7 @@
             "operator",
             "resort",
             "address",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "access_simple",
@@ -14642,9 +15030,9 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -14661,7 +15049,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "access_simple",
             "fee",
             "payment_multi_fee",
@@ -14672,8 +15059,8 @@
             "fax",
             "gnis/feature_id-US",
             "level",
-            "phone",
-            "website"
+            "opening_hours/covid19",
+            "phone"
         ],
         "geometry": [
             "point",
@@ -14740,6 +15127,7 @@
             "building",
             "address",
             "fee",
+            "opening_hours",
             "payment_multi_fee",
             "charge_fee"
         ],
@@ -14748,10 +15136,8 @@
             "fax",
             "gnis/feature_id-US",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -14818,12 +15204,12 @@
             "sport",
             "address",
             "building_area",
+            "opening_hours",
             "access_simple"
         ],
         "moreFields": [
             "air_conditioning",
             "level",
-            "opening_hours",
             "opening_hours/covid19",
             "fee",
             "payment_multi_fee",
@@ -14850,8 +15236,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -15014,7 +15399,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -15029,6 +15413,7 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "operator",
             "payment_multi"
         ],
@@ -15229,7 +15614,6 @@
         "moreFields": [
             "colour",
             "material",
-            "name",
             "operator",
             "ref"
         ],
@@ -15239,6 +15623,21 @@
         ],
         "tags": {
             "man_made": "cairn"
+        }
+    },
+    "man_made/carpet_hanger": {
+        "icon": "maki-picnic-site",
+        "fields": [
+            "material",
+            "height",
+            "colour"
+        ],
+        "geometry": [
+            "point",
+            "line"
+        ],
+        "tags": {
+            "man_made": "carpet_hanger"
         }
     },
     "man_made/chimney": {
@@ -15445,8 +15844,7 @@
             "fax",
             "gnis/feature_id-US",
             "phone",
-            "seamark/type",
-            "website"
+            "seamark/type"
         ],
         "geometry": [
             "point",
@@ -15673,6 +16071,27 @@
             "value": "yes"
         }
     },
+    "man_made/mast/lighting": {
+        "icon": "temaki-mast_lighting",
+        "fields": [
+            "{man_made/mast}",
+            "direction_point"
+        ],
+        "moreFields": [
+            "{man_made/mast}"
+        ],
+        "geometry": [
+            "point"
+        ],
+        "tags": {
+            "man_made": "mast",
+            "tower:type": "lighting"
+        },
+        "reference": {
+            "key": "tower:type",
+            "value": "lighting"
+        }
+    },
     "man_made/mineshaft": {
         "icon": "temaki-mineshaft_cage",
         "geometry": [
@@ -15702,6 +16121,9 @@
             "monitoring_multi",
             "operator",
             "manufacturer"
+        ],
+        "moreFields": [
+            "ref"
         ],
         "tags": {
             "man_made": "monitoring_station"
@@ -15738,8 +16160,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -15856,11 +16277,32 @@
             "pipeline": "valve"
         }
     },
+    "man_made/planter": {
+        "icon": "maki-garden",
+        "geometry": [
+            "point",
+            "vertex",
+            "area"
+        ],
+        "fields": [
+            "material",
+            "barrier_planter"
+        ],
+        "tags": {
+            "man_made": "planter"
+        },
+        "matchScore": 0.9
+    },
     "man_made/pumping_station": {
         "icon": "temaki-powered_pump",
         "geometry": [
             "point",
             "area"
+        ],
+        "fields": [
+            "name",
+            "operator",
+            "address"
         ],
         "moreFields": [
             "gnis/feature_id-US"
@@ -16013,7 +16455,6 @@
         ],
         "moreFields": [
             "survey_point/datum_aligned",
-            "website",
             "inscription"
         ],
         "geometry": [
@@ -16033,7 +16474,6 @@
             "lit"
         ],
         "moreFields": [
-            "name",
             "operator",
             "ref"
         ],
@@ -16268,9 +16708,7 @@
             "min_height"
         ],
         "moreFields": [
-            "name",
             "ref",
-            "website",
             "visibility"
         ],
         "geometry": [
@@ -16287,14 +16725,14 @@
         "fields": [
             "name",
             "operator",
-            "address"
+            "address",
+            "ref"
         ],
         "moreFields": [
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -16437,8 +16875,7 @@
             "email",
             "fax",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -16615,7 +17052,10 @@
     "natural/beach": {
         "icon": "temaki-beach",
         "fields": [
-            "surface"
+            "name",
+            "surface",
+            "lifeguard",
+            "supervised"
         ],
         "geometry": [
             "point",
@@ -16629,8 +17069,7 @@
         "icon": "temaki-cape_landform",
         "fields": [
             "name",
-            "ele_node",
-            "description"
+            "ele_node"
         ],
         "geometry": [
             "point",
@@ -16744,7 +17183,8 @@
             "gnis/feature_id-US"
         ],
         "geometry": [
-            "point"
+            "point",
+            "area"
         ],
         "tags": {
             "natural": "hot_spring"
@@ -16924,11 +17364,15 @@
             "leaf_cycle_singular",
             "denotation",
             "height",
-            "diameter"
+            "circumference"
         ],
         "moreFields": [
-            "circumference",
-            "species/wikidata"
+            "genus",
+            "species",
+            "species/wikidata",
+            "taxon",
+            "diameter_crown",
+            "diameter"
         ],
         "geometry": [
             "point",
@@ -16942,8 +17386,7 @@
         "icon": "temaki-valley",
         "fields": [
             "name",
-            "ele_node",
-            "description"
+            "ele_node"
         ],
         "geometry": [
             "vertex",
@@ -17099,9 +17542,7 @@
             "intermittent",
             "tidal"
         ],
-        "moreFields": [
-            "name"
-        ],
+        "moreFields": [],
         "geometry": [
             "area"
         ],
@@ -17120,9 +17561,7 @@
             "water",
             "intermittent"
         ],
-        "moreFields": [
-            "name"
-        ],
+        "moreFields": [],
         "geometry": [
             "area"
         ],
@@ -17276,7 +17715,7 @@
         }
     },
     "natural/wetland/swamp": {
-        "icon": "maki-wetland",
+        "icon": "temaki-swamp",
         "fields": [],
         "moreFields": [
             "tidal"
@@ -17389,7 +17828,6 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "phone",
             "website"
         ],
@@ -17407,6 +17845,7 @@
             "internet_access/ssid",
             "level",
             "not/name",
+            "opening_hours/covid19",
             "operator",
             "ref/vatin",
             "smoking",
@@ -17457,6 +17896,24 @@
             "value": "travel_agency"
         },
         "searchable": false
+    },
+    "office/yes": {
+        "icon": "maki-suitcase",
+        "fields": [
+            "name",
+            "office",
+            "{office}"
+        ],
+        "geometry": [
+            "point",
+            "vertex",
+            "area"
+        ],
+        "tags": {
+            "office": "yes"
+        },
+        "searchable": false,
+        "matchScore": 0.5
     },
     "office/accountant": {
         "icon": "temaki-accounting",
@@ -17580,10 +18037,6 @@
         ],
         "tags": {
             "office": "coworking"
-        },
-        "reference": {
-            "key": "amenity",
-            "value": "coworking_space"
         }
     },
     "office/diplomatic": {
@@ -18212,10 +18665,6 @@
     },
     "place/city_block": {
         "icon": "maki-triangle-stroked",
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18230,10 +18679,6 @@
             "name",
             "population"
         ],
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18247,10 +18692,6 @@
         "fields": [
             "name",
             "population"
-        ],
-        "moreFields": [
-            "{place}",
-            "website"
         ],
         "geometry": [
             "point",
@@ -18292,10 +18733,6 @@
     },
     "place/locality": {
         "icon": "maki-triangle-stroked",
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18311,8 +18748,7 @@
             "population"
         ],
         "moreFields": [
-            "gnis/feature_id-US",
-            "website"
+            "gnis/feature_id-US"
         ],
         "geometry": [
             "point",
@@ -18338,10 +18774,6 @@
             "name",
             "population"
         ],
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18352,10 +18784,6 @@
     },
     "place/square": {
         "icon": "maki-marker-stroked",
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18369,10 +18797,6 @@
         "fields": [
             "name",
             "population"
-        ],
-        "moreFields": [
-            "{place}",
-            "website"
         ],
         "geometry": [
             "point",
@@ -18388,10 +18812,6 @@
             "name",
             "population"
         ],
-        "moreFields": [
-            "{place}",
-            "website"
-        ],
         "geometry": [
             "point",
             "area"
@@ -18405,10 +18825,6 @@
         "fields": [
             "name",
             "population"
-        ],
-        "moreFields": [
-            "{place}",
-            "website"
         ],
         "geometry": [
             "point",
@@ -18440,7 +18856,9 @@
     "playground/basketswing": {
         "icon": "maki-playground",
         "geometry": [
-            "point"
+            "point",
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "basketswing"
@@ -18466,10 +18884,23 @@
             "playground": "cushion"
         }
     },
+    "playground/hopscotch": {
+        "icon": "maki-playground",
+        "geometry": [
+            "point",
+            "line",
+            "area"
+        ],
+        "tags": {
+            "playground": "hopscotch"
+        }
+    },
     "playground/horizontal_bar": {
         "icon": "temaki-horizontal_bar",
         "geometry": [
-            "point"
+            "point",
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "horizontal_bar"
@@ -18510,9 +18941,11 @@
         }
     },
     "playground/seesaw": {
-        "icon": "maki-playground",
+        "icon": "temaki-seesaw",
         "geometry": [
-            "point"
+            "point",
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "seesaw"
@@ -18522,7 +18955,8 @@
         "icon": "temaki-slide",
         "geometry": [
             "point",
-            "line"
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "slide"
@@ -18541,6 +18975,7 @@
         "icon": "temaki-play_structure",
         "geometry": [
             "point",
+            "line",
             "area"
         ],
         "tags": {
@@ -18556,7 +18991,9 @@
             "blind"
         ],
         "geometry": [
-            "point"
+            "point",
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "swing"
@@ -18565,8 +19002,8 @@
     "playground/zipwire": {
         "icon": "maki-playground",
         "geometry": [
-            "point",
-            "line"
+            "line",
+            "area"
         ],
         "tags": {
             "playground": "zipwire"
@@ -18608,10 +19045,8 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "building_area",
-            "phone",
-            "website"
+            "phone"
         ],
         "moreFields": [
             "air_conditioning",
@@ -18621,6 +19056,7 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "wheelchair"
         ],
         "geometry": [
@@ -19204,6 +19640,7 @@
             "ref"
         ],
         "moreFields": [
+            "address",
             "gnis/feature_id-US"
         ],
         "geometry": [
@@ -19273,7 +19710,8 @@
             "voltage/secondary",
             "voltage/tertiary",
             "windings",
-            "windings/configuration"
+            "windings/configuration",
+            "windings/auto"
         ],
         "geometry": [
             "point",
@@ -20056,7 +20494,6 @@
             "internet_access/ssid",
             "level",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -20697,7 +21134,8 @@
         "fields": [
             "name",
             "level",
-            "wheelchair"
+            "wheelchair",
+            "ref"
         ],
         "tags": {
             "railway": "subway_entrance"
@@ -20763,7 +21201,8 @@
     "railway/tram": {
         "icon": "temaki-tram",
         "fields": [
-            "{railway/light_rail}"
+            "{railway/light_rail}",
+            "oneway"
         ],
         "moreFields": [
             "{railway/light_rail}"
@@ -20824,6 +21263,7 @@
             "interval",
             "maxheight",
             "maxweight",
+            "maxwidth",
             "network",
             "oneway",
             "opening_hours",
@@ -20833,7 +21273,6 @@
             "reservation",
             "roundtrip",
             "vhf",
-            "website",
             "wheelchair"
         ],
         "tags": {
@@ -20938,10 +21377,8 @@
             "address",
             "building_area",
             "opening_hours",
-            "opening_hours/covid19",
             "payment_multi",
-            "phone",
-            "website"
+            "phone"
         ],
         "moreFields": [
             "air_conditioning",
@@ -20959,6 +21396,7 @@
             "internet_access/ssid",
             "level",
             "not/name",
+            "opening_hours/covid19",
             "ref/vatin",
             "second_hand",
             "stroller",
@@ -21019,6 +21457,23 @@
             "shop": "vacant"
         },
         "searchable": false
+    },
+    "shop/yes": {
+        "icon": "maki-shop",
+        "fields": [
+            "name",
+            "shop",
+            "{shop}"
+        ],
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "shop": "yes"
+        },
+        "searchable": false,
+        "matchScore": 0.5
     },
     "shop/agrarian": {
         "icon": "fas-tractor",
@@ -21466,6 +21921,17 @@
             "second_hand": "only"
         }
     },
+    "shop/clothes/suits": {
+        "icon": "fas-tshirt",
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "shop": "clothes",
+            "clothes": "suits"
+        }
+    },
     "shop/clothes/underwear": {
         "icon": "temaki-bikini",
         "geometry": [
@@ -21494,6 +21960,17 @@
         "reference": {
             "key": "clothes",
             "value": "wedding"
+        }
+    },
+    "shop/clothes/workwear": {
+        "icon": "fas-tshirt",
+        "geometry": [
+            "point",
+            "area"
+        ],
+        "tags": {
+            "shop": "clothes",
+            "clothes": "workwear"
         }
     },
     "shop/coffee": {
@@ -22302,8 +22779,12 @@
     "shop/outdoor": {
         "icon": "temaki-compass",
         "fields": [
+            "{shop}"
+        ],
+        "moreFields": [
             "{shop}",
-            "clothes"
+            "clothes",
+            "service/bicycle"
         ],
         "geometry": [
             "point",
@@ -22573,6 +23054,10 @@
             "operator",
             "sport",
             "{shop}"
+        ],
+        "moreFields": [
+            "{shop}",
+            "service/bicycle"
         ],
         "geometry": [
             "point",
@@ -22927,8 +23412,7 @@
         "moreFields": [
             "address",
             "gnis/feature_id-US",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -22975,7 +23459,6 @@
             "gnis/feature_id-US",
             "internet_access/ssid",
             "reservation",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23026,8 +23509,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "charge_fee",
@@ -23038,11 +23520,11 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "payment_multi_fee",
             "phone",
             "ref/vatin",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23062,8 +23544,7 @@
         ],
         "moreFields": [
             "level",
-            "material",
-            "website"
+            "material"
         ],
         "geometry": [
             "point",
@@ -23274,7 +23755,6 @@
             "shower",
             "stars",
             "toilets",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23339,7 +23819,6 @@
             "phone",
             "reservation",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23391,8 +23870,7 @@
             "operator",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "email",
@@ -23401,10 +23879,10 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "ref/vatin",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23604,7 +24082,6 @@
             "height_building",
             "internet_access/ssid",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23708,8 +24185,7 @@
             "museum",
             "address",
             "building_area",
-            "opening_hours",
-            "opening_hours/covid19"
+            "opening_hours"
         ],
         "moreFields": [
             "air_conditioning",
@@ -23724,9 +24200,9 @@
             "internet_access/fee",
             "internet_access/ssid",
             "level",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23773,7 +24249,6 @@
             "phone",
             "reservation",
             "smoking",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -23792,7 +24267,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "website"
         ],
         "moreFields": [
@@ -23804,6 +24278,7 @@
             "internet_access",
             "internet_access/fee",
             "internet_access/ssid",
+            "opening_hours/covid19",
             "payment_multi",
             "phone",
             "wheelchair"
@@ -23834,8 +24309,7 @@
             "internet_access/ssid",
             "opening_hours",
             "opening_hours/covid19",
-            "phone",
-            "website"
+            "phone"
         ],
         "geometry": [
             "point",
@@ -23897,7 +24371,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "fee",
             "charge_fee"
         ],
@@ -23909,9 +24382,9 @@
             "internet_access/fee",
             "internet_access/ssid",
             "payment_multi",
+            "opening_hours/covid19",
             "phone",
             "ref/vatin",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -24152,19 +24625,6 @@
             "traffic_sign": "maxspeed"
         }
     },
-    "type/multipolygon": {
-        "icon": "iD-multipolygon",
-        "geometry": [
-            "area",
-            "relation"
-        ],
-        "tags": {
-            "type": "multipolygon"
-        },
-        "removeTags": {},
-        "searchable": false,
-        "matchScore": 0.1
-    },
     "type/boundary": {
         "icon": "iD-boundary",
         "fields": [
@@ -24254,6 +24714,17 @@
             "key": "enforcement",
             "value": "maxspeed"
         }
+    },
+    "type/multipolygon": {
+        "icon": "iD-multipolygon",
+        "geometry": [
+            "relation"
+        ],
+        "tags": {
+            "type": "multipolygon"
+        },
+        "removeTags": {},
+        "matchScore": 0.1
     },
     "type/public_transport/stop_area_group": {
         "icon": "iD-relation",
@@ -24771,6 +25242,32 @@
             "value": "power"
         }
     },
+    "type/route/railway": {
+        "icon": "temaki-railway_track",
+        "fields": [
+            "name",
+            "ref_route",
+            "operator",
+            "network",
+            "from",
+            "to",
+            "via"
+        ],
+        "moreFields": [
+            "distance"
+        ],
+        "geometry": [
+            "relation"
+        ],
+        "tags": {
+            "type": "route",
+            "route": "railway"
+        },
+        "reference": {
+            "key": "route",
+            "value": "railway"
+        }
+    },
     "type/route/road": {
         "icon": "iD-highway-unclassified",
         "fields": [
@@ -24921,20 +25418,6 @@
             "type": "waterway"
         }
     },
-    "waterway/riverbank": {
-        "icon": "maki-water",
-        "geometry": [
-            "area"
-        ],
-        "fields": [],
-        "moreFields": [
-            "name"
-        ],
-        "tags": {
-            "waterway": "riverbank"
-        },
-        "searchable": false
-    },
     "waterway/boatyard": {
         "icon": "temaki-boat",
         "fields": [
@@ -24947,7 +25430,6 @@
             "fax",
             "gnis/feature_id-US",
             "phone",
-            "website",
             "wheelchair"
         ],
         "geometry": [
@@ -25019,8 +25501,7 @@
             "material"
         ],
         "moreFields": [
-            "seamark/type",
-            "website"
+            "seamark/type"
         ],
         "tags": {
             "waterway": "dam"
@@ -25100,7 +25581,6 @@
             "operator",
             "address",
             "opening_hours",
-            "opening_hours/covid19",
             "fuel_multi"
         ],
         "moreFields": [
@@ -25110,9 +25590,9 @@
             "email",
             "fax",
             "payment_multi",
+            "opening_hours/covid19",
             "phone",
             "seamark/type",
-            "website",
             "wheelchair"
         ],
         "geometry": [

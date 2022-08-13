@@ -7,9 +7,9 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
 import de.westnordost.streetcomplete.osm.IS_SHOP_OR_DISUSED_SHOP_EXPRESSION
+import de.westnordost.streetcomplete.osm.Tags
 import java.util.concurrent.FutureTask
 
 class AddPlaceName(
@@ -81,11 +81,8 @@ class AddPlaceName(
                 // name & wheelchair
                 "sports_centre", "stadium",
 
-                // name & opening hours
-                "horse_riding",
-
                 // name only
-                "dance", "nature_reserve", "marina",
+                "dance", "nature_reserve", "marina", "horse_riding",
             ),
             "landuse" to arrayOf(
                 "cemetery", "allotments"
@@ -110,7 +107,7 @@ class AddPlaceName(
     override val wikiLink = "Key:name"
     override val icon = R.drawable.ic_quest_label
     override val isReplaceShopEnabled = true
-    override val questTypeAchievements = listOf(CITIZEN)
+    override val achievements = listOf(CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_placeName_title
 

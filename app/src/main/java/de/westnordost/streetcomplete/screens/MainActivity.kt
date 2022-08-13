@@ -1,13 +1,8 @@
 package de.westnordost.streetcomplete.screens
 
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.Configuration
-import android.graphics.Point
-import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
@@ -23,7 +18,6 @@ import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
@@ -32,9 +26,12 @@ import de.westnordost.streetcomplete.data.download.ConnectionException
 import de.westnordost.streetcomplete.data.download.DownloadController
 import de.westnordost.streetcomplete.data.download.DownloadProgressListener
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
+import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.ImageUploadServerException
-import de.westnordost.streetcomplete.data.quest.Quest
+import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
+import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
 import de.westnordost.streetcomplete.data.upload.UploadController
 import de.westnordost.streetcomplete.data.upload.UploadProgressListener
@@ -50,6 +47,7 @@ import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
 import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
 import de.westnordost.streetcomplete.util.ktx.toast
+import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.location.LocationRequester
 import de.westnordost.streetcomplete.util.parseGeoUri
 import de.westnordost.streetcomplete.view.dialogs.RequestLoginDialog
@@ -66,24 +64,28 @@ class MainActivity :
     private val questAutoSyncer: QuestAutoSyncer by inject()
     private val downloadController: DownloadController by inject()
     private val uploadController: UploadController by inject()
-    private val unsyncedChangesCountSource: UnsyncedChangesCountSource by inject()
-    private val prefs: SharedPreferences by inject()
-    private val userLoginStatusController: UserLoginStatusController by inject()
+    private val locationAvailabilityReceiver: LocationAvailabilityReceiver by inject()
     private val userUpdater: UserUpdater by inject()
+    private val elementEditsSource: ElementEditsSource by inject()
+    private val noteEditsSource: NoteEditsSource by inject()
+    private val unsyncedChangesCountSource: UnsyncedChangesCountSource by inject()
+    private val userLoginStatusController: UserLoginStatusController by inject()
+    private val prefs: SharedPreferences by inject()
 
     private val requestLocation = LocationRequester(this, this)
 
     private var mainFragment: MainFragment? = null
 
-    private val locationAvailabilityReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            updateLocationAvailability()
-        }
+    private val elementEditsListener = object : ElementEditsSource.Listener {
+        override fun onAddedEdit(edit: ElementEdit) { lifecycleScope.launch { ensureLoggedIn() } }
+        override fun onSyncedEdit(edit: ElementEdit) {}
+        override fun onDeletedEdits(edits: List<ElementEdit>) {}
     }
-    private val requestLocationPermissionResultReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            updateLocationAvailability()
-        }
+
+    private val noteEditsListener = object : NoteEditsSource.Listener {
+        override fun onAddedEdit(edit: NoteEdit) { lifecycleScope.launch { ensureLoggedIn() } }
+        override fun onSyncedEdit(edit: NoteEdit) {}
+        override fun onDeletedEdits(edits: List<NoteEdit>) {}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,10 +97,6 @@ class MainActivity :
 
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-
-        if (prefs.getBoolean(Prefs.KEEP_SCREEN_ON, false)) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
 
         setContentView(R.layout.activity_main)
 
@@ -115,6 +113,9 @@ class MainActivity :
                 userUpdater.update()
             }
         }
+
+        elementEditsSource.addListener(elementEditsListener)
+        noteEditsSource.addListener(noteEditsListener)
     }
 
     private fun handleGeoUri() {
@@ -130,20 +131,17 @@ class MainActivity :
     public override fun onStart() {
         super.onStart()
 
-        registerReceiver(
-            locationAvailabilityReceiver,
-            IntentFilter(LocationManager.MODE_CHANGED_ACTION)
-        )
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-            requestLocationPermissionResultReceiver,
-            IntentFilter(LocationRequester.REQUEST_LOCATION_PERMISSION_RESULT)
-        )
+        if (prefs.getBoolean(Prefs.KEEP_SCREEN_ON, false)) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
 
         downloadController.showNotification = false
         uploadController.showNotification = false
         uploadController.addUploadProgressListener(uploadProgressListener)
         downloadController.addDownloadProgressListener(downloadProgressListener)
-        updateLocationAvailability()
+
+        locationAvailabilityReceiver.addListener(::updateLocationAvailability)
+        updateLocationAvailability(hasLocationPermission && isLocationEnabled)
     }
 
     override fun onBackPressed() {
@@ -184,12 +182,17 @@ class MainActivity :
 
     public override fun onStop() {
         super.onStop()
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(requestLocationPermissionResultReceiver)
-        unregisterReceiver(locationAvailabilityReceiver)
         downloadController.showNotification = true
         uploadController.showNotification = true
         uploadController.removeUploadProgressListener(uploadProgressListener)
         downloadController.removeDownloadProgressListener(downloadProgressListener)
+        locationAvailabilityReceiver.removeListener(::updateLocationAvailability)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        elementEditsSource.removeListener(elementEditsListener)
+        noteEditsSource.removeListener(noteEditsListener)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -288,14 +291,6 @@ class MainActivity :
 
     /* --------------------------------- MainFragment.Listener ---------------------------------- */
 
-    override fun onQuestSolved(quest: Quest, source: String?) {
-        lifecycleScope.launch { ensureLoggedIn() }
-    }
-
-    override fun onCreatedNote(screenPosition: Point) {
-        lifecycleScope.launch { ensureLoggedIn() }
-    }
-
     override fun onMapInitialized() {
         handleGeoUri()
     }
@@ -313,7 +308,7 @@ class MainActivity :
             }
         }
 
-        prefs.edit().putBoolean(Prefs.HAS_SHOWN_TUTORIAL, true).apply()
+        prefs.edit { putBoolean(Prefs.HAS_SHOWN_TUTORIAL, true) }
 
         val tutorialFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
         if (tutorialFragment != null) {
@@ -326,8 +321,8 @@ class MainActivity :
 
     /* ------------------------------------ Location listener ----------------------------------- */
 
-    private fun updateLocationAvailability() {
-        if (hasLocationPermission && isLocationEnabled) {
+    private fun updateLocationAvailability(isAvailable: Boolean) {
+        if (isAvailable) {
             questAutoSyncer.startPositionTracking()
         } else {
             questAutoSyncer.stopPositionTracking()

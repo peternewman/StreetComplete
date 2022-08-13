@@ -2,9 +2,9 @@ package de.westnordost.streetcomplete.quests.construction
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CAR
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
 import de.westnordost.streetcomplete.osm.ALL_ROADS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.toCheckDateString
 import de.westnordost.streetcomplete.osm.updateCheckDate
 
@@ -15,11 +15,11 @@ class MarkCompletedHighwayConstruction : OsmFilterQuestType<CompletedConstructio
          and (!opening_date or opening_date < today)
          and older today -2 weeks
     """
-    override val changesetComment = "Determine whether construction is now completed"
+    override val changesetComment = "Determine whether road construction is now completed"
     override val wikiLink = "Tag:highway=construction"
     override val icon = R.drawable.ic_quest_road_construction
     override val hasMarkersAtEnds = true
-    override val questTypeAchievements = listOf(CAR)
+    override val achievements = listOf(CAR)
 
     override fun getTitle(tags: Map<String, String>): Int {
         val isRoad = ALL_ROADS.contains(tags["construction"])

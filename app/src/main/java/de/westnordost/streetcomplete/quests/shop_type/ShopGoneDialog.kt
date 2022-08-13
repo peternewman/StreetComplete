@@ -26,7 +26,7 @@ class ShopGoneDialog(
     private val featureDictionary: FeatureDictionary,
     private val onSelectedFeature: (Map<String, String>) -> Unit,
     private val onLeaveNote: () -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+) : AlertDialog(context) {
 
     private val binding: ViewShopTypeBinding
 
@@ -97,7 +97,7 @@ class ShopGoneDialog(
 
     private fun getSelectedFeature(): Feature? {
         val input = binding.presetsEditText.text.toString()
-        return getFeatures(input).firstOrNull { it.canonicalName == StringUtils.canonicalize(input) }
+        return getFeatures(input).firstOrNull { it.canonicalNames.first() == StringUtils.canonicalize(input) }
     }
 
     private fun getFeatures(startsWith: String): List<Feature> {

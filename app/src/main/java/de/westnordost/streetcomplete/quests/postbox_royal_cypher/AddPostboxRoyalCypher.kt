@@ -5,18 +5,18 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
 import de.westnordost.streetcomplete.data.quest.NoCountriesExcept
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.POSTMAN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.POSTMAN
+import de.westnordost.streetcomplete.osm.Tags
 
 class AddPostboxRoyalCypher : OsmFilterQuestType<PostboxRoyalCypher>() {
 
     override val elementFilter = "nodes with amenity = post_box and !royal_cypher"
-    override val changesetComment = "Add postbox royal cypher"
+    override val changesetComment = "Specify postbox royal cyphers"
     override val wikiLink = "Key:royal_cypher"
     override val icon = R.drawable.ic_quest_crown
     override val isDeleteElementEnabled = true
-    override val questTypeAchievements = listOf(POSTMAN)
+    override val achievements = listOf(POSTMAN)
     override val enabledInCountries = NoCountriesExcept(
         // United Kingdom and some former nations of the British Empire, members of the Commonwealth of Nations and British overseas territories etc
         "GB", "GI", "CY", "HK", "MT", "NZ", "LK",

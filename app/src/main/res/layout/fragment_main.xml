@@ -7,7 +7,7 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/mapFragment"
-        android:name="de.westnordost.streetcomplete.screens.main.map.QuestsMapFragment"
+        android:name="de.westnordost.streetcomplete.screens.main.map.MainMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:layout="@layout/fragment_map"
@@ -85,6 +85,17 @@
             android:orientation="vertical"
             android:clipToPadding="false"
             tools:ignore="RtlHardcoded,RtlSymmetry">
+
+            <ImageButton
+                android:id="@+id/stop_tracks_button"
+                style="@style/RoundAccentButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/map_button_size"
+                android:contentDescription="@string/map_btn_stop_track"
+                android:scaleType="center"
+                android:src="@drawable/ic_stop_recording_24dp"
+                android:visibility="gone"
+                tools:visibility="visible"/>
 
             <ImageButton
                 android:id="@+id/zoomInButton"

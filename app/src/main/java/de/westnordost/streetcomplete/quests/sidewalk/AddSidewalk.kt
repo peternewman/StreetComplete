@@ -6,10 +6,10 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.PEDESTRIAN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.ANYTHING_UNPAVED
 import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.estimateCycleTrackWidth
 import de.westnordost.streetcomplete.osm.estimateParkingOffRoadWidth
 import de.westnordost.streetcomplete.osm.estimateRoadwayWidth
@@ -28,11 +28,10 @@ class AddSidewalk : OsmElementQuestType<SidewalkSides> {
     """.toElementFilterExpression() }
     // highway=construction included, as situation often changes during and after construction
 
-    override val changesetComment = "Add whether there are sidewalks"
+    override val changesetComment = "Specify whether roads have sidewalks"
     override val wikiLink = "Key:sidewalk"
     override val icon = R.drawable.ic_quest_sidewalk
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(PEDESTRIAN)
+    override val achievements = listOf(PEDESTRIAN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_sidewalk_title
 
@@ -106,10 +105,19 @@ class AddSidewalk : OsmElementQuestType<SidewalkSides> {
         // streets that may have sidewalk tagging
         private val roadsFilter by lazy { """
             ways with
-              highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service
+              (
+                (
+                  highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service
+                  and motorroad != yes
+                  and foot != no
+                )
+                or
+                (
+                  highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service
+                  and (foot ~ yes|designated or bicycle ~ yes|designated)
+                )
+              )
               and area != yes
-              and motorroad != yes
-              and foot != no
               and access !~ private|no
         """.toElementFilterExpression() }
 
@@ -125,18 +133,15 @@ class AddSidewalk : OsmElementQuestType<SidewalkSides> {
         * */
         private val untaggedRoadsFilter by lazy { """
             ways with
-              highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential
+              highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential
               and !sidewalk and !sidewalk:both and !sidewalk:left and !sidewalk:right
-              and (
-                !maxspeed
-                or maxspeed > 8
-                or (maxspeed ~ ".*mph" and maxspeed !~ "[1-5] mph")
-              )
+              and (!maxspeed or maxspeed > 9)
               and surface !~ ${ANYTHING_UNPAVED.joinToString("|")}
               and (
                 lit = yes
                 or highway = residential
                 or ~${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")} ~ .*urban|.*zone.*
+                or (foot ~ yes|designated and highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link)
               )
               and foot != use_sidepath
               and bicycle != use_sidepath
@@ -150,12 +155,11 @@ class AddSidewalk : OsmElementQuestType<SidewalkSides> {
     }
 
     private fun Element.hasInvalidOrIncompleteSidewalkTags(): Boolean {
-        val sides = createSidewalkSides(tags)
-        if (sides == null) return false
-        if (sides.any { it == INVALID }) return true
+        val sides = createSidewalkSides(tags) ?: return false
+        if (sides.any { it == INVALID || it == null }) return true
         return false
     }
 }
 
-private fun LeftAndRightSidewalk.any(block: (sidewalk: Sidewalk) -> Boolean): Boolean =
-    left?.let(block) == true || right?.let(block) == true
+private fun LeftAndRightSidewalk.any(block: (sidewalk: Sidewalk?) -> Boolean): Boolean =
+    block(left) || block(right)

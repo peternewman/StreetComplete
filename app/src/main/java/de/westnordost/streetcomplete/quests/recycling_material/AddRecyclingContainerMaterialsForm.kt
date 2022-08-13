@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.quests.recycling_material
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.quests.AImageListQuestAnswerFragment
+import de.westnordost.streetcomplete.quests.AImageListQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.quests.recycling_material.RecyclingMaterial.BATTERIES
 import de.westnordost.streetcomplete.quests.recycling_material.RecyclingMaterial.BEVERAGE_CARTONS
@@ -26,7 +26,7 @@ import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item
 
 class AddRecyclingContainerMaterialsForm :
-    AImageListQuestAnswerFragment<List<RecyclingMaterial>, RecyclingContainerMaterialsAnswer>() {
+    AImageListQuestForm<List<RecyclingMaterial>, RecyclingContainerMaterialsAnswer>() {
 
     override val descriptionResId = R.string.quest_recycling_materials_note
 
@@ -46,7 +46,7 @@ class AddRecyclingContainerMaterialsForm :
         Item(listOf(SCRAP_METAL),   R.drawable.ic_recycling_scrap_metal,   R.string.quest_recycling_type_scrap_metal),
         Item(listOf(CLOTHES),       R.drawable.ic_recycling_clothes,       R.string.quest_recycling_type_clothes),
         Item(listOf(SHOES),         R.drawable.ic_recycling_shoes,         R.string.quest_recycling_type_shoes),
-        Item(listOf(SMALL_ELECTRICAL_APPLIANCES), R.drawable.ic_recycling_small_electric_appliances, R.string.quest_recycling_type_electric_appliances),
+        Item(listOf(SMALL_ELECTRICAL_APPLIANCES), R.drawable.ic_recycling_small_electrical_appliances, R.string.quest_recycling_type_electric_appliances),
         Item(listOf(BATTERIES),     R.drawable.ic_recycling_batteries,     R.string.quest_recycling_type_batteries),
         Item(listOf(GREEN_WASTE),   R.drawable.ic_recycling_garden_waste,  R.string.quest_recycling_type_green_waste),
         Item(listOf(COOKING_OIL),   R.drawable.ic_recycling_cooking_oil,   R.string.quest_recycling_type_cooking_oil),

@@ -81,6 +81,7 @@ open class MapFragment :
         set(value) {
             if (field == value) return
             field = value
+            if (sceneMapComponent?.isAerialView == true) return
 
             val toggle = if (value) "true" else "false"
 
@@ -193,7 +194,11 @@ open class MapFragment :
 
     override fun onLowMemory() {
         super.onLowMemory()
-        binding.map.onLowMemory()
+        try {
+            binding.map.onLowMemory()
+        } catch (e: Exception) {
+            // ignore (see https://github.com/streetcomplete/StreetComplete/issues/4221)
+        }
     }
 
     /* ------------------------------------------- Map  ----------------------------------------- */
@@ -252,7 +257,7 @@ open class MapFragment :
         return object : DefaultHttpHandler(builder) {
             override fun configureRequest(url: HttpUrl, builder: Request.Builder) {
                 builder
-                    .cacheControl(cacheConfig.cacheControl)
+                    .cacheControl(cacheConfig.tangramCacheControl)
                     .header("User-Agent", ApplicationConstants.USER_AGENT + " / " + Version.userAgent())
             }
         }

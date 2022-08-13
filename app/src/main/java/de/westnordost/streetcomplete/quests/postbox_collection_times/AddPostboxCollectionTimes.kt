@@ -6,9 +6,9 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
 import de.westnordost.streetcomplete.data.quest.NoCountriesExcept
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.POSTMAN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.POSTMAN
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.opening_hours.parser.isSupportedCollectionTimes
 import de.westnordost.streetcomplete.osm.opening_hours.parser.toOpeningHoursRules
 import de.westnordost.streetcomplete.osm.updateWithCheckDate
@@ -25,11 +25,11 @@ class AddPostboxCollectionTimes : OsmElementQuestType<CollectionTimesAnswer> {
     /* Don't ask again for postboxes without signed collection times. This is very unlikely to
     *  change and problematic to tag clearly with the check date scheme */
 
-    override val changesetComment = "Add postbox collection times"
+    override val changesetComment = "Survey postbox collection times"
     override val wikiLink = "Key:collection_times"
     override val icon = R.drawable.ic_quest_mail
     override val isDeleteElementEnabled = true
-    override val questTypeAchievements = listOf(POSTMAN)
+    override val achievements = listOf(POSTMAN)
 
     // See overview here: https://ent8r.github.io/blacklistr/?streetcomplete=postbox_collection_times/AddPostboxCollectionTimes.kt
     // sources:
