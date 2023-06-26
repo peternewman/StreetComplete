@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.quests.max_height
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
@@ -44,7 +45,7 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
     private val bridgeFilter by lazy { """
         ways with (
             highway ~ ${(ALL_ROADS + ALL_PATHS).joinToString("|")}
-            or railway ~ rail|light_rail|subway|narrow_gauge|tram|disused|preserved|funicular
+            or railway ~ rail|light_rail|subway|narrow_gauge|tram|disused|preserved|funicular|monorail
           ) and (
             bridge and bridge != no
             or man_made = pipeline and location = overhead
@@ -122,7 +123,7 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
 
     override fun createForm() = AddMaxHeightForm()
 
-    override fun applyAnswerTo(answer: MaxHeightAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: MaxHeightAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
             is MaxHeight -> {
                 tags["maxheight"] = answer.value.toOsmValue()

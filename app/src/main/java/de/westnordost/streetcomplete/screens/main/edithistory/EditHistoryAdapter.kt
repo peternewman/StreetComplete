@@ -14,8 +14,8 @@ import de.westnordost.streetcomplete.data.edithistory.overlayIcon
 import de.westnordost.streetcomplete.databinding.RowEditItemBinding
 import de.westnordost.streetcomplete.databinding.RowEditSyncedBinding
 import de.westnordost.streetcomplete.util.ktx.findNext
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.toast
-import java.lang.System.currentTimeMillis
 import java.text.DateFormat
 import java.util.Collections
 import kotlin.collections.ArrayList
@@ -57,7 +57,7 @@ class EditHistoryAdapter(
 
     fun onSynced(edit: Edit) {
         val editIndex = rows.indexOfFirst { it is EditItem && it.edit == edit }
-        check(editIndex != -1)
+        if (editIndex == -1) return
 
         val syncedItemIndex = rows.indexOfFirst { it is IsSyncedItem }
         if (syncedItemIndex != -1) {
@@ -108,8 +108,8 @@ class EditHistoryAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            EDIT   -> EditViewHolder(RowEditItemBinding.inflate(inflater))
-            SYNCED -> SyncedViewHolder(RowEditSyncedBinding.inflate(inflater))
+            EDIT   -> EditViewHolder(RowEditItemBinding.inflate(inflater, parent, false))
+            SYNCED -> SyncedViewHolder(RowEditSyncedBinding.inflate(inflater, parent, false))
             else   -> throw IllegalArgumentException("Unknown viewType $viewType")
         }
     }
@@ -191,7 +191,7 @@ class EditHistoryAdapter(
 }
 
 private fun Edit.formatSameDayTime() = DateUtils.formatSameDayTime(
-    createdTimestamp, currentTimeMillis(), DateFormat.SHORT, DateFormat.SHORT
+    createdTimestamp, nowAsEpochMilliseconds(), DateFormat.SHORT, DateFormat.SHORT
 )
 
 private fun Edit.formatDate() = DateFormat.getDateInstance(DateFormat.SHORT).format(createdTimestamp)

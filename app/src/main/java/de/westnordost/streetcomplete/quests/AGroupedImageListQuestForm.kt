@@ -15,7 +15,6 @@ import de.westnordost.streetcomplete.util.mostCommonWithin
 import de.westnordost.streetcomplete.util.padWith
 import de.westnordost.streetcomplete.view.image_select.GroupableDisplayItem
 import de.westnordost.streetcomplete.view.image_select.GroupedImageSelectAdapter
-import kotlin.math.max
 
 /**
  * Abstract class for quests with a grouped list of images and one to select.
@@ -56,20 +55,21 @@ abstract class AGroupedImageListQuestForm<I, T> : AbstractOsmQuestForm<T>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        imageSelector = GroupedImageSelectAdapter(GridLayoutManager(activity, itemsPerRow))
+        imageSelector = GroupedImageSelectAdapter()
         itemsByString = allItems.mapNotNull { it.items }.flatten().associateBy { it.value.toString() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.list.layoutManager = imageSelector.gridLayoutManager
-        binding.list.isNestedScrollingEnabled = false
-
-        binding.showMoreButton.setOnClickListener {
-            imageSelector.items = allItems
-            binding.showMoreButton.visibility = View.GONE
+        val layoutManager = GridLayoutManager(activity, itemsPerRow)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return if (imageSelector.items[position].isGroup) layoutManager.spanCount else 1
+            }
         }
+        binding.list.layoutManager = layoutManager
+        binding.list.isNestedScrollingEnabled = false
 
         binding.selectHintLabel.setText(R.string.quest_select_hint_most_specific)
 
@@ -77,26 +77,25 @@ abstract class AGroupedImageListQuestForm<I, T> : AbstractOsmQuestForm<T>() {
         imageSelector.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
-                scrollTo(positionStart)
+                scrollTo(positionStart - 1)
             }
         })
         checkIsFormComplete()
 
-        imageSelector.items = getInitialItems()
+        imageSelector.items = getInitialItems() + allItems
+
         binding.list.adapter = imageSelector
     }
 
     private fun scrollTo(index: Int) {
-        val item = imageSelector.gridLayoutManager.getChildAt(max(0, index - 1))
-        if (item != null) {
-            val itemPos = IntArray(2)
-            item.getLocationInWindow(itemPos)
-            val scrollViewPos = IntArray(2)
-            scrollView.getLocationInWindow(scrollViewPos)
+        val item = binding.list.layoutManager?.findViewByPosition(index) ?: return
+        val itemPos = IntArray(2)
+        item.getLocationInWindow(itemPos)
+        val scrollViewPos = IntArray(2)
+        scrollView.getLocationInWindow(scrollViewPos)
 
-            scrollView.postDelayed(250) {
-                scrollView.smoothScrollTo(0, itemPos[1] - scrollViewPos[1])
-            }
+        scrollView.postDelayed(250) {
+            scrollView.smoothScrollTo(0, itemPos[1] - scrollViewPos[1])
         }
     }
 

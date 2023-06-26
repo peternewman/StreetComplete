@@ -2,8 +2,12 @@ package de.westnordost.streetcomplete.quests.building_entrance
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.Relation
+import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.Tags
@@ -15,17 +19,20 @@ class AddEntrance : OsmElementQuestType<EntranceAnswer> {
           !entrance and !barrier and noexit != yes and !railway
     """.toElementFilterExpression() }
 
-    private val buildingWaysFilter by lazy { """
-        ways, relations with building and building !~ yes|no|service|shed|house|detached|terrace|semi|semidetached_house|roof|carport
+    private val buildingFilter by lazy { """
+        ways, relations with
+          building and building !~ yes|no|service|shed|house|detached|terrace|semi|semidetached_house|roof|carport|construction
+          and location != underground
+          and (layer !~ -[0-9]+ or location)
     """.toElementFilterExpression() }
 
     private val incomingWaysFilter by lazy { """
         ways with
-          highway ~ path|footway and area != yes and access !~ private|no
+          highway ~ path|footway|steps|cycleway and area != yes and access !~ private|no
     """.toElementFilterExpression() }
 
     private val excludedWaysFilter by lazy { """
-        ways with (tunnel and tunnel != no) or (covered and covered != no)
+        ways with (tunnel and tunnel != no) or (covered and covered != no) or location ~ roof|rooftop
     """.toElementFilterExpression() }
 
     override val changesetComment = "Specify type of entrances"
@@ -37,9 +44,15 @@ class AddEntrance : OsmElementQuestType<EntranceAnswer> {
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         val buildingsWayNodeIds = mutableSetOf<Long>()
-        mapData.ways
-            .filter { buildingWaysFilter.matches(it) }
-            .flatMapTo(buildingsWayNodeIds) { it.nodeIds }
+        mapData
+            .filter { buildingFilter.matches(it) }
+            .flatMapTo(buildingsWayNodeIds) {
+                when (it) {
+                    is Way -> it.nodeIds
+                    is Relation -> it.getMultipolygonNodeIds(mapData)
+                    else -> emptyList()
+                }
+            }
 
         val incomingWayNodeIds = mutableSetOf<Long>()
         mapData.ways
@@ -63,10 +76,23 @@ class AddEntrance : OsmElementQuestType<EntranceAnswer> {
 
     override fun createForm() = AddEntranceForm()
 
-    override fun applyAnswerTo(answer: EntranceAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: EntranceAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
             DeadEnd -> tags["noexit"] = "yes"
             is EntranceExistsAnswer -> tags["entrance"] = answer.osmValue
         }
     }
+}
+
+private fun Relation.getMultipolygonNodeIds(mapData: MapDataWithGeometry): List<Long> {
+    if (tags["type"] != "multipolygon") return emptyList()
+    val nodeIds = mutableListOf<Long>()
+    for (member in members) {
+        if (member.type != ElementType.WAY) continue
+        val wayNodeIds = mapData.getWay(member.ref)?.nodeIds
+        if (wayNodeIds != null) {
+            nodeIds.addAll(wayNodeIds)
+        }
+    }
+    return nodeIds
 }

@@ -23,6 +23,12 @@ Reading the text below is not necessary to create a new quest. Duplicating an ex
 
 If you are doing it for the first time, don't worry if there is an error to solve along the way, this is typical for setting up an Android development environment. See [CONTRIBUTING file](CONTRIBUTING.md#development) which has some links to information about the setup.
 
+## Alternative to Android Studio
+
+- Instead of installing Android Studio locally, one can use GitHub Actions to build `.apk` files. Click on `Actions` > `Build debug apk` on your GitHub fork, make sure you select correct branch with your changes when clicking `Run workflow`, and after about 15 minutes, download the ready-made `debug-apk.zip` which contains an `.apk` file to install on your phone manually.
+  This debug build of StreetComplete can be installed alongside the official version.
+- One can also edit files online in the GitHub file view via the pen icon, thus avoiding the need for a local git client and doing all the changes on the web.
+
 # Invent a new quest
 
 ## Own ideas
@@ -108,13 +114,13 @@ This can be also used to locate relevant code, especially helpful if some change
 
 # Copying
 
-Duplicate the relevant quest folder from [`app/src/main/java/de/westnordost/streetcomplete/quests`](app/src/main/java/de/westnordost/streetcomplete/quests). Some contain multiple quests, in such case delete unnecessary files.
+Duplicate the relevant quest folder from [`app/src/main/java/de/westnordost/streetcomplete/quests`](app/src/main/java/de/westnordost/streetcomplete). Some contain multiple quests, in such case delete unnecessary files.
 
 Some quests are entirely defined in a single file, some have additional answer class, custom interface or utility classes.
 
 For example, lets imagine that new quest will ask whether [AED](https://wiki.openstreetmap.org/wiki/Tag:emergency%3Ddefibrillator) is placed indoor or outdoor. A very similar in mechanics quest with simple yes/no question is for example [quest asking "Is this bicycle parking covered (protected from rain)?"](app/src/main/java/de/westnordost/streetcomplete/quests/bike_parking_cover/AddBikeParkingCover.kt).
 
-So, as the first step: lets copy [`app/src/main/java/de/westnordost/streetcomplete/quests/bike_parking_cover/`](app/src/main/java/de/westnordost/streetcomplete/quests/bike_parking_cover) folder into `app/src/main/java/de/westnordost/streetcomplete/quests/defibrillator/`.
+So, as the first step: lets copy [`app/src/main/java/de/streetcomplete/StreetComplete/quests/bike_parking_cover/`](app/src/main/java/de/streetcomplete/StreetComplete/quests/bike_parking_cover) folder into `app/src/main/java/de/streetcomplete/StreetComplete/quests/defibrillator/`.
 
 This is done in [this commit](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/7d9ad571f521055a4c5a0006743762fd16e4c9d6) in the demonstration repository.
 
@@ -126,17 +132,19 @@ Change its class name and the file name to the new one.
 
 In copied code change package info (things like `package de.westnordost.streetcomplete.quests.defibrillator` at the top) to match the new folder containing the quest.
 
-When commiting changes be careful to not change already existing quest - only new code (using built-in refactoring rename will affect also `QuestsModule.kt` entry for an existing quest).
+When committing changes be careful to not change already existing quest - only new code (using built-in refactoring rename will affect also `QuestsModule.kt` entry for an existing quest).
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/9c65d00c7d096c3fee61650e1465a43b7e7f5712) in the example repository.
 
 # Add the quest to the list of active ones
 
-Adjust [QuestsModule.kt](app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt) file. It contains a big list of active quests, ordered by priority. Read [what governs their priority](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt#L172-L195) but do not worry too much, it can be tweaked later.
+Adjust [QuestsModule.kt](app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt) file. It contains a big list of active quests, ordered by priority. Read [what governs their priority](app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt#L172-L195) but do not worry too much, it can be tweaked later.
+
+Each quest is associated with a number in this list. These numbers are used to identify the quest uniquely and can be used to save presets as QR codes. When adding a new quest, use the next consecutive number that is not yet in the list. Put the quest in order of priority, even if it means the numbers are not sorted.
 
 Add your quest to the list so that it will be loaded by the app.
 
-As this point you can run the app in emulator - everything should work and one of quests will appear twice.
+At this point you can run the app in emulator - everything should work and one of quests will appear twice.
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/b4f01eeb752f92fd6927fbb9a943ea19a4799eec) in the example repository.
 
@@ -171,7 +179,7 @@ This query will be limited to object which fulfill some requirements.
 - `and !indoor`
   - and `indoor` key must not be present at all, to show only ones where this tag is still missing
 
-See the documentation of [`ElementFilterExpression`](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt) for a complete documentation of the syntax. You can look around some quests to see more examples of such element filter expressions.
+See the documentation of [`ElementFilterExpression`](app/src/main/java/de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt) for a complete documentation of the syntax. You can look around some quests to see more examples of such element filter expressions.
 
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/2726ff1c7b3121825e808c4566e6e534392121b3) in the example repository.
@@ -256,7 +264,7 @@ Form defines interface used by mappers.
 
 In this case, the simplest possible is used.
 
-But sometimes more complex ones are needed, see for example [AddBridgeStructure.kt](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/bridge_structure/AddBridgeStructure.kt)
+But sometimes more complex ones are needed, see for example [AddBridgeStructure.kt](app/src/main/java/de/westnordost/streetcomplete/quests/bridge_structure/AddBridgeStructure.kt)
 
 `override fun createForm() = AddBridgeStructureForm()`
 
@@ -481,7 +489,7 @@ This quest will be triggered when:
 - `and access !~ private|no`
   - and `access` tag does neither have value `private` nor `no`
 - `and (!capacity or capacity older today -4 years)`
-  - and one of following is fullfilled:
+  - and one of following is fulfilled:
     - `capacity` tag is not present at all (`!capacity`)
     - element was not edited for a long time (base time is 4 years, but it can be influenced by user changing settings)
     - `check_date:capacity` with a date indicating that it is outdated (the same as above applies)
@@ -495,15 +503,15 @@ Matches like `surface ~ earth|dirt|ground` are possible and are evaluated as "`s
 `access !~ private|no` will be evaluated to "`access` is neither `private` nor `no`"
 
 
-But using regexp like `surface ~ ^(.*)[0-9]$` is [also possible](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/test/java/de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpassKtTest.kt#L79-L88).
+But using regexp like `surface ~ ^(.*)[0-9]$` is [also possible](app/src/test/java/de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpassKtTest.kt#L79-L88).
 
-It is possible to check for [age of elements](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/construction/MarkCompletedHighwayConstruction.kt#L13-L17) or implement a [fully custom tag parsing](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/opening_hours/AddOpeningHours.kt#L137-L151), still combined with filter syntax.
+It is possible to check for [age of elements](app/src/main/java/de/westnordost/streetcomplete/quests/construction/MarkCompletedHighwayConstruction.kt#L13-L17) or implement a [fully custom tag parsing](app/src/main/java/de/westnordost/streetcomplete/quests/opening_hours/AddOpeningHours.kt#L137-L151), still combined with filter syntax.
 
-It is possible to share and reuse [information about tagging schemes](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/surface/AddRoadSurface.kt#L18).
+It is possible to share and reuse [information about tagging schemes](app/src/main/java/de/westnordost/streetcomplete/quests/surface/AddRoadSurface.kt#L18).
 
-(this info is gathered [here](/app/src/main/java/de/westnordost/streetcomplete/data/meta/OsmTaggings.kt))
+(this info is gathered [here](/app/src/main/java/de/streetcomplete/StreetComplete/data/meta/OsmTaggings.kt))
 
-Even more complex ones using different class bases are possible. Such as what was needed by the [address quest](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/address/AddAddressStreet.kt) or the [crossing quest](https://github.com/streetcomplete/StreetComplete/blob/master/app/src/main/java/de/westnordost/streetcomplete/quests/crossing/AddCrossing.kt) but it is better to start from something simpler.
+Even more complex ones using different class bases are possible. Such as what was needed by the [address quest](app/src/main/java/de/westnordost/streetcomplete/quests/address/AddAddressStreet.kt) or the [crossing quest](app/src/main/java/de/westnordost/streetcomplete/quests/crossing/AddCrossing.kt) but it is better to start from something simpler.
 
 It allows it to make complex geometry checks, but writing them is also far more complex.
 
@@ -511,9 +519,9 @@ It allows it to make complex geometry checks, but writing them is also far more 
 
 Some quests should be enabled only in some countries or disabled in a specific countries.
 
-[`override val enabledInCountries = NoCountriesExcept("SE")`](app/src/main/java/de/westnordost/streetcomplete/quests/accepts_cash/AddAcceptsCash.kt) - enabled only in Sweden.
+[`override val enabledInCountries = NoCountriesExcept("SE")`](app/src/main/java/de/streetcomplete/StreetComplete/quests/accepts_cash/AddAcceptsCash.kt) - enabled only in Sweden.
 
-[`override val enabledInCountries = AllCountriesExcept("US", "CA")`](app/src/main/java/de/westnordost/streetcomplete/quests/address/AddHousenumber.kt) - not enabled in USA and Canada
+[`override val enabledInCountries = AllCountriesExcept("US", "CA")`](app/src/main/java/de/streetcomplete/StreetComplete/quests/address/AddHousenumber.kt) - not enabled in USA and Canada
 
 ## `defaultDisabledMessage`
 

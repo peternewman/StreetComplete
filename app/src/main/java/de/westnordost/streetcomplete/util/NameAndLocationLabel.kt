@@ -1,69 +1,90 @@
 package de.westnordost.streetcomplete.util
 
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.text.Html
-import android.text.Spanned
-import androidx.core.os.ConfigurationCompat
 import androidx.core.text.parseAsHtml
 import de.westnordost.osmfeatures.FeatureDictionary
+import de.westnordost.osmfeatures.GeometryType
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.util.ktx.toList
-import java.util.Locale
+import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.util.ktx.geometryType
 
-fun getNameAndLocationLabelString(
+fun getNameAndLocationLabel(
+    element: Element,
+    resources: Resources,
+    featureDictionary: FeatureDictionary,
+    showHouseNumber: Boolean? = null
+): CharSequence? {
+    // only if geometry is not a node because at this point we cannot tell apart points vs vertices
+    val geometryType = if (element.type == ElementType.NODE) null else element.geometryType
+    val feature = featureDictionary.getFeatureName(resources.configuration, element.tags, geometryType)
+        ?.withNonBreakingSpaces()
+        ?.inItalics()
+    val name = getNameLabel(element.tags)
+        ?.withNonBreakingSpaces()
+        ?.inBold()
+
+    val nameAndFeatureName = if (name != null && feature != null) {
+        resources.getString(R.string.label_name_feature, name, feature)
+    } else {
+        name ?: feature
+    }
+
+    // only show house number if there is no name
+    val location = getLocationHtml(element.tags, resources, showHouseNumber =
+        if (showHouseNumber == null && name != null) false else showHouseNumber
+    )
+
+    val label = if (nameAndFeatureName != null && location != null) {
+        resources.getString(R.string.label_location_name, location, nameAndFeatureName)
+    } else {
+        location ?: nameAndFeatureName
+    }
+
+    return label?.parseAsHtml()
+}
+
+/** Returns a text that describes its location, e.g. "house number 123 - on floor 5" */
+fun getLocationLabel(
     tags: Map<String, String>,
     resources: Resources,
-    featureDictionary: FeatureDictionary
-): Spanned? {
-    val localeList = ConfigurationCompat.getLocales(resources.configuration).toList()
-    val feature = getFeatureName(tags, featureDictionary, localeList)
-        ?.withNonBreakingSpaces()?.inItalics()
-    val name = getNameLabel(tags)?.withNonBreakingSpaces()?.inBold()
-    val level = getLevelLabel(tags, resources)
+    showHouseNumber: Boolean? = null
+): CharSequence? =
+    getLocationHtml(tags, resources, showHouseNumber)?.parseAsHtml()
 
-    // only show housenumber if there is neither name nor level information
-    val location = level ?: if (name == null) getHouseNumberLabel(tags, resources) else null
-
-    return if (location != null) {
-        if (name != null && feature != null) {
-            resources.getString(R.string.label_location_name_feature, location, name, feature)
-        } else if (name != null || feature != null) {
-            resources.getString(R.string.label_location_name, location, name ?: feature)
-        } else {
-            location
-        }
-    } else {
-        if (name != null && feature != null) {
-            resources.getString(R.string.label_name_feature, name, feature)
-        } else {
-            name ?: feature
-        }
-    }?.parseAsHtml()
-}
-
-private fun getFeatureName(
+private fun getLocationHtml(
     tags: Map<String, String>,
-    featureDictionary: FeatureDictionary,
-    localeList: List<Locale>
+    resources: Resources,
+    showHouseNumber: Boolean? = null
 ): String? {
-    val locales = localeList.toMutableList()
-    /* add fallback to English if (some) English is not part of the locale list already as the
-       fallback for text is also always English in this app (strings.xml) independent of, or rather
-       additionally to what is in the user's LocaleList. */
-    if (locales.none { it.language == Locale.ENGLISH.language }) {
-        locales.add(Locale.ENGLISH)
+    val level = getLevelLabel(tags, resources)
+    // by default only show house number if no level is given
+    val houseNumber = if (showHouseNumber ?: (level == null)) getHouseNumberHtml(tags, resources) else null
+
+    return if (level != null && houseNumber != null) {
+        resources.getString(R.string.label_housenumber_location, houseNumber, level)
+    } else {
+        level ?: houseNumber
     }
-    return featureDictionary
-        .byTags(tags)
-        // not for geometry because at this point we cannot tell apart points and vertices
-        // .forGeometry(element?.geometryType)
-        .isSuggestion(false)
-        .forLocale(*locales.toTypedArray())
-        .find()
-        .firstOrNull()
-        ?.name
 }
 
+/** Returns the feature name only, e.g. "Bakery" */
+fun FeatureDictionary.getFeatureName(
+    configuration: Configuration,
+    tags: Map<String, String>,
+    geometryType: GeometryType? = null,
+): String? = this
+    .byTags(tags)
+    .isSuggestion(false)
+    .forLocale(*getLocalesForFeatureDictionary(configuration))
+    .forGeometry(geometryType)
+    .find()
+    .firstOrNull()
+    ?.name
+
+/** Returns a text that identifies the feature by name, ref, brand or whatever, e.g. "The Leaky Cauldron" */
 fun getNameLabel(tags: Map<String, String>): String? {
     val name = tags["name"]
     val brand = tags["brand"]
@@ -82,6 +103,7 @@ fun getNameLabel(tags: Map<String, String>): String? {
         ?: ref
 }
 
+/** Returns a text that describes the floor / level, e.g. "on floor 5" */
 fun getLevelLabel(tags: Map<String, String>, resources: Resources): String? {
     /* distinguish between "floor" and "level":
        E.g. addr:floor may be "M" while level is "2". The "2" is in this case purely technical and
@@ -100,7 +122,11 @@ fun getLevelLabel(tags: Map<String, String>, resources: Resources): String? {
     return null
 }
 
-fun getHouseNumberLabel(tags: Map<String, String>, resources: Resources): String? {
+/** Returns a text that describes the house number, e.g. "house number 123" */
+fun getHouseNumberLabel(tags: Map<String, String>, resources: Resources): CharSequence? =
+    getHouseNumberHtml(tags, resources)?.parseAsHtml()
+
+private fun getHouseNumberHtml(tags: Map<String, String>, resources: Resources): String? {
     val houseName = tags["addr:housename"]
     val conscriptionNumber = tags["addr:conscriptionnumber"]
     val streetNumber = tags["addr:streetnumber"]
@@ -117,6 +143,22 @@ fun getHouseNumberLabel(tags: Map<String, String>, resources: Resources): String
         return resources.getString(R.string.at_housenumber, houseNumber)
     }
     return null
+}
+
+/** Returns just the house number as it would be signed if set, e.g. "123" */
+fun getShortHouseNumber(map: Map<String, String>): String? {
+    val houseName = map["addr:housename"]
+    val conscriptionNumber = map["addr:conscriptionnumber"]
+    val streetNumber = map["addr:streetnumber"]
+    val houseNumber = map["addr:housenumber"]
+
+    return when {
+        houseName != null -> houseName
+        conscriptionNumber != null && streetNumber != null -> "$conscriptionNumber / $streetNumber"
+        conscriptionNumber != null -> conscriptionNumber
+        houseNumber != null -> houseNumber
+        else -> null
+    }
 }
 
 private fun String.inBold(): String = "<b>${Html.escapeHtml(this)}</b>"

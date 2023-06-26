@@ -1,11 +1,12 @@
 package de.westnordost.streetcomplete.quests.shoulder
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
-import de.westnordost.streetcomplete.osm.ANYTHING_UNPAVED
 import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
 import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.surface.ANYTHING_UNPAVED
 
 class AddShoulder : OsmFilterQuestType<ShoulderSides>() {
 
@@ -23,12 +24,13 @@ class AddShoulder : OsmFilterQuestType<ShoulderSides>() {
               highway ~ trunk|primary|secondary|tertiary|unclassified
               and (
                 motorroad = yes
+                or expressway = yes
                 or tunnel ~ yes|building_passage|avalanche_protector
                 or bridge = yes
                 or sidewalk ~ no|none
                 or !maxspeed and highway = trunk
                 or maxspeed > 50
-                or ~${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")} ~ ".*(rural|trunk|motorway|nsl_single|nsl_dual)"
+                or ~"${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")}" ~ ".*:(rural|trunk|motorway|nsl_single|nsl_dual)"
               )
             ) or (
               highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified
@@ -59,7 +61,7 @@ class AddShoulder : OsmFilterQuestType<ShoulderSides>() {
 
     override fun createForm() = AddShoulderForm()
 
-    override fun applyAnswerTo(answer: ShoulderSides, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: ShoulderSides, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         tags["shoulder"] = answer.osmValue
     }
 }

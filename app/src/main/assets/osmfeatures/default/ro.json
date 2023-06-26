@@ -218,9 +218,6 @@
                 "building": {
                     "label": "Clădire"
                 },
-                "building_area": {
-                    "label": "Clădire"
-                },
                 "bunker_type": {
                     "label": "Tip"
                 },
@@ -287,21 +284,7 @@
                     "label": "Rețea"
                 },
                 "cycleway": {
-                    "label": "Drumuri de Biciclete",
-                    "options": {
-                        "lane": {
-                            "title": "Drum de Biciclete Standard"
-                        },
-                        "none": {
-                            "description": "Fără Drum de Biciclete",
-                            "title": "Niciun"
-                        }
-                    },
-                    "placeholder": "niciun",
-                    "types": {
-                        "cycleway:left": "Partea stângă",
-                        "cycleway:right": "Partea dreaptă"
-                    }
+                    "label": "Drumuri de Biciclete"
                 },
                 "date": {
                     "label": "Dată"
@@ -386,9 +369,6 @@
                 "fuel": {
                     "label": "Benzină"
                 },
-                "fuel_multi": {
-                    "label": "Tipuri de Benzină"
-                },
                 "gender": {
                     "label": "Sex",
                     "options": {
@@ -445,7 +425,6 @@
                     "label": "Înclinare"
                 },
                 "incline_steps": {
-                    "label": "Înclinare",
                     "options": {
                         "down": "Jos",
                         "up": "Sus"
@@ -588,7 +567,6 @@
                     }
                 },
                 "oneway_yes": {
-                    "label": "O singură direcție",
                     "options": {
                         "no": "Nu",
                         "undefined": "Presupus a fi Da",
@@ -739,15 +717,6 @@
                     "label": "Surse"
                 },
                 "sport": {
-                    "label": "Sporturi"
-                },
-                "sport_ice": {
-                    "label": "Sporturi"
-                },
-                "sport_racing_motor": {
-                    "label": "Sporturi"
-                },
-                "sport_racing_nonmotor": {
                     "label": "Sporturi"
                 },
                 "stars": {
@@ -1205,9 +1174,6 @@
                 "building/semidetached_house": {
                     "name": "Casă Semi-detașată"
                 },
-                "building/static_caravan": {
-                    "name": "Casă Mobilă Statică"
-                },
                 "building/terrace": {
                     "name": "Case în Rând"
                 },
@@ -1219,9 +1185,6 @@
                 },
                 "club": {
                     "name": "Club"
-                },
-                "craft/brewery": {
-                    "name": "Berărie"
                 },
                 "craft/electrician": {
                     "name": "Electrician"
@@ -1438,9 +1401,6 @@
                 },
                 "landuse/military/barracks": {
                     "name": "Baraci"
-                },
-                "landuse/military/danger_area": {
-                    "name": "Zonă de Pericol"
                 },
                 "landuse/military/range": {
                     "name": "Gamă Militară"
@@ -1791,9 +1751,6 @@
                     "name": "Magazin de Băuturi Alcoolice",
                     "terms": "g"
                 },
-                "shop/antiques": {
-                    "name": "Anticariat"
-                },
                 "shop/appliance": {
                     "name": "Magazin de Electrocasnice"
                 },
@@ -1832,9 +1789,6 @@
                 },
                 "shop/bookmaker": {
                     "name": "Atelier de Cărți"
-                },
-                "shop/books": {
-                    "name": "Magazin de Cărți"
                 },
                 "shop/boutique": {
                     "name": "Boutique"
@@ -1971,9 +1925,6 @@
                 "shop/musical_instrument": {
                     "name": "Magazin de Instrumente Muzicale"
                 },
-                "shop/newsagent": {
-                    "name": "Magazin de Ziare"
-                },
                 "shop/nutrition_supplements": {
                     "name": "Magazin de Suplimente Nutritive"
                 },
@@ -2006,9 +1957,6 @@
                 },
                 "shop/seafood": {
                     "name": "Magazin de Fructe de Mare"
-                },
-                "shop/second_hand": {
-                    "name": "Magazin de Depozite"
                 },
                 "shop/shoes": {
                     "name": "Magazin de Ghete"
@@ -2045,9 +1993,6 @@
                 },
                 "shop/vacuum_cleaner": {
                     "name": "Magazin de Aspiratoare"
-                },
-                "shop/variety_store": {
-                    "name": "Magazin de Varietăți"
                 },
                 "shop/video": {
                     "name": "Magazin Video"

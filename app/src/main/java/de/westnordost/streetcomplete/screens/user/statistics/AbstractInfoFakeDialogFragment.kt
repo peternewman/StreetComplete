@@ -8,6 +8,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import de.westnordost.streetcomplete.view.Transforms
 import de.westnordost.streetcomplete.view.ViewPropertyAnimatorsPlayer
@@ -23,9 +24,6 @@ abstract class AbstractInfoFakeDialogFragment(layoutId: Int) : Fragment(layoutId
     /** View from which the title image view is animated from (and back on dismissal)*/
     private var sharedTitleView: View? = null
 
-    var isShowing: Boolean = false
-        private set
-
     private var animatorsPlayer: ViewPropertyAnimatorsPlayer? = null
 
     protected abstract val dialogAndBackgroundContainer: ViewGroup
@@ -34,11 +32,18 @@ abstract class AbstractInfoFakeDialogFragment(layoutId: Int) : Fragment(layoutId
     protected abstract val dialogBubbleBackground: View
     protected abstract val titleView: View
 
+    private val backPressedCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            dismiss()
+        }
+    }
+
     /* ---------------------------------------- Lifecycle --------------------------------------- */
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         dialogAndBackgroundContainer.setOnClickListener { dismiss() }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
     }
 
     override fun onDestroyView() {
@@ -51,14 +56,14 @@ abstract class AbstractInfoFakeDialogFragment(layoutId: Int) : Fragment(layoutId
 
     open fun dismiss(): Boolean {
         if (animatorsPlayer != null) return false
-        isShowing = false
+        backPressedCallback.isEnabled = false
         animateOut(sharedTitleView)
         return true
     }
 
     protected fun show(sharedView: View): Boolean {
         if (animatorsPlayer != null) return false
-        isShowing = true
+        backPressedCallback.isEnabled = true
         this.sharedTitleView = sharedView
         animateIn(sharedView)
         return true
@@ -105,16 +110,14 @@ abstract class AbstractInfoFakeDialogFragment(layoutId: Int) : Fragment(layoutId
 
     private fun createTitleImageFlingInAnimation(sourceView: View): ViewPropertyAnimator {
         sourceView.visibility = View.INVISIBLE
-        val root = sourceView.rootView as ViewGroup
         titleView.applyTransforms(Transforms.IDENTITY)
-        return titleView.animateFrom(sourceView, root)
+        return titleView.animateFrom(sourceView)
             .setDuration(ANIMATION_TIME_IN_MS)
             .setInterpolator(OvershootInterpolator())
     }
 
     private fun createTitleImageFlingOutAnimation(targetView: View): ViewPropertyAnimator {
-        val root = targetView.rootView as ViewGroup
-        return titleView.animateTo(targetView, root)
+        return titleView.animateTo(targetView)
             .setDuration(ANIMATION_TIME_OUT_MS)
             .setInterpolator(AccelerateDecelerateInterpolator())
             .withEndAction {

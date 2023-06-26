@@ -29,10 +29,17 @@
                         "forward": "Forwards"
                     }
                 },
-                "direction_vertex_dual": {
+                "fire_mains": {
                     "options": {
-                        "backward": "Backwards",
-                        "forward": "Forwards"
+                        "dry": "Dry Riser Inlet",
+                        "wet": "Wet Riser Inlet"
+                    }
+                },
+                "fire_sprinkler": {
+                    "options": {
+                        "dry": "Dry System",
+                        "pre-action": "Pre-action System",
+                        "wet": "Wet System"
                     }
                 },
                 "healthcare/speciality": {
@@ -52,11 +59,6 @@
                 },
                 "opening_hours": {
                     "label": "Opening Hours"
-                },
-                "parking/orientation": {
-                    "options": {
-                        "perpendicular": "Meets the Street at a Right Angle "
-                    }
                 },
                 "railway/signal/direction": {
                     "options": {
@@ -113,6 +115,14 @@
                     "name": "Barbeque/Grill",
                     "terms": "bbq,grill,barbecue"
                 },
+                "amenity/cafe": {
+                    "name": "Café",
+                    "terms": "bistro,coffee,tea,cafe"
+                },
+                "amenity/cafe/bubble_tea": {
+                    "name": "Bubble Tea Café",
+                    "terms": "boba,bubble milk tea,pearl milk tea,taiwanese tea drink,tapioca,pearl tea,boba drink,cafe"
+                },
                 "amenity/community_centre": {
                     "name": "Community Centre"
                 },
@@ -133,7 +143,11 @@
                 },
                 "amenity/fuel": {
                     "name": "Petrol Station",
-                    "terms": "gas station"
+                    "terms": "gas station,service station"
+                },
+                "amenity/internet_cafe": {
+                    "name": "Internet Café",
+                    "terms": "cybercafe,taxiphone,teleboutique,coffee,cafe,net,lanhouse,internet cafe"
                 },
                 "amenity/parking": {
                     "name": "Car Park",
@@ -182,6 +196,9 @@
                     "name": "Long-drop Toilet",
                     "aliases": "Pit Latrine"
                 },
+                "amenity/trolley_bay": {
+                    "name": "Shopping Trolley Bay"
+                },
                 "amenity/vending_machine/fuel": {
                     "name": "Fuel Pump",
                     "terms": "petrol,fuel,gasoline,propane,diesel,lng,cng,biodiesel,gas pump"
@@ -203,15 +220,28 @@
                 "barrier/kerb": {
                     "name": "Kerb"
                 },
+                "building/pavilion": {
+                    "name": "Sports Pavilion",
+                    "terms": "sports,pavilion"
+                },
                 "building/terrace": {
                     "name": "Terraced Houses",
                     "terms": "home,terrace,terraced,brownstone,residence,dwelling,townhouse,townhouses,row house,row houses"
+                },
+                "emergency/fire_hose": {
+                    "terms": "fire hose reel,fhr,riser,dry riser,standpipe,stand pipe"
+                },
+                "emergency/fire_service_inlet": {
+                    "name": "Building Inlet"
                 },
                 "healthcare/birthing_center": {
                     "name": "Birthing Centre"
                 },
                 "healthcare/blood_donation": {
                     "name": "Blood Donation Centre"
+                },
+                "highway/footway/conveying": {
+                    "name": "Travelator"
                 },
                 "highway/give_way": {
                     "name": "Give Way Sign",
@@ -226,6 +256,9 @@
                 },
                 "landuse/construction": {
                     "name": "Construction Site"
+                },
+                "landuse/military/range": {
+                    "terms": "shooting range,shooting,range,gun,army,military,defence force"
                 },
                 "leisure/adult_gaming_centre": {
                     "name": "Adult Gaming Centre"
@@ -252,6 +285,9 @@
                 "leisure/sports_hall": {
                     "name": "Sports Hall"
                 },
+                "man_made": {
+                    "name": "Human-Made Feature"
+                },
                 "man_made/groyne": {
                     "name": "Groyne",
                     "terms": "groin"
@@ -259,12 +295,25 @@
                 "man_made/survey_point": {
                     "name": "Survey Marker"
                 },
+                "man_made/yes": {
+                    "name": "Human-Made Feature (Unspecified Type)"
+                },
                 "natural/cape": {
                     "terms": "point"
                 },
                 "natural/wetland/mangrove": {
                     "name": "Mangroves",
                     "terms": "mangrove"
+                },
+                "office/employment_agency": {
+                    "terms": "job,career,careers,vocational,vocation,occupation"
+                },
+                "office/it": {
+                    "name": "IT/Software Company",
+                    "terms": "computer,information,software,technology,tech,it,ict,information technology"
+                },
+                "office/lawyer": {
+                    "name": "Lawyer"
                 },
                 "place/suburb": {
                     "name": "Suburb"
@@ -284,6 +333,9 @@
                 "shop/chemist": {
                     "name": "Chemist"
                 },
+                "shop/coffee": {
+                    "name": "Coffee Ingredients Store"
+                },
                 "shop/convenience": {
                     "name": "Convenience Store / Dairy",
                     "terms": "dairy,superette,convenience store,convenience shop,corner store,corner shop"
@@ -294,9 +346,6 @@
                 "shop/garden_centre": {
                     "name": "Garden Centre"
                 },
-                "shop/second_hand": {
-                    "name": "Second Hand Shop"
-                },
                 "shop/tyres": {
                     "name": "Tyre Store"
                 },
@@ -305,6 +354,9 @@
                 },
                 "tourism/caravan_site": {
                     "name": "Caravan Site"
+                },
+                "tourism/chalet": {
+                    "terms": "bach,crib"
                 },
                 "tourism/information/office": {
                     "name": "Visitor Centre"

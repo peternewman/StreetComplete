@@ -4,14 +4,10 @@ import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryChange
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryModify
-import de.westnordost.streetcomplete.osm.lit.LitStatus.AUTOMATIC
-import de.westnordost.streetcomplete.osm.lit.LitStatus.NIGHT_AND_DAY
-import de.westnordost.streetcomplete.osm.lit.LitStatus.NO
-import de.westnordost.streetcomplete.osm.lit.LitStatus.YES
-import de.westnordost.streetcomplete.osm.toCheckDateString
+import de.westnordost.streetcomplete.osm.lit.LitStatus.*
+import de.westnordost.streetcomplete.osm.nowAsCheckDateString
 import org.assertj.core.api.Assertions
 import org.junit.Test
-import java.time.LocalDate
 
 class LitStatusKtTest {
 
@@ -23,8 +19,13 @@ class LitStatusKtTest {
         verifyAnswer(mapOf(), NIGHT_AND_DAY, arrayOf(StringMapEntryAdd("lit", "24/7")))
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `applying invalid throws exception`() {
+        UNSUPPORTED.applyTo(StringMapChangesBuilder(mapOf()))
+    }
+
     @Test fun `apply updates check date`() {
-        val today = LocalDate.now().toCheckDateString()
+        val today = nowAsCheckDateString()
         verifyAnswer(
             mapOf("lit" to "yes"),
             YES,
@@ -59,20 +60,20 @@ class LitStatusKtTest {
         )
     }
 
-    @Test fun `apply does not overwrite unspported value if 'yes'`() {
+    @Test fun `apply does not overwrite unsupported value if 'yes'`() {
         verifyAnswer(
             mapOf("lit" to "limited"),
             YES,
-            arrayOf(StringMapEntryAdd("check_date:lit", LocalDate.now().toCheckDateString()))
+            arrayOf(StringMapEntryAdd("check_date:lit", nowAsCheckDateString()))
         )
         verifyAnswer(
             mapOf("lit" to "22:00-05:00"),
             YES,
-            arrayOf(StringMapEntryAdd("check_date:lit", LocalDate.now().toCheckDateString()))
+            arrayOf(StringMapEntryAdd("check_date:lit", nowAsCheckDateString()))
         )
     }
 
-    @Test fun `apply does overwrite unspported value if not 'yes'`() {
+    @Test fun `apply does overwrite unsupported value if not 'yes'`() {
         verifyAnswer(
             mapOf("lit" to "limited"),
             NO,
@@ -86,7 +87,7 @@ class LitStatusKtTest {
     }
 }
 
-fun verifyAnswer(tags: Map<String, String>, answer: LitStatus, expectedChanges: Array<StringMapEntryChange>) {
+private fun verifyAnswer(tags: Map<String, String>, answer: LitStatus, expectedChanges: Array<StringMapEntryChange>) {
     val cb = StringMapChangesBuilder(tags)
     answer.applyTo(cb)
     val changes = cb.create().changes

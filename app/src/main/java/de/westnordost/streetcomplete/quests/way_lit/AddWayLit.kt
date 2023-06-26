@@ -1,10 +1,12 @@
 package de.westnordost.streetcomplete.quests.way_lit
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
 import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.changeToSteps
 import de.westnordost.streetcomplete.osm.lit.applyTo
 
 class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
@@ -24,7 +26,7 @@ class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
           or highway ~ ${LIT_NON_RESIDENTIAL_ROADS.joinToString("|")} and
           (
             sidewalk ~ both|left|right|yes|separate
-            or ~${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")} ~ .*urban|.*zone.*
+            or ~"${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")}" ~ ".*:(urban|.*zone.*|nsl_restricted)"
             or maxspeed <= 60
           )
           or highway ~ ${LIT_WAYS.joinToString("|")}
@@ -38,20 +40,22 @@ class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
         )
         and (access !~ private|no or (foot and foot !~ private|no))
         and indoor != yes
+        and ~path|footway|cycleway !~ link
     """
 
     override val changesetComment = "Specify whether ways are lit"
     override val wikiLink = "Key:lit"
     override val icon = R.drawable.ic_quest_lantern
     override val achievements = listOf(PEDESTRIAN)
+    override val defaultDisabledMessage = R.string.default_disabled_msg_overlay
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_lit_title
 
     override fun createForm() = WayLitForm()
 
-    override fun applyAnswerTo(answer: WayLitOrIsStepsAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: WayLitOrIsStepsAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
-            is IsActuallyStepsAnswer -> tags["highway"] = "steps"
+            is IsActuallyStepsAnswer -> tags.changeToSteps()
             is WayLit -> answer.litStatus.applyTo(tags)
         }
     }

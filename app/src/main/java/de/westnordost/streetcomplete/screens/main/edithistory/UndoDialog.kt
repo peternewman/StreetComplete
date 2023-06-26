@@ -11,6 +11,7 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.EditHistoryController
@@ -18,7 +19,10 @@ import de.westnordost.streetcomplete.data.edithistory.icon
 import de.westnordost.streetcomplete.data.edithistory.overlayIcon
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeFromVertexAction
 import de.westnordost.streetcomplete.data.osm.edits.delete.DeletePoiNodeAction
+import de.westnordost.streetcomplete.data.osm.edits.move.MoveNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryChange
@@ -34,9 +38,12 @@ import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.databinding.DialogUndoBinding
 import de.westnordost.streetcomplete.quests.getHtmlQuestTitle
+import de.westnordost.streetcomplete.util.getNameAndLocationLabel
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ResText
 import de.westnordost.streetcomplete.view.Text
+import de.westnordost.streetcomplete.view.setHtml
 import de.westnordost.streetcomplete.view.setText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,16 +52,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.sufficientlysecure.htmltextview.HtmlTextView
+import org.koin.core.qualifier.named
 import java.util.MissingFormatArgumentException
+import java.util.concurrent.FutureTask
 
 class UndoDialog(
     context: Context,
-    private val edit: Edit
+    private val edit: Edit,
 ) : AlertDialog(context), KoinComponent {
 
     private val mapDataSource: MapDataWithEditsSource by inject()
     private val editHistoryController: EditHistoryController by inject()
+    private val featureDictionaryFuture: FutureTask<FeatureDictionary> by inject(named("FeatureDictionaryFuture"))
+
+    private val featureDictionary: FeatureDictionary get() = featureDictionaryFuture.get()
 
     private val binding = DialogUndoBinding.inflate(LayoutInflater.from(context))
 
@@ -65,7 +76,7 @@ class UndoDialog(
         val overlayResId = edit.overlayIcon
         if (overlayResId != 0) binding.overlayIcon.setImageResource(overlayResId)
         binding.createdTimeText.text =
-            DateUtils.getRelativeTimeSpanString(edit.createdTimestamp, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+            DateUtils.getRelativeTimeSpanString(edit.createdTimestamp, nowAsEpochMilliseconds(), DateUtils.MINUTE_IN_MILLIS)
         binding.descriptionContainer.addView(edit.descriptionView)
 
         setTitle(R.string.undo_confirm_title2)
@@ -80,6 +91,11 @@ class UndoDialog(
         super.onCreate(savedInstanceState)
         scope.launch {
             binding.titleText.text = edit.getTitle()
+            if (edit is ElementEdit) {
+                binding.titleHintText.text = edit.getPrimaryElement()?.let {
+                    getNameAndLocationLabel(it, context.resources, featureDictionary)
+                }
+            }
         }
     }
 
@@ -88,10 +104,18 @@ class UndoDialog(
         scope.cancel()
     }
 
+    private suspend fun ElementEdit.getPrimaryElement(): Element? {
+        val key = action.elementKeys.firstOrNull() ?: return null
+        return withContext(Dispatchers.IO) { mapDataSource.get(key.type, key.id) }
+    }
+
     private suspend fun Edit.getTitle(): CharSequence = when (this) {
         is ElementEdit -> {
-            if (type is QuestType) getQuestTitle(type, originalElement)
-            else context.resources.getText(type.title)
+            if (type is QuestType) {
+                getQuestTitle(type, getPrimaryElement()?.tags.orEmpty())
+            } else {
+                context.resources.getText(type.title)
+            }
         }
         is NoteEdit -> {
             context.resources.getText(when (action) {
@@ -101,7 +125,7 @@ class UndoDialog(
         }
         is OsmQuestHidden -> {
             val element = withContext(Dispatchers.IO) { mapDataSource.get(elementType, elementId) }
-            getQuestTitle(questType, element)
+            getQuestTitle(questType, element?.tags.orEmpty())
         }
         is OsmNoteQuestHidden -> {
             context.resources.getText(R.string.quest_noteDiscussion_title)
@@ -112,9 +136,18 @@ class UndoDialog(
     private val Edit.descriptionView: View get() = when (this) {
         is ElementEdit -> {
             when (action) {
-                is UpdateElementTagsAction -> createListOfTagUpdates(action.changes.changes)
-                is DeletePoiNodeAction -> createTextView(ResText(R.string.deleted_poi_action_description))
-                is SplitWayAction -> createTextView(ResText(R.string.split_way_action_description))
+                is UpdateElementTagsAction ->
+                    createListOfTagUpdates(action.changes.changes)
+                is DeletePoiNodeAction ->
+                    createTextView(ResText(R.string.deleted_poi_action_description))
+                is SplitWayAction ->
+                    createTextView(ResText(R.string.split_way_action_description))
+                is CreateNodeAction ->
+                    createCreateNodeDescriptionView(action.tags)
+                is CreateNodeFromVertexAction ->
+                    createListOfTagUpdates(action.changes.changes)
+                is MoveNodeAction ->
+                    createTextView(ResText(R.string.move_node_action_description))
                 else -> throw IllegalArgumentException()
             }
         }
@@ -124,9 +157,9 @@ class UndoDialog(
         else -> throw IllegalArgumentException()
     }
 
-    private fun getQuestTitle(questType: QuestType, element: Element?): CharSequence =
+    private fun getQuestTitle(questType: QuestType, tags: Map<String, String>): CharSequence =
         try {
-            context.resources.getHtmlQuestTitle(questType, element)
+            context.resources.getHtmlQuestTitle(questType, tags)
         } catch (e: MissingFormatArgumentException) {
             /* The exception happens when the number of format strings in the quest title
              * differs from what can be "filled" by getHtmlQuestTitle. When does this happen?
@@ -140,29 +173,51 @@ class UndoDialog(
         val txt = TextView(context)
         txt.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
         txt.setText(text)
+        txt.setTextIsSelectable(true)
         return txt
     }
 
-    private fun createListOfTagUpdates(changes: Collection<StringMapEntryChange>): HtmlTextView {
-        val txt = HtmlTextView(context)
+    private fun createListOfTagUpdates(changes: Collection<StringMapEntryChange>): TextView {
+        val txt = TextView(context)
         txt.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
 
         txt.setHtml(changes.joinToString(separator = "", prefix = "<ul>", postfix = "</ul>") { change ->
            "<li>" +
            context.resources.getString(
                change.titleResId,
-               "<tt>" + Html.escapeHtml(change.tagString) + "</tt>"
+               "<tt>" + change.toLinkedTagString() + "</tt>"
            ) +
            "</li>"
         })
         return txt
     }
+
+    private fun createCreateNodeDescriptionView(tags: Map<String, String>): TextView {
+        val txt = TextView(context)
+        txt.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+
+        txt.setHtml(
+            context.resources.getString(R.string.create_node_action_description) +
+            tags.entries.joinToString(separator = "", prefix = "<ul>", postfix = "</ul>") { (key, value) ->
+                "<li><tt>" + linkedTagString(key, value) + "</tt></li>"
+            }
+        )
+        return txt
+    }
 }
 
-private val StringMapEntryChange.tagString: String get() = when (this) {
-    is StringMapEntryAdd -> "$key = $value"
-    is StringMapEntryModify -> "$key = $value"
-    is StringMapEntryDelete -> "$key = $valueBefore"
+private fun StringMapEntryChange.toLinkedTagString(): String =
+    linkedTagString(key, when (this) {
+        is StringMapEntryAdd -> value
+        is StringMapEntryModify -> value
+        is StringMapEntryDelete -> valueBefore
+    })
+
+private fun linkedTagString(key: String, value: String): String {
+    val escapedKey = Html.escapeHtml(key)
+    val escapedValue = Html.escapeHtml(value)
+    val keyLink = "<a href=\"https://wiki.openstreetmap.org/wiki/Key:$escapedKey\">$escapedKey</a>"
+    return "$keyLink = $escapedValue"
 }
 
 private val StringMapEntryChange.titleResId: Int get() = when (this) {

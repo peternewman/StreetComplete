@@ -12,19 +12,20 @@ import org.koin.dsl.module
 
 val elementEditsModule = module {
     factory { ChangesetAutoCloser(get()) }
-    factory { ElementEditUploader(get(), get()) }
+    factory { ElementEditUploader(get(), get(), get()) }
 
     factory { ElementEditsDao(get(), get(), get()) }
     factory { ElementIdProviderDao(get()) }
     factory { LastEditTimeStore(get()) }
     factory { OpenChangesetsDao(get()) }
+    factory { EditElementsDao(get()) }
 
     single { OpenChangesetsManager(get(), get(), get(), get()) }
 
-    single { ElementEditsUploader(get(), get(), get(), get(), get()) }
+    single { ElementEditsUploader(get(), get(), get(), get(), get(), get()) }
 
     single<ElementEditsSource> { get<ElementEditsController>() }
-    single { ElementEditsController(get(), get(), get()) }
+    single { ElementEditsController(get(), get(), get(), get()) }
     single { MapDataWithEditsSource(get(), get(), get()) }
 
     worker { ChangesetAutoCloserWorker(get(), get(), get()) }

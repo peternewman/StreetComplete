@@ -9,21 +9,26 @@ import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.key
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
 import de.westnordost.streetcomplete.overlays.Overlay
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.StyledElement
 import de.westnordost.streetcomplete.screens.main.map.tangram.KtMapController
+import de.westnordost.streetcomplete.util.math.intersect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 /** Manages the layer of styled map data in the map view:
- *  Gets told by the QuestsMapFragment when a new area is in view and independently pulls the map
+ *  Gets told by the MainMapFragment when a new area is in view and independently pulls the map
  *  data for the bbox surrounding the area from database and holds it in memory. */
 class StyleableOverlayManager(
     private val ctrl: KtMapController,
@@ -39,11 +44,19 @@ class StyleableOverlayManager(
 
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
+    private var updateJob: Job? = null
+
     private var overlay: Overlay? = null
     set(value) {
         if (field == value) return
+        val wasNull = field == null
+        val isNullNow = value == null
         field = value
-        if (value != null) show() else hide()
+        when {
+            isNullNow -> hide()
+            wasNull ->   show()
+            else ->      switchOverlay()
+        }
     }
 
     private val overlayListener = object : SelectedOverlaySource.Listener {
@@ -54,7 +67,11 @@ class StyleableOverlayManager(
 
     private val mapDataListener = object : MapDataWithEditsSource.Listener {
         override fun onUpdated(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
-            viewLifecycleScope.launch { updateStyledElements(updated, deleted) }
+            val oldUpdateJob = updateJob
+            updateJob = viewLifecycleScope.launch {
+                oldUpdateJob?.join() // don't cancel, as updateStyledElements only updates existing data
+                updateStyledElements(updated, deleted)
+            }
         }
 
         override fun onReplacedForBBox(bbox: BoundingBox, mapDataWithGeometry: MapDataWithGeometry) {
@@ -75,11 +92,11 @@ class StyleableOverlayManager(
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
+        overlay = null
         selectedOverlaySource.removeListener(overlayListener)
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        hide()
         viewLifecycleScope.cancel()
     }
 
@@ -87,6 +104,11 @@ class StyleableOverlayManager(
         clear()
         onNewScreenPosition()
         mapDataSource.addListener(mapDataListener)
+    }
+
+    private fun switchOverlay() {
+        clear()
+        onNewScreenPosition()
     }
 
     private fun hide() {
@@ -111,8 +133,14 @@ class StyleableOverlayManager(
 
     private fun onNewTilesRect(tilesRect: TilesRect) {
         val bbox = tilesRect.asBoundingBox(TILES_ZOOM)
-        viewLifecycleScope.launch {
-            val mapData = withContext(Dispatchers.IO) { mapDataSource.getMapDataWithGeometry(bbox) }
+        updateJob?.cancel()
+        updateJob = viewLifecycleScope.launch {
+            val mapData = withContext(Dispatchers.IO) {
+                synchronized(mapDataSource) {
+                    if (!coroutineContext.isActive) null
+                    else mapDataSource.getMapDataWithGeometry(bbox)
+                }
+            } ?: return@launch
             setStyledElements(mapData)
         }
     }
@@ -123,36 +151,60 @@ class StyleableOverlayManager(
         viewLifecycleScope.launch { mapComponent.clear() }
     }
 
-    private fun setStyledElements(mapData: MapDataWithGeometry) {
+    private suspend fun setStyledElements(mapData: MapDataWithGeometry) {
         val layer = overlay ?: return
         synchronized(mapDataInView) {
             mapDataInView.clear()
             createStyledElementsByKey(layer, mapData).forEach { (key, styledElement) ->
-                if (styledElement != null) {
-                    mapDataInView[key] = styledElement
+                mapDataInView[key] = styledElement
+            }
+            if (coroutineContext.isActive) {
+                mapComponent.set(mapDataInView.values)
+                ctrl.requestRender()
+            }
+        }
+    }
+
+    private suspend fun updateStyledElements(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
+        val overlay = overlay ?: return
+        val displayedBBox = lastDisplayedRect?.asBoundingBox(TILES_ZOOM)
+        var changedAnything = false
+        synchronized(mapDataInView) {
+            deleted.forEach {
+                if (mapDataInView.remove(it) != null) {
+                    changedAnything = true
                 }
             }
-            mapComponent.set(mapDataInView.values)
-        }
-    }
-
-    private fun updateStyledElements(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
-        val layer = overlay ?: return
-        synchronized(mapDataInView) {
-            createStyledElementsByKey(layer, updated).forEach { (key, styledElement) ->
-                if (styledElement != null) mapDataInView[key] = styledElement
-                else                       mapDataInView.remove(key)
+            val styledElementsByKey = createStyledElementsByKey(overlay, updated).toMap()
+            // for elements that used to be displayed in the overlay but now not anymore
+            updated.forEach {
+                if (!styledElementsByKey.containsKey(it.key)) {
+                    mapDataInView.remove(it.key)
+                    changedAnything = true
+                }
             }
-            deleted.forEach { mapDataInView.remove(it) }
-            mapComponent.set(mapDataInView.values)
+            styledElementsByKey.forEach { (key, styledElement) ->
+                mapDataInView[key] = styledElement
+                if (!changedAnything && displayedBBox?.intersect(styledElement.geometry.getBounds()) != false) {
+                    changedAnything = true
+                }
+            }
+
+            if (changedAnything && coroutineContext.isActive) {
+                mapComponent.set(mapDataInView.values)
+                ctrl.requestRender()
+            }
         }
     }
 
-    private fun createStyledElementsByKey(overlay: Overlay, mapData: MapDataWithGeometry): Sequence<Pair<ElementKey, StyledElement?>> =
-        overlay.getStyledElements(mapData).map { (element, style) ->
-            val key = ElementKey(element.type, element.id)
-            val geometry = mapData.getGeometry(element.type, element.id)
-            key to geometry?.let { StyledElement(element, geometry, style) }
+    private fun createStyledElementsByKey(
+        overlay: Overlay,
+        mapData: MapDataWithGeometry
+    ): Sequence<Pair<ElementKey, StyledElement>> =
+        overlay.getStyledElements(mapData).mapNotNull { (element, style) ->
+            val key = element.key
+            val geometry = mapData.getGeometry(element.type, element.id) ?: return@mapNotNull null
+            key to StyledElement(element, geometry, style)
         }
 
     companion object {

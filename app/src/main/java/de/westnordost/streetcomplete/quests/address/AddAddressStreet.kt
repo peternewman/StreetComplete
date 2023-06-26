@@ -2,21 +2,25 @@ package de.westnordost.streetcomplete.quests.address
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Relation
+import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.quest.AllCountriesExcept
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.POSTMAN
 import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.address.StreetOrPlaceName
+import de.westnordost.streetcomplete.osm.address.applyTo
 
-class AddAddressStreet : OsmElementQuestType<AddressStreetAnswer> {
+class AddAddressStreet : OsmElementQuestType<StreetOrPlaceName> {
 
     private val filter by lazy { """
         nodes, ways, relations with
-          (addr:housenumber or addr:housename) and !addr:street and !addr:place and !addr:block_number
-          or addr:streetnumber and !addr:street
+          (addr:housenumber or addr:housename) and !addr:street and !addr:place and !addr:block_number and !addr:substreet and !addr:parentstreet
+          or addr:streetnumber and !addr:street and !addr:substreet and !addr:parentstreet
     """.toElementFilterExpression() }
 
     // #2112 - exclude indirect addr:street
@@ -58,14 +62,17 @@ class AddAddressStreet : OsmElementQuestType<AddressStreetAnswer> {
     override fun isApplicableTo(element: Element): Boolean? =
         if (!filter.matches(element)) false else null
 
+    override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
+        getMapData().filter("""
+            nodes, ways, relations with
+            (addr:housenumber or addr:housename or addr:conscriptionnumber or addr:streetnumber)
+            and !name and !brand and !operator and !ref
+        """.toElementFilterExpression())
+
     override fun createForm() = AddAddressStreetForm()
 
-    override fun applyAnswerTo(answer: AddressStreetAnswer, tags: Tags, timestampEdited: Long) {
-        val key = when (answer) {
-            is StreetName -> "addr:street"
-            is PlaceName -> "addr:place"
-        }
-        tags[key] = answer.name
+    override fun applyAnswerTo(answer: StreetOrPlaceName, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        answer.applyTo(tags)
     }
 }
 

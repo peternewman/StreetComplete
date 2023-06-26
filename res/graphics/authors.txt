@@ -71,6 +71,9 @@ app icon/
     ic_launcher.png             https://www.elegantthemes.com/blog/freebie-of-the-week/beautiful-flat-icons-for-free (GPL 2.0) with trivial changes by Mateusz Konieczny (recolour)
     ic_launcher_round.png       https://www.elegantthemes.com/blog/freebie-of-the-week/beautiful-flat-icons-for-free (GPL 2.0) with trivial changes by Mateusz Konieczny (recolour)
 
+assembly point/
+    assembly_point.svg          Epop, License: Public domain; https://commons.wikimedia.org/wiki/File:E011.svg
+
 bridge structure/
     arch.svg                    Jay Turner, License: CC0 1.0
     beam.svg                    Jay Turner, License: CC0 1.0
@@ -103,6 +106,7 @@ building/
     garage.svg                  parts taken from Twemoji: U+1F698
     garages.svg                 parts taken from Twemoji: U+1F698
     greenhouse.svg
+    guardhouse.svg
     hangar.svg
     historic.svg
     hospital.svg
@@ -145,36 +149,52 @@ charging station capacity/
 cycleway/
     bus_lane.svg
     bus_lane_l.svg
-    lane.svg
-    lane_belgium.svg
-    lane_dual.svg
-    lane_dual_belgium.svg
-    lane_dual_italy.svg
-    lane_dual_l.svg
-    lane_dual_switzerland.svg
-    lane_italy.svg
-    lane_l.svg
-    lane_switzerland.svg
     none.svg
-    pictograms.svg
-    pictograms_l.svg
-    shared_lane.svg
-    shared_lane_l.svg
-    shared_lane_switzerland.svg
     sidewalk.svg
     sidewalk_explicit.svg
     sidewalk_explicit_l.svg
-    suggestion_lane.svg
     suggestion_lane_belgium.svg
     track.svg
     track_dual.svg
     track_dual_l.svg
     track_l.svg
+    lane_dashed_yellow_l.svg
+    lane_dashed_both_white.svg
+    lane_dashed_white_l.svg
+    bicycle.svg
+    lane_yellow_dual.svg
+    lane_dotted_white.svg
+    lane_white.svg
+    shared_lane_white_dashed_l.svg
+    pictograms_yellow_l.svg
+    pictograms_yellow.svg
+    lane_white_l.svg
+    shoulder.svg
+    pictograms_white_l.svg
+    shared_lane_orchre_background.svg
+    lane_white_dual_l.svg
+    pictograms_white.svg
+    lane_dashed_both_white_l.svg
+    lane_yellow.svg
+    shared_lane_white_dashed.svg
+    sidewalk_explicit_dual.svg
+    lane_dashed_yellow.svg
+    lane_dotted_white_l.svg
+    lane_white_dual.svg
+    lane_yellow_l.svg
+    lane_dashed_white.svg
+    lane_yellow_dual_l.svg
+    shared_lane_no_pictograms.svg
 
 cycleway segregation/
     not_segregated.svg
     segregated_l.svg
     segregated_r.svg
+    allowed.svg
+    exclusive.svg
+    no.svg
+    with_sidewalk_l.svg
+    with_sidewalk.svg
 
 fire hydrant diameter/
     fire_hydrant_sign_de.svg    modified from https://commons.wikimedia.org/wiki/File:Hydrantenschild_mit_Legende.svg, Marvin Feiter
@@ -198,6 +218,10 @@ lanes/
     car3.svg
     car4.svg
     car5.svg
+
+laurel_wreath/
+    ic_laurel_leaf_pair.svg        CC0               Mateusz Konieczny (if even copyright is applicable here)
+    ic_laurel_leaf_ending.svg      CC0               Mateusz Konieczny (if even copyright is applicable here)
 
 links/
     link_neis_one.svg
@@ -232,6 +256,7 @@ pins/
     car_air_compressor.svg
     car_charger.svg                 parts taken from Twemoji: U+1F698 and U+1F50C
     choker.svg                      modified from https://www.svgrepo.com/svg/236894/belt, SVG Repo, License: CC-0
+    choker_borderless.svg           modified from https://www.svgrepo.com/svg/236894/belt, SVG Repo, License: CC-0
     defibrillator.svg               (c) 2020 Sequynth, (c) 2020 Mateusz Konieczny ( https://github.com/matkoniecz/Zazolc/commit/6b20ae7ed27f6aeaa543b690a3559aad1aab62b5 + https://github.com/matkoniecz/Zazolc/commit/e021a329bd1d705d0c03ac08d51d1cc14e176772)
     fire_hydrant.svg
     information.svg
@@ -253,6 +278,7 @@ italian police type/
     polizia.svg                     modified from https://commons.wikimedia.org/wiki/File:Italian_traffic_signs_-_icona_polizia.svg, Gigillo83, License: CC-BY-SA 3.0
 
 quest/
+    access_point.svg
     apple.svg
     baby.svg                         modified from Twemoji: U+1F6BC
     barrier.svg                      Tobias Zwick (CC-BY-SA 4.0) (based on road_construction.svg)
@@ -263,6 +289,7 @@ quest/
     bench_poi.svg
     bench_public_transport.svg
     bicycle.svg
+    bicycle_incline.svg              Tobias Zwick (CC-BY-SA 4.0) for used graphic elements, minor rearranging by Mateusz Konieczny
     bicycle_parking.svg
     bicycle_parking_access.svg       Flo Edelmann merged bicycle_parking.svg by Tobias Zwick (CC-BY-SA 4.0) with parking_access.svg made by Tobias Zwick with parts taken from EmojiOne 2: U+1F511 (CC-BY 4.0), resulting work is CC-BY-SA 4.0
     bicycle_parking_capacity.svg
@@ -275,6 +302,7 @@ quest/
     bicycle_second_hand.svg
     bicycleway.svg
     bicycleway_surface.svg
+    bicycleway_surface_detail.svg
     bicycleway_width.svg
     bin_public_transport.svg         Flo Edelmann, parts from https://www.svgrepo.com/svg/187115/trash (License: CC0 1.0)
     blind.svg
@@ -293,6 +321,8 @@ quest/
     bus_stop_lit.svg                 parts taken from Twemoji: U+1F68D
     bus_stop_shelter.svg             parts taken from Twemoji: U+1F68D
     bus_stop_name.svg                parts taken from Twemoji: U+1F68D
+    calendar.svg                     Flo Edelmann (CC0)
+    camp_power.svg
     car.svg                          modified from Twemoji: U+1F698
     car_bumpy.svg                    modified from Twemoji: U+1F698
     car_wash.svg                     modified from Twemoji: U+1F698
@@ -315,7 +345,11 @@ quest/
     fire_hydrant.svg
     fire_hydrant_diameter.svg
     fire_hydrant_grass.svg
+    fire_hydrant_ref.svg             modified from fire_hydrant.svg, label.svg and mail_ref.svg by mcliquid
+    footway_surface.svg
+    footway_surface_detail.svg
     fuel.svg
+    hairdresser.svg                  modified from scissors.svg by Matija Nalis (CC0 for modifications)
     housenumber.svg
     housenumber_street.svg
     information.svg
@@ -331,6 +365,7 @@ quest/
     mail_ref.svg
     max_width.svg
     max_height.svg
+    max_height_measure.svg
     max_speed.svg
     max_weight.svg
     memorial.svg
@@ -379,7 +414,9 @@ quest/
     road_construction.svg
     roof_shape.svg
     seating.svg
+    shower.svg
     sidewalk.svg
+    sidewalk_surface.svg             @krisdoodle45 (based on way_surface.svg)
     smoking.svg
     snow_poi.svg                     Scott de Jonge from https://commons.wikimedia.org/wiki/File:Map_icons_by_Scott_de_Jonge_-_snow.svg (License: CC-BY-3.0)
     sport.svg                        modified from EmojiOne 2: U+26BD
@@ -398,6 +435,7 @@ quest/
     summit_cross.svg                based on peak.svg which is (c) 2020 Mateusz Konieczny and Tobias Zwick (CC-BY-SA 4.0), with cross added by Flo Edelmann (so also CC-BY-SA 4.0)
     surveillance.svg
     surveillance_camera.svg
+    tent.svg
     toilets.svg
     toilet_fee.svg
     toilets_wheelchair.svg
@@ -410,6 +448,10 @@ quest/
     wheelchair.svg
     wheelchair_shop.svg
     wheelchair_crossing.svg
+
+links/
+    link_neis_one.svg
+    link_openorienteeringmap.svg
 
 lit/
     24_7.svg
@@ -443,6 +485,7 @@ recycling/
     glass_bottles.svg
     newspaper.svg                    modified from EmojiOne 2: U+1F4F0
     paper.svg
+    pet.svg
     plastic.svg
     plastic_bottles.svg
     plastic_packaging.svg
@@ -504,6 +547,7 @@ roof shape/
     skillion_west.svg
 
 royal cypher/
+    CIIIR.svg             CC-BY-SA 3.0      https://commons.wikimedia.org/wiki/File:Royal_Cypher_of_King_Charles_III.svg (adapted)
     EIIR.svg              CC-BY-SA 3.0      https://commons.wikimedia.org/wiki/File:Royal_Cypher_of_Queen_Elizabeth_II.svg (adapted)
     EVIIIR.svg            Public Domain     https://commons.wikimedia.org/wiki/File:EVIIIR.PNG (adapted)
     EVIIR.svg             CC-BY-SA 4.0      https://commons.wikimedia.org/wiki/File:Royal_Monogram_of_King_Edward_VII_of_Great_Britain_goldenrod.svg (adapted)

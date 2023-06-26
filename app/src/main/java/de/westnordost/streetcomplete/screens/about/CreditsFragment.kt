@@ -6,29 +6,34 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.widget.TextViewCompat
-import androidx.fragment.app.Fragment
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.FragmentCreditsBinding
 import de.westnordost.streetcomplete.databinding.RowCreditsTranslatorsBinding
+import de.westnordost.streetcomplete.screens.HasTitle
+import de.westnordost.streetcomplete.screens.TwoPaneDetailFragment
 import de.westnordost.streetcomplete.util.ktx.getYamlObject
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.viewBinding
+import de.westnordost.streetcomplete.view.setHtml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import org.sufficientlysecure.htmltextview.HtmlTextView
 import java.util.Locale
 
 private typealias TranslationCreditMap = MutableMap<String, MutableMap<String, Int>>
 
 /** Shows the credits of this app */
-class CreditsFragment : Fragment(R.layout.fragment_credits) {
+class CreditsFragment : TwoPaneDetailFragment(R.layout.fragment_credits), HasTitle {
 
     private val binding by viewBinding(FragmentCreditsBinding::bind)
 
+    override val title: String get() = getString(R.string.about_title_authors)
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         viewLifecycleScope.launch {
             val mainContributors = readMainContributors()
             val mainContributorUsernames = mainContributors.map { it.githubUsername }
@@ -52,14 +57,9 @@ class CreditsFragment : Fragment(R.layout.fragment_credits) {
         binding.contributorMore.setHtml(getString(R.string.credits_contributors))
     }
 
-    override fun onStart() {
-        super.onStart()
-        activity?.setTitle(R.string.about_title_authors)
-    }
-
     private fun addContributorsTo(contributors: List<String>, view: ViewGroup) {
         val items = contributors.joinToString("") { "<li>$it</li>" }
-        val textView = HtmlTextView(activity)
+        val textView = TextView(activity)
         TextViewCompat.setTextAppearance(textView, R.style.TextAppearance_Body)
         textView.setTextIsSelectable(true)
         textView.setHtml("<ul>$items</ul>")

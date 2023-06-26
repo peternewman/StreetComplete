@@ -1,7 +1,7 @@
 package de.westnordost.streetcomplete.screens.main.bottom_sheet
 
 import android.content.res.Configuration
-import android.graphics.Point
+import android.graphics.PointF
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +12,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationSet
 import android.view.animation.BounceInterpolator
 import android.view.animation.TranslateAnimation
+import androidx.core.graphics.toPointF
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
 import de.westnordost.streetcomplete.ApplicationConstants
@@ -51,6 +52,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
     override val floatingBottomView get() = bottomSheetBinding.okButton
     override val backButton get() = bottomSheetBinding.closeButton
     override val okButton get() = bottomSheetBinding.okButton
+    override val okButtonContainer get() = bottomSheetBinding.okButtonContainer
 
     private val contentBinding by viewBinding(FormLeaveNoteBinding::bind, R.id.content)
 
@@ -59,7 +61,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
     private var hasGpxAttached: Boolean = false
 
     interface Listener {
-        fun getMapPositionAt(screenPos: Point): LatLon?
+        fun getMapPositionAt(screenPos: PointF): LatLon?
         fun getRecordedTrack(): List<Trackpoint>?
 
         fun onCreatedNote(position: LatLon)
@@ -140,12 +142,10 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
            the position of the note he placed */
         if (contentBinding.noteInput.hideKeyboard() == true) return
 
-        val screenPos = binding.markerCreateLayout.createNoteMarker.getLocationInWindow()
-        screenPos.offset(
-            binding.markerCreateLayout.createNoteMarker.width / 2,
-            binding.markerCreateLayout.createNoteMarker.height / 2
-        )
-        val position = listener?.getMapPositionAt(screenPos) ?: return
+        val createNoteMarker = binding.markerCreateLayout.createNoteMarker
+        val screenPos = createNoteMarker.getLocationInWindow()
+        screenPos.offset(createNoteMarker.width / 2, createNoteMarker.height / 2)
+        val position = listener?.getMapPositionAt(screenPos.toPointF()) ?: return
 
         binding.markerCreateLayout.markerLayoutContainer.visibility = View.INVISIBLE
 

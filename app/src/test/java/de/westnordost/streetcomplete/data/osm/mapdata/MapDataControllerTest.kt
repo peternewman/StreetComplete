@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.osm.mapdata
 
+import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
 import de.westnordost.streetcomplete.data.osm.created_elements.CreatedElementsController
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryCreator
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryDao
@@ -70,6 +71,7 @@ class MapDataControllerTest {
 
     @Test fun getMapDataWithGeometry() {
         val bbox = bbox()
+        val bboxCacheWillRequest = bbox.asBoundingBoxOfEnclosingTiles(17)
         val geomEntries = listOf(
             ElementGeometryEntry(NODE, 1L, pGeom()),
             ElementGeometryEntry(NODE, 2L, pGeom()),
@@ -79,7 +81,7 @@ class MapDataControllerTest {
             ElementKey(NODE, 2L),
         )
         val elements = listOf(node(1), node(2))
-        on(elementDB.getAll(bbox)).thenReturn(elements)
+        on(elementDB.getAll(bboxCacheWillRequest)).thenReturn(elements)
         on(geometryDB.getAllEntries(elementKeys)).thenReturn(geomEntries)
 
         val mapData = controller.getMapDataWithGeometry(bbox)
@@ -125,17 +127,33 @@ class MapDataControllerTest {
     }
 
     @Test fun deleteOlderThan() {
-        val elementKeys = listOf(
+        val nodeKeys = listOf(
             ElementKey(NODE, 1L),
             ElementKey(NODE, 2L),
+            ElementKey(NODE, 3L),
         )
-        on(elementDB.getIdsOlderThan(123L)).thenReturn(elementKeys)
+        val filteredNodeKeys = listOf(
+            ElementKey(NODE, 1L),
+            ElementKey(NODE, 3L),
+        )
+        val wayKeys = listOf(
+            ElementKey(ElementType.WAY, 1L),
+        )
+        val relationKeys = listOf(
+            ElementKey(ElementType.RELATION, 1L),
+        )
+        val elementKeys = relationKeys + wayKeys + filteredNodeKeys
+        on(nodeDB.getIdsOlderThan(123L)).thenReturn(nodeKeys.map { it.id })
+        on(wayDB.getIdsOlderThan(123L)).thenReturn(wayKeys.map { it.id })
+        on(relationDB.getIdsOlderThan(123L)).thenReturn(relationKeys.map { it.id })
+        on(wayDB.filterNodeIdsWithoutWays(nodeKeys.map { it.id })).thenReturn(filteredNodeKeys.map { it.id })
         val listener = mock<MapDataController.Listener>()
 
         controller.addListener(listener)
         controller.deleteOlderThan(123L)
 
-        verify(elementDB).deleteAll(elementKeys)
+        verify(elementDB).deleteAll(wayKeys + relationKeys)
+        verify(elementDB).deleteAll(filteredNodeKeys)
         verify(geometryDB).deleteAll(elementKeys)
         verify(createdElementsController).deleteAll(elementKeys)
 

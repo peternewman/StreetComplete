@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.screens.main.map
 import android.graphics.PointF
 import android.graphics.RectF
 import androidx.annotation.DrawableRes
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
@@ -14,6 +15,7 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
+import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
@@ -32,13 +34,15 @@ import org.koin.android.ext.android.inject
  *  geometry, overlays... */
 class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
-    private val spriteSheet: TangramPinsSpriteSheet by inject()
+    private val questPinsSpriteSheet: TangramPinsSpriteSheet by inject()
+    private val iconsSpriteSheet: TangramIconsSpriteSheet by inject()
     private val questTypeOrderSource: QuestTypeOrderSource by inject()
     private val questTypeRegistry: QuestTypeRegistry by inject()
     private val visibleQuestsSource: VisibleQuestsSource by inject()
     private val editHistorySource: EditHistorySource by inject()
     private val mapDataSource: MapDataWithEditsSource by inject()
     private val selectedOverlaySource: SelectedOverlaySource by inject()
+    private val downloadedTilesSource: DownloadedTilesSource by inject()
 
     private var geometryMarkersMapComponent: GeometryMarkersMapComponent? = null
     private var pinsMapComponent: PinsMapComponent? = null
@@ -48,6 +52,8 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private var editHistoryPinsManager: EditHistoryPinsManager? = null
     private var styleableOverlayMapComponent: StyleableOverlayMapComponent? = null
     private var styleableOverlayManager: StyleableOverlayManager? = null
+    private var downloadedAreaMapComponent: DownloadedAreaMapComponent? = null
+    private var downloadedAreaManager: DownloadedAreaManager? = null
 
     interface Listener {
         fun onClickedQuest(questKey: QuestKey)
@@ -65,6 +71,37 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
             updatePinMode()
         }
 
+    private var overlaySceneUpdates: List<Pair<String, String>>? = null
+
+    private val overlayListener = object : SelectedOverlaySource.Listener {
+        override fun onSelectedOverlayChanged() {
+            val new = selectedOverlaySource.selectedOverlay?.sceneUpdates
+            val old = overlaySceneUpdates
+            if (old == new) return
+
+            old?.let { sceneMapComponent?.removeSceneUpdates(it) }
+            new?.let { sceneMapComponent?.addSceneUpdates(it) }
+
+            if (old != null || new != null) {
+                viewLifecycleScope.launch { sceneMapComponent?.loadScene() }
+            }
+            overlaySceneUpdates = new
+        }
+    }
+
+    /* ------------------------------------- Map setup ------------------------------------------ */
+
+    override suspend fun onBeforeLoadScene() {
+        super.onBeforeLoadScene()
+        val sceneUpdates = withContext(Dispatchers.IO) {
+            questPinsSpriteSheet.sceneUpdates + iconsSpriteSheet.sceneUpdates
+        }
+        sceneMapComponent?.addSceneUpdates(sceneUpdates)
+
+        overlaySceneUpdates = selectedOverlaySource.selectedOverlay?.sceneUpdates
+        overlaySceneUpdates?.let { sceneMapComponent?.addSceneUpdates(it) }
+    }
+
     /* ------------------------------------ Lifecycle ------------------------------------------- */
 
     override suspend fun onMapReady() {
@@ -77,15 +114,21 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
         questPinsManager = QuestPinsManager(ctrl, pinsMapComponent!!, questTypeOrderSource, questTypeRegistry, resources, visibleQuestsSource)
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
-        questPinsManager!!.isActive = pinMode == PinMode.QUESTS
+        questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
 
         editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, resources)
         viewLifecycleOwner.lifecycle.addObserver(editHistoryPinsManager!!)
-        editHistoryPinsManager!!.isActive = pinMode == PinMode.EDITS
+        editHistoryPinsManager!!.isVisible = pinMode == PinMode.EDITS
 
         styleableOverlayMapComponent = StyleableOverlayMapComponent(resources, ctrl)
         styleableOverlayManager = StyleableOverlayManager(ctrl, styleableOverlayMapComponent!!, mapDataSource, selectedOverlaySource)
         viewLifecycleOwner.lifecycle.addObserver(styleableOverlayManager!!)
+
+        downloadedAreaMapComponent = DownloadedAreaMapComponent(ctrl)
+        downloadedAreaManager = DownloadedAreaManager(ctrl, downloadedAreaMapComponent!!, downloadedTilesSource)
+        viewLifecycleOwner.lifecycle.addObserver(downloadedAreaManager!!)
+
+        selectedOverlaySource.addListener(overlayListener)
 
         super.onMapReady()
     }
@@ -94,14 +137,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         super.onMapIsChanging(position, rotation, tilt, zoom)
         questPinsManager?.onNewScreenPosition()
         styleableOverlayManager?.onNewScreenPosition()
+        downloadedAreaManager?.onNewScreenPosition()
     }
 
-    /* ------------------------------------- Map setup ------------------------------------------ */
-
-    override suspend fun onBeforeLoadScene() {
-        super.onBeforeLoadScene()
-        val questSceneUpdates = withContext(Dispatchers.IO) { spriteSheet.sceneUpdates }
-        sceneMapComponent?.putSceneUpdates(questSceneUpdates)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        selectedOverlaySource.removeListener(overlayListener)
     }
 
     /* -------------------------------- Picking quest pins -------------------------------------- */
@@ -133,8 +174,8 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
             if (styleableOverlayMapComponent?.isVisible == true) {
                 if (selectedOverlaySource.selectedOverlay != null) {
-                    val props = controller?.pickFeature(x, y)?.properties
-                        ?: controller?.pickLabel(x, y)?.properties
+                    val props = controller?.pickLabel(x, y)?.properties
+                        ?: controller?.pickFeature(x, y)?.properties
                     val elementKey = props?.let { styleableOverlayMapComponent?.getElementKey(it) }
                     if (elementKey != null) {
                         listener?.onClickedElement(elementKey)
@@ -170,6 +211,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         geometryMapComponent?.beginFocusGeometry(geometry, offset)
     }
 
+    /** End the focussing but do not return to position before focussing */
+    fun clearFocus() {
+        geometryMapComponent?.clearFocusGeometry()
+        centerCurrentPositionIfFollowing()
+    }
+
     /** return to the position before focussing */
     fun endFocus() {
         viewLifecycleScope.launch {
@@ -194,7 +241,6 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     fun hideOverlay() {
         styleableOverlayMapComponent?.isVisible = false
-        styleableOverlayMapComponent?.isVisible = false
     }
 
     fun highlightGeometry(geometry: ElementGeometry) {
@@ -208,6 +254,10 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         selectedPinsMapComponent?.clear()
         geometryMapComponent?.clearGeometry()
         geometryMarkersMapComponent?.clear()
+    }
+
+    fun clearSelectedPins() {
+        selectedPinsMapComponent?.clear()
     }
 
     /* ----------------------------  Markers for current highlighting --------------------------- */
@@ -236,16 +286,16 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
          */
         when (pinMode) {
             PinMode.QUESTS -> {
-                editHistoryPinsManager?.isActive = false
-                questPinsManager?.isActive = true
+                editHistoryPinsManager?.isVisible = false
+                questPinsManager?.isVisible = true
             }
             PinMode.EDITS -> {
-                questPinsManager?.isActive = false
-                editHistoryPinsManager?.isActive = true
+                questPinsManager?.isVisible = false
+                editHistoryPinsManager?.isVisible = true
             }
             else -> {
-                questPinsManager?.isActive = false
-                editHistoryPinsManager?.isActive = false
+                questPinsManager?.isVisible = false
+                editHistoryPinsManager?.isVisible = false
             }
         }
     }
