@@ -1,43 +1,52 @@
 package de.westnordost.streetcomplete.quests.bus_stop_shelter
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
-import de.westnordost.streetcomplete.quests.bus_stop_shelter.BusStopShelterAnswer.*
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.updateWithCheckDate
+import de.westnordost.streetcomplete.quests.bus_stop_shelter.BusStopShelterAnswer.COVERED
+import de.westnordost.streetcomplete.quests.bus_stop_shelter.BusStopShelterAnswer.NO_SHELTER
+import de.westnordost.streetcomplete.quests.bus_stop_shelter.BusStopShelterAnswer.SHELTER
 
-class AddBusStopShelter(o: OverpassMapDataDao) : SimpleOverpassQuestType<BusStopShelterAnswer>(o) {
+class AddBusStopShelter : OsmFilterQuestType<BusStopShelterAnswer>() {
 
-    override val tagFilters = """
-        nodes with 
-        ((public_transport = platform and ~bus|trolleybus|tram ~ yes)
-        or
-        (highway = bus_stop and public_transport != stop_position))
-        and !shelter and !covered
+    override val elementFilter = """
+        nodes, ways, relations with
+        (
+          public_transport = platform
+          or (highway = bus_stop and public_transport != stop_position)
+        )
+        and physically_present != no and naptan:BusStopType != HAR
+        and access !~ no|private
+        and !covered
+        and location !~ underground|indoor
+        and indoor != yes
+        and tunnel != yes
+        and (!level or level >= 0)
+        and (!shelter or shelter older today -4 years)
     """
-    override val commitMessage = "Add bus stop shelter"
-    override val icon = R.drawable.ic_quest_bus_stop_shelter
+    /* Not asking again if it is covered because it means the stop itself is under a large
+       building or roof building so this won't usually change */
 
-    override fun getTitle(tags: Map<String, String>): Int {
-        val hasName = tags.containsKey("name")
-        val isTram = tags["tram"] == "yes"
-        return if (isTram) {
-            if (hasName) R.string.quest_busStopShelter_tram_name_title
-            else         R.string.quest_busStopShelter_tram_title
-        } else {
-            if (hasName) R.string.quest_busStopShelter_name_title
-            else         R.string.quest_busStopShelter_title
-        }
-    }
+    override val changesetComment = "Specify whether public transport stops have shelters"
+    override val wikiLink = "Key:shelter"
+    override val icon = R.drawable.ic_quest_bus_stop_shelter
+    override val achievements = listOf(PEDESTRIAN)
+
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_busStopShelter_title2
 
     override fun createForm() = AddBusStopShelterForm()
 
-    override fun applyAnswerTo(answer: BusStopShelterAnswer, changes: StringMapChangesBuilder) {
-        when(answer) {
-            SHELTER -> changes.add("shelter", "yes")
-            NO_SHELTER -> changes.add("shelter", "no")
-            COVERED -> changes.add("covered", "yes")
+    override fun applyAnswerTo(answer: BusStopShelterAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        when (answer) {
+            SHELTER -> tags.updateWithCheckDate("shelter", "yes")
+            NO_SHELTER -> tags.updateWithCheckDate("shelter", "no")
+            COVERED -> {
+                tags.remove("shelter")
+                tags["covered"] = "yes"
+            }
         }
     }
 }
-

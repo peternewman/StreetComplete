@@ -1,8 +1,11 @@
-# Do not edit. Source files are in /res/country_metadata
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+centerLineStyle: white
 isLeftHandTraffic: true
 mobileCountryCode: 510
-officialLanguages: [id, ms, jv, su, mad, min]
-orchardProduces: [coconut, banana, rubber, guava, mango, mangosteen, orange, chilli_pepper, sweet_pepper,
-  pineapple, tomato, papaya, cacao, coffee, avocado, tea, areca_nut, cashew_nut]
+noParkingSignStyle: australia
+noStoppingSignStyle: australia
+officialLanguages: [id]
+orchardProduces: [rubber, coconut, cacao, coffee, cashew_nut, chilli_pepper, sweet_pepper, guava, mango, mangosteen, nutmeg, pepper, banana, areca_nut, tea, orange, tomato, avocado]
 popularReligions: [muslim, christian, hindu, buddhist, chinese_folk]
 popularSports: [soccer, tennis, basketball, volleyball, badminton]
+postboxesHaveCollectionTimes: true

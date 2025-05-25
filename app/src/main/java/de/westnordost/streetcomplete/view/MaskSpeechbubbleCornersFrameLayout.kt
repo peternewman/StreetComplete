@@ -6,19 +6,18 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.widget.FrameLayout
-
-import de.westnordost.streetcomplete.util.DpUtil
+import de.westnordost.streetcomplete.util.ktx.dpToPx
 
 /** Mask the speech_bubble_none.9.png */
 class MaskSpeechbubbleCornersFrameLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0)
-    : FrameLayout(context, attrs, defStyleAttr) {
+    defStyleAttr: Int = 0
+) : FrameLayout(context, attrs, defStyleAttr) {
 
     override fun dispatchDraw(canvas: Canvas) {
         val path = Path()
-        val corner = DpUtil.toPx(10.5f, context).toInt()
+        val corner = resources.dpToPx(10).toInt()
         path.addRoundRect(
             RectF(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat()),
             corner.toFloat(),

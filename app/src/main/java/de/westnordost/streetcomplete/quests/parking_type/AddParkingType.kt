@@ -1,21 +1,28 @@
 package de.westnordost.streetcomplete.quests.parking_type
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
+import de.westnordost.streetcomplete.osm.Tags
 
-class AddParkingType(o: OverpassMapDataDao) : SimpleOverpassQuestType<String>(o) {
+class AddParkingType : OsmFilterQuestType<ParkingType>() {
 
-    override val tagFilters = "nodes, ways, relations with amenity = parking and !parking"
-    override val commitMessage = "Add parking type"
+    override val elementFilter = """
+        nodes, ways, relations with
+          amenity = parking
+          and (!parking or parking = yes)
+    """
+    override val changesetComment = "Specify parking types"
+    override val wikiLink = "Tag:amenity=parking"
     override val icon = R.drawable.ic_quest_parking
+    override val achievements = listOf(CAR)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_parkingType_title
 
     override fun createForm() = AddParkingTypeForm()
 
-    override fun applyAnswerTo(answer: String, changes: StringMapChangesBuilder) {
-        changes.add("parking", answer)
+    override fun applyAnswerTo(answer: ParkingType, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["parking"] = answer.osmValue
     }
 }

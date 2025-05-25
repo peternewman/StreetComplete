@@ -1,74 +1,106 @@
 package de.westnordost.streetcomplete.quests.sidewalk
 
-import de.westnordost.osmapi.map.data.BoundingBox
-import de.westnordost.osmapi.map.data.Element
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.meta.OsmTaggings
-import de.westnordost.streetcomplete.data.osm.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.MapDataWithGeometryHandler
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
-import de.westnordost.streetcomplete.data.osm.tql.getQuestPrintStatement
-import de.westnordost.streetcomplete.data.osm.tql.toGlobalOverpassBBox
+import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.filter
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
+import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.sidewalk.LeftAndRightSidewalk
+import de.westnordost.streetcomplete.osm.sidewalk.Sidewalk.INVALID
+import de.westnordost.streetcomplete.osm.sidewalk.any
+import de.westnordost.streetcomplete.osm.sidewalk.applyTo
+import de.westnordost.streetcomplete.osm.sidewalk.parseSidewalkSides
+import de.westnordost.streetcomplete.osm.surface.UNPAVED_SURFACES
 
-class AddSidewalk(private val overpassServer: OverpassMapDataDao) : OsmElementQuestType<SidewalkAnswer> {
-
-    override val commitMessage = "Add whether there are sidewalks"
+class AddSidewalk : OsmElementQuestType<LeftAndRightSidewalk> {
+    override val changesetComment = "Specify whether roads have sidewalks"
+    override val wikiLink = "Key:sidewalk"
     override val icon = R.drawable.ic_quest_sidewalk
-    override val isSplitWayEnabled = true
+    override val achievements = listOf(PEDESTRIAN)
+    override val defaultDisabledMessage = R.string.default_disabled_msg_overlay
+
+    override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
+        getMapData().filter("""
+            ways with (
+                highway ~ path|footway|steps
+                or highway ~ cycleway|bridleway and foot ~ yes|designated
+              )
+              and foot !~ no|private
+              and access !~ no|private
+        """)
+
+    override val hint = R.string.quest_street_side_puzzle_tutorial
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_sidewalk_title
 
-    override fun download(bbox: BoundingBox, handler: MapDataWithGeometryHandler): Boolean {
-        return overpassServer.getAndHandleQuota(getOverpassQuery(bbox), handler)
-    }
+    override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> =
+        mapData.filter { isApplicableTo(it) }
 
-    /** returns overpass query string to get streets without sidewalk info not near separately mapped
-     *  sidewalks (and other paths)
-     */
-    private fun getOverpassQuery(bbox: BoundingBox): String {
-        val minDistToWays = 15 //m
-
-        // note: this query is very similar to the query in AddCycleway
-        return bbox.toGlobalOverpassBBox() + "\n" +
-            "way[highway ~ '^(primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential)$']" +
-            "[area != yes]" +
-            // not any motorroads
-            "[motorroad != yes]" +
-            // only without sidewalk tags
-            "[!sidewalk][!'sidewalk:left'][!'sidewalk:right'][!'sidewalk:both']" +
-            // not any with very low speed limit because they not very likely to have sidewalks
-            "[maxspeed !~ '^(8|7|6|5|5 mph|walk)$']" +
-            // not any unpaved because of the same reason
-            "[surface !~ '^(" + OsmTaggings.ANYTHING_UNPAVED.joinToString("|") + ")$']" +
-            "[lit = yes]" +
-            // not any explicitly tagged as no pedestrians
-            "[foot != no]" +
-            "[access !~ '^(private|no)$']" +
-            // some roads may be farther than minDistToWays from ways, not tagged with
-            // footway=separate/sidepath but may have a hint that there is a separately tagged
-            // sidewalk
-            "[foot != use_sidepath]" +
-            " -> .streets;\n" +
-            "way[highway ~ '^(path|footway|cycleway)$'](around.streets: " + minDistToWays + ")" +
-            " -> .ways;\n" +
-            "way.streets(around.ways: " + minDistToWays + ") -> .streets_near_ways;\n" +
-            "(.streets; - .streets_near_ways;);\n" +
-            getQuestPrintStatement()
-    }
-
-    override fun isApplicableTo(element: Element): Boolean? = null
+    override fun isApplicableTo(element: Element): Boolean =
+        roadsFilter.matches(element)
+        && (untaggedRoadsFilter.matches(element) || element.hasInvalidOrIncompleteSidewalkTags())
 
     override fun createForm() = AddSidewalkForm()
 
-    override fun applyAnswerTo(answer: SidewalkAnswer, changes: StringMapChangesBuilder) {
-        changes.add("sidewalk", getSidewalkValue(answer))
+    override fun applyAnswerTo(answer: LeftAndRightSidewalk, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        answer.applyTo(tags)
     }
+}
 
-    private fun getSidewalkValue(answer: SidewalkAnswer) = when {
-        answer.left && answer.right -> "both"
-        answer.left ->  "left"
-        answer.right ->  "right"
-        else -> "none"
-    }
+// streets that may have sidewalk tagging
+private val roadsFilter by lazy { """
+    ways with
+      (
+        (
+          highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service|busway
+          and motorroad != yes
+          and expressway != yes
+          and foot != no
+        )
+        or
+        (
+          highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service|busway
+          and (foot ~ yes|designated or bicycle ~ yes|designated)
+        )
+      )
+      and area != yes
+      and access !~ private|no
+""".toElementFilterExpression() }
+
+// streets that do not have sidewalk tagging yet
+/* the filter additionally filters out ways that are unlikely to have sidewalks:
+ *
+ * + unpaved roads
+ * + roads that are probably not developed enough to have sidewalk (i.e. country roads)
+ * + roads with a very low speed limit
+ * + Also, anything explicitly tagged as no pedestrians or explicitly tagged that the sidewalk
+ *   is mapped as a separate way OR that is tagged with that the cycleway is separate. If the
+ *   cycleway is separate, the sidewalk is too for sure
+ */
+private val untaggedRoadsFilter by lazy { """
+    ways with
+      highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential
+      and !sidewalk and !sidewalk:both and !sidewalk:left and !sidewalk:right
+      and (!maxspeed or maxspeed > 9 or maxspeed ~ [A-Z].*)
+      and surface !~ ${UNPAVED_SURFACES.joinToString("|")}
+      and (
+        lit = yes
+        or highway = residential
+        or ~"${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")}" ~ ".*:(urban|.*zone.*|nsl_restricted)"
+        or maxspeed <= 60
+        or (foot ~ yes|designated and highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link)
+      )
+      and ~foot|bicycle|bicycle:backward|bicycle:forward !~ use_sidepath
+      and ~cycleway|cycleway:left|cycleway:right|cycleway:both !~ separate
+""".toElementFilterExpression() }
+
+private fun Element.hasInvalidOrIncompleteSidewalkTags(): Boolean {
+    val sides = parseSidewalkSides(tags) ?: return false
+    if (sides.any { it == INVALID || it == null }) return true
+    return false
 }

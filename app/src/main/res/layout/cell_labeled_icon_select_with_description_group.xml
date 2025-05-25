@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/selectableItemBackground">
+
+    <View
+        android:id="@+id/topDivider"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:background="@color/divider"/>
 
     <RelativeLayout
         android:id="@+id/group_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:padding="6dp"
+        android:layout_below="@id/topDivider"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="1dp"
+        android:padding="4dp"
         android:background="@drawable/image_select_cell_rounded">
 
         <ImageView
@@ -20,7 +28,7 @@
             android:layout_centerVertical="true"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="8dp"
             android:scaleType="fitCenter"
             tools:src="@drawable/ic_building_apartments"
             />
@@ -29,6 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/imageView"
+            android:layout_toStartOf="@id/dropDownArrowImageView"
             android:layout_centerVertical="true"
             android:orientation="vertical">
 
@@ -36,23 +45,25 @@
                 android:id="@+id/textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                style="@style/ImageSelectTitle"
+                style="@style/TitleNextToImage"
                 tools:text="@string/quest_buildingType_residential" />
 
             <TextView
                 android:id="@+id/descriptionView"
-                style="@style/ImageSelectDescription"
+                style="@style/DescriptionNextToImage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 tools:text="@string/quest_buildingType_residential_description" />
 
         </LinearLayout>
 
-    </RelativeLayout>
+        <ImageView
+            android:id="@+id/dropDownArrowImageView"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_arrow_right_96dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"/>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_below="@id/group_container"
-        android:background="@color/divider"/>
+    </RelativeLayout>
 </RelativeLayout>

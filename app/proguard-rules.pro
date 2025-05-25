@@ -1,35 +1,45 @@
 -dontobfuscate
 
--dontwarn org.xmlpull.**
--dontnote org.xmlpull.**
+# Lifecycle
+-keep public class androidx.lifecycle.* {
+    public protected *;
+}
+-keepclassmembers class * {
+    @androidx.lifecycle.OnLifecycleEvent public *;
+}
 
-# https://issuetracker.google.com/issues/37070898
--dontnote android.net.http.*
--dontnote org.apache.commons.codec.**
--dontnote org.apache.http.**
+# just leave my stuff alone
+-keep class de.westnordost.* { *; }
+-keep class de.westnordost.** { *; }
 
-# JTS
-# (we don't use the AWT part of JTS)
--dontwarn java.awt.**
+# see https://github.com/westnordost/StreetComplete/issues/2003
+-keepclassmembers class * implements android.os.Parcelable {
+        public static final ** CREATOR;
+}
 
-# tangram
-# let's just keep everything
--keep class com.mapzen.tangram.** { *; }
+# kotlinx-serialization start ----------------------------------------------------------------------
 
-# kryo
--dontwarn java.beans.**
--dontwarn sun.nio.ch.**
--dontwarn sun.misc.**
--dontwarn java.lang.invoke.SerializedLambda
-# let's just keep everything
--keep class com.esotericsoftware.kryo.** { *; }
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt # core serialization annotations
 
-# evernote/android-job
--dontwarn com.evernote.android.job.gcm.**
--dontwarn com.evernote.android.job.GcmAvailableHelper
+# kotlinx-serialization-json specific. Add this if you have java.lang.NoClassDefFoundError kotlinx.serialization.json.JsonObjectSerializer
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
 
--keep public class com.evernote.android.job.v21.PlatformJobService
--keep public class com.evernote.android.job.v14.PlatformAlarmService
--keep public class com.evernote.android.job.v14.PlatformAlarmReceiver
--keep public class com.evernote.android.job.JobBootReceiver
--keep public class com.evernote.android.job.JobRescheduleService
+# ktor client, see https://youtrack.jetbrains.com/issue/KTOR-5528
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+
+# Change here com.yourcompany.yourpackage
+-keep,includedescriptorclasses class de.westnordost.streetcomplete.**$$serializer { *; }
+-keepclassmembers class de.westnordost.streetcomplete.** {
+    *** Companion;
+}
+-keepclasseswithmembers class de.westnordost.streetcomplete.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# kotlinx-serialization end ------------------------------------------------------------------------

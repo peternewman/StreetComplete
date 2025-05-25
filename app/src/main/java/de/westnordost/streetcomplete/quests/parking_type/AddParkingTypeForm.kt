@@ -1,20 +1,13 @@
 package de.westnordost.streetcomplete.quests.parking_type
 
-import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.quests.AImageListQuestAnswerFragment
-import de.westnordost.streetcomplete.view.Item
+import de.westnordost.streetcomplete.quests.AImageListQuestForm
 
-class AddParkingTypeForm : AImageListQuestAnswerFragment<String,String>() {
+class AddParkingTypeForm : AImageListQuestForm<ParkingType, ParkingType>() {
 
-    override val items = listOf(
-        Item("surface", R.drawable.parking_type_surface, R.string.quest_parkingType_surface),
-        Item("underground", R.drawable.parking_type_underground, R.string.quest_parkingType_underground),
-        Item("multi-storey", R.drawable.parking_type_multistorey, R.string.quest_parkingType_multiStorage)
-    )
-
+    override val items = ParkingType.entries.map { it.asItem() }
     override val itemsPerRow = 3
 
-    override fun onClickOk(selectedItems: List<String>) {
+    override fun onClickOk(selectedItems: List<ParkingType>) {
         applyAnswer(selectedItems.single())
     }
 }

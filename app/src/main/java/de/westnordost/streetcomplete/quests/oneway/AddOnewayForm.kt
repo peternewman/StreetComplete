@@ -1,52 +1,33 @@
 package de.westnordost.streetcomplete.quests.oneway
 
 import android.os.Bundle
-import androidx.annotation.AnyThread
-import android.view.View
-
-import javax.inject.Inject
-
-import de.westnordost.streetcomplete.Injector
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.ElementPolylinesGeometry
-import de.westnordost.streetcomplete.quests.AYesNoQuestAnswerFragment
-import de.westnordost.streetcomplete.quests.StreetSideRotater
-import de.westnordost.streetcomplete.quests.oneway.data.WayTrafficFlowDao
-import kotlinx.android.synthetic.main.quest_street_side_puzzle.*
+import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
+import de.westnordost.streetcomplete.quests.AImageListQuestForm
+import de.westnordost.streetcomplete.util.math.getOrientationAtCenterLineInDegrees
 
-class AddOnewayForm : AYesNoQuestAnswerFragment<OnewayAnswer>() {
+class AddOnewayForm : AImageListQuestForm<OnewayAnswer, OnewayAnswer>() {
 
-    override val contentLayoutResId = R.layout.quest_street_side_puzzle
-    override val contentPadding = false
+    override val items get() =
+        OnewayAnswer.entries.map { it.asItem(requireContext(), wayRotation - mapRotation) }
 
-    private var streetSideRotater: StreetSideRotater? = null
+    override val itemsPerRow = 3
 
-    @Inject internal lateinit var db: WayTrafficFlowDao
+    private var mapRotation: Float = 0f
+    private var wayRotation: Float = 0f
 
-    init {
-        Injector.instance.applicationComponent.inject(this)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        wayRotation = (geometry as ElementPolylinesGeometry).getOrientationAtCenterLineInDegrees()
+        imageSelector.cellLayoutId = R.layout.cell_icon_select_with_label_below
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        puzzleView.showOnlyRightSide()
-
-        puzzleView.setRightSideImageResource(
-            if (db.isForward(osmElement!!.id)!!) R.drawable.ic_oneway_lane
-            else R.drawable.ic_oneway_lane_reverse
-        )
-
-        streetSideRotater = StreetSideRotater(puzzleView, compassNeedle, elementGeometry as ElementPolylinesGeometry)
+    override fun onMapOrientation(rotation: Double, tilt: Double) {
+        mapRotation = rotation.toFloat()
+        imageSelector.items = items
     }
 
-    override fun onClick(answer: Boolean) {
-        // the quest needs the way ID of the element to find out the direction of the oneway
-        applyAnswer(OnewayAnswer(answer, osmElement!!.id))
-    }
-
-    @AnyThread
-    override fun onMapOrientation(rotation: Float, tilt: Float) {
-        streetSideRotater?.onMapOrientation(rotation, tilt)
+    override fun onClickOk(selectedItems: List<OnewayAnswer>) {
+        applyAnswer(selectedItems.first())
     }
 }

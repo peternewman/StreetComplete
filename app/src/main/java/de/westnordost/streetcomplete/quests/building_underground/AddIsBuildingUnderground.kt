@@ -1,28 +1,25 @@
 package de.westnordost.streetcomplete.quests.building_underground
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
-import de.westnordost.streetcomplete.quests.YesNoQuestAnswerFragment
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.BUILDING
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.quests.YesNoQuestForm
 
-class AddIsBuildingUnderground(o: OverpassMapDataDao) : SimpleOverpassQuestType<Boolean>(o) {
+class AddIsBuildingUnderground : OsmFilterQuestType<Boolean>() {
 
-    override val tagFilters = "ways, relations with building and !location and layer~-[0-9]+"
-    override val commitMessage = "Determine whatever building is fully underground"
+    override val elementFilter = "ways, relations with building and layer ~ -[0-9]+ and !location"
+    override val changesetComment = "Determine whether buildings are fully underground"
+    override val wikiLink = "Key:location"
     override val icon = R.drawable.ic_quest_building_underground
+    override val achievements = listOf(BUILDING)
 
-    override fun getTitle(tags: Map<String, String>): Int {
-        val hasName = tags.containsKey("name")
-        return if (hasName)
-            R.string.quest_building_underground_name_title
-        else
-            R.string.quest_building_underground_title
-    }
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_building_underground_title
 
-    override fun createForm() = YesNoQuestAnswerFragment()
+    override fun createForm() = YesNoQuestForm()
 
-    override fun applyAnswerTo(answer: Boolean, changes: StringMapChangesBuilder) {
-        changes.add("location", if (answer) "underground" else "surface")
+    override fun applyAnswerTo(answer: Boolean, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["location"] = if (answer) "underground" else "surface"
     }
 }

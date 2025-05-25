@@ -5,15 +5,17 @@ labels: bug
 
 ---
 
-<!--
-If you are suggesting a new quest, please choose the "Quest suggestion" template.
+<!-- 
+Please provide a clear and concise description of the bug. 
+
+Maybe it is not a bug? Check the FAQ: https://wiki.openstreetmap.org/wiki/StreetComplete/FAQ
 -->
 
-<!-- Add a clear and concise description of what the bug is. -->
-
 **How to Reproduce**
-<!-- Add steps to reproduce this behavior -->
+<!-- Add steps to reproduce this behavior here -->
+
+**Expected Behavior**
+<!-- Add a clear and concise description of what you expected to happen -->
 
 **Versions affected**
-<!-- Add the Android and StreetComplete version -->
-
+<!-- Add the Android and StreetComplete version here. Please use exact version number instead of saying "latest" -->

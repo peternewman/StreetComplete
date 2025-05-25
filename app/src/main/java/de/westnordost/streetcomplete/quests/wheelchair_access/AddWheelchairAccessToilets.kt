@@ -1,26 +1,37 @@
 package de.westnordost.streetcomplete.quests.wheelchair_access
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.WHEELCHAIR
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.updateWithCheckDate
 
-class AddWheelchairAccessToilets(o: OverpassMapDataDao) : SimpleOverpassQuestType<String>(o) {
+class AddWheelchairAccessToilets : OsmFilterQuestType<WheelchairAccess>() {
 
-    override val tagFilters =
-        " nodes, ways with  amenity=toilets and access !~ private|customers and !wheelchair"
-    override val commitMessage = "Add wheelchair access to toilets"
+    override val elementFilter = """
+        nodes, ways with amenity = toilets
+         and access !~ no|private
+         and (
+           !wheelchair
+           or wheelchair != yes and wheelchair older today -4 years
+           or wheelchair older today -8 years
+         )
+    """
+    override val changesetComment = "Specify wheelchair accessibility of toilets"
+    override val wikiLink = "Key:wheelchair"
     override val icon = R.drawable.ic_quest_toilets_wheelchair
+    override val isDeleteElementEnabled = true
+    override val achievements = listOf(WHEELCHAIR)
 
-    override fun getTitle(tags: Map<String, String>) =
-        if (tags.containsKey("name"))
-            R.string.quest_wheelchairAccess_toilets_name_title
-        else
-            R.string.quest_wheelchairAccess_toilets_title
+    override val hint = R.string.quest_wheelchairAccess_description_toilets
+    override val hintImages = listOf(R.drawable.wheelchair_sign)
 
-    override fun createForm() = AddWheelchairAccessToiletsForm()
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_wheelchairAccess_outside_title
 
-    override fun applyAnswerTo(answer: String, changes: StringMapChangesBuilder) {
-        changes.add("wheelchair", answer)
+    override fun createForm() = WheelchairAccessForm()
+
+    override fun applyAnswerTo(answer: WheelchairAccess, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags.updateWithCheckDate("wheelchair", answer.osmValue)
     }
 }

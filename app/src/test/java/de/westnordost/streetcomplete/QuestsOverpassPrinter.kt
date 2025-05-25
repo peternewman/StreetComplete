@@ -1,36 +1,23 @@
 package de.westnordost.streetcomplete
 
-import de.westnordost.osmapi.map.data.BoundingBox
-import de.westnordost.streetcomplete.data.osm.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
-import de.westnordost.streetcomplete.quests.QuestModule
+import de.westnordost.streetcomplete.data.elementfilter.toOverpassQLString
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.quests.questTypeRegistry
+import de.westnordost.streetcomplete.testutils.mock
 
 fun main() {
+    val registry = questTypeRegistry(mock(), mock(), mock())
 
-    val overpassMock: OverpassMapDataDao = mock()
-    on(overpassMock.getAndHandleQuota(any(), any())).then { invocation ->
-        var query = invocation.getArgument(0) as String
-        // make query overpass-turbo friendly
-        query = query
-            .replace("0,0,1,1", "{{bbox}}")
-            .replace("out meta geom 2000;", "out meta geom;")
-        print("```\n$query\n```\n")
-        true
-    }
-
-    val registry = QuestModule.questTypeRegistry(mock(), overpassMock, mock(), mock(), mock(), mock(), mock())
-
-    val bbox = BoundingBox(0.0,0.0,1.0,1.0)
-
-    for (questType in registry.all) {
-        if (questType is OsmElementQuestType) {
-            println("### " + questType.javaClass.simpleName)
-            if (questType is SimpleOverpassQuestType) {
-                val filters = questType.tagFilters.trimIndent()
-                println("<details>\n<summary>Tag Filters</summary>\n\n```\n$filters\n```\n</details>\n")
+    for (questType in registry) {
+        if (questType is OsmElementQuestType<*>) {
+            println("### " + questType.name)
+            if (questType is OsmFilterQuestType<*>) {
+                val query = "[bbox:{{bbox}}];\n" + questType.filter.toOverpassQLString() + "\n out meta geom;"
+                println("```\n$query\n```")
+            } else {
+                println("Not available, see source code")
             }
-            questType.download(bbox, mock())
             println()
         }
     }

@@ -1,29 +1,28 @@
 package de.westnordost.streetcomplete.quests.ferry
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
-import de.westnordost.streetcomplete.quests.YesNoQuestAnswerFragment
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.RARE
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.quests.YesNoQuestForm
+import de.westnordost.streetcomplete.util.ktx.toYesNo
 
-class AddFerryAccessPedestrian(o: OverpassMapDataDao) : SimpleOverpassQuestType<Boolean>(o) {
+class AddFerryAccessPedestrian : OsmFilterQuestType<Boolean>() {
 
-    override val tagFilters = "ways, relations with route=ferry and !foot"
-    override val commitMessage = "Specify ferry access for pedestrians"
+    override val elementFilter = "ways, relations with route = ferry and !foot"
+    override val changesetComment = "Specify ferry access for pedestrians"
+    override val wikiLink = "Tag:route=ferry"
     override val icon = R.drawable.ic_quest_ferry_pedestrian
     override val hasMarkersAtEnds = true
+    override val achievements = listOf(RARE, PEDESTRIAN)
 
-    override fun getTitle(tags: Map<String, String>): Int {
-        val hasName = tags.containsKey("name")
-        return if (hasName)
-            R.string.quest_ferry_pedestrian_name_title
-        else
-            R.string.quest_ferry_pedestrian_title
-    }
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_ferry_pedestrian_title
 
-    override fun createForm() = YesNoQuestAnswerFragment()
+    override fun createForm() = YesNoQuestForm()
 
-    override fun applyAnswerTo(answer: Boolean, changes: StringMapChangesBuilder) {
-        changes.add("foot", if (answer) "yes" else "no")
+    override fun applyAnswerTo(answer: Boolean, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["foot"] = answer.toYesNo()
     }
 }

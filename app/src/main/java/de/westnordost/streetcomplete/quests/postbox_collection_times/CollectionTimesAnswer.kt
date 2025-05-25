@@ -1,6 +1,8 @@
 package de.westnordost.streetcomplete.quests.postbox_collection_times
 
-sealed class CollectionTimesAnswer
+import de.westnordost.osm_opening_hours.model.OpeningHours
 
-data class CollectionTimes(val times:List<WeekdaysTimes>) : CollectionTimesAnswer()
-object NoCollectionTimesSign : CollectionTimesAnswer()
+sealed interface CollectionTimesAnswer
+
+data class CollectionTimes(val times: OpeningHours) : CollectionTimesAnswer
+data object NoCollectionTimesSign : CollectionTimesAnswer

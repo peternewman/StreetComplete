@@ -1,22 +1,32 @@
 package de.westnordost.streetcomplete.quests.religion
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.SimpleOverpassQuestType
-import de.westnordost.streetcomplete.data.osm.changes.StringMapChangesBuilder
-import de.westnordost.streetcomplete.data.osm.download.OverpassMapDataDao
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.osm.Tags
 
-class AddReligionToPlaceOfWorship(o: OverpassMapDataDao) : SimpleOverpassQuestType<String>(o) {
+class AddReligionToPlaceOfWorship : OsmFilterQuestType<Religion>() {
 
-    override val tagFilters =
-        "nodes, ways, relations with amenity=place_of_worship and !religion and name"
-    override val commitMessage = "Add religion for place of worship"
+    override val elementFilter = """
+        nodes, ways, relations with
+        (
+            amenity = place_of_worship
+            or
+            amenity = monastery
+        )
+        and !religion
+    """
+    override val changesetComment = "Specify religion for places of worship"
+    override val wikiLink = "Key:religion"
     override val icon = R.drawable.ic_quest_religion
+    override val achievements = listOf(CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_religion_for_place_of_worship_title
 
     override fun createForm() = AddReligionForm()
 
-    override fun applyAnswerTo(answer: String, changes: StringMapChangesBuilder) {
-        changes.add("religion", answer)
+    override fun applyAnswerTo(answer: Religion, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["religion"] = answer.osmValue
     }
 }
