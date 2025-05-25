@@ -2,14 +2,15 @@ package de.westnordost.streetcomplete.quests.max_height
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CAR
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
 import de.westnordost.streetcomplete.osm.ALL_PATHS
 import de.westnordost.streetcomplete.osm.ALL_ROADS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.util.ktx.containsAny
 import de.westnordost.streetcomplete.util.math.intersects
 
@@ -21,17 +22,32 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
           barrier = height_restrictor
           or amenity = parking_entrance and parking ~ underground|multi-storey
         )
-        and !maxheight and !maxheight:signed and !maxheight:physical
+        and $noMaxHeight
     """.toElementFilterExpression() }
 
     private val roadsWithoutMaxHeightFilter by lazy { """
         ways with
         (
-          highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|track|road
+          highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|track|road|busway
           or (highway = service and access !~ private|no and vehicle !~ private|no)
         )
-        and !maxheight and !maxheight:signed and !maxheight:physical
+        and $noMaxHeight
     """.toElementFilterExpression() }
+
+    private val railwayCrossingsFilter by lazy { """
+        nodes with
+          railway = level_crossing
+          and $noMaxHeight
+    """.toElementFilterExpression() }
+
+    private val electrifiedRailwaysFilter by lazy { """
+        ways with
+          railway and railway != tram
+          and electrified = contact_line
+    """.toElementFilterExpression() }
+    // not trams because people tell me it is extremely unlikely that it is signed - at least
+    // directly at the crossing, anyway. Also, since a tram crosses with a road so often, it is
+    // kind of spammy, especially if the answer is virtually always(?) "not signed"
 
     private val allRoadsFilter by lazy { """
         ways with highway ~ ${ALL_ROADS.joinToString("|")}
@@ -43,48 +59,56 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
 
     private val bridgeFilter by lazy { """
         ways with (
-            highway ~ ${(ALL_ROADS + ALL_PATHS).joinToString("|")}
-            or railway ~ rail|light_rail|subway|narrow_gauge|tram|disused|preserved|funicular
-          ) and (
-            bridge and bridge != no
+            (
+              highway ~ ${(ALL_ROADS + ALL_PATHS).joinToString("|")}
+              or railway ~ rail|light_rail|subway|narrow_gauge|tram|disused|preserved|funicular|monorail
+            )
+            and bridge and bridge != no
+          ) or (
+            building = roof
             or man_made = pipeline and location = overhead
           )
           and layer
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add maximum heights"
+    private val noMaxHeight = """
+        !maxheight
+        and !maxheight:signed
+        and !maxheight:physical
+        and (!maxheight:forward or !maxheight:backward)
+        and !maxheight:lanes
+    """
+
+    override val changesetComment = "Specify maximum heights"
     override val wikiLink = "Key:maxheight"
     override val icon = R.drawable.ic_quest_max_height
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(CAR)
+    override val achievements = listOf(CAR)
 
-    override fun getTitle(tags: Map<String, String>): Int {
-        val isBelowBridge = tags["amenity"] != "parking_entrance"
-            && tags["barrier"] != "height_restrictor"
-            && tags["tunnel"] == null
-            && tags["covered"] == null
-            && tags["man_made"] != "pipeline"
-        // only the "below the bridge" situation may need some context
-        return when {
-            isBelowBridge -> R.string.quest_maxheight_below_bridge_title
-            else          -> R.string.quest_maxheight_title
-        }
-    }
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_maxheight_sign_title
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         // amenity = parking_entrance nodes etc. only if they are a vertex in a road
-        val roadsNodeIds = mutableSetOf<Long>()
-        mapData.ways
+        val roadsNodeIds = mapData.ways
             .filter { allRoadsFilter.matches(it) }
-            .flatMapTo(roadsNodeIds) { it.nodeIds }
+            .flatMapTo(HashSet()) { it.nodeIds }
 
         val nodesWithoutHeight = mapData.nodes
-            .filter { roadsNodeIds.contains(it.id) && nodeFilter.matches(it) }
+            .filter { it.id in roadsNodeIds && nodeFilter.matches(it) }
 
+        // railway crossings with railways that have an electrified contact line
+        val electrifiedRailwayNodeIds = mapData.ways
+            .filter { electrifiedRailwaysFilter.matches(it) }
+            .flatMapTo(HashSet()) { it.nodeIds }
+
+        val railwayCrossingNodesWithoutHeight = mapData.nodes
+            .filter { it.id in electrifiedRailwayNodeIds && railwayCrossingsFilter.matches(it) }
+
+        // tunnels without height
         val roadsWithoutHeight = mapData.ways.filter { roadsWithoutMaxHeightFilter.matches(it) }
 
         val tunnelsWithoutHeight = roadsWithoutHeight.filter { tunnelFilter.matches(it) }
 
+        // ways below bridges without height
         val bridges = mapData.ways.filter { bridgeFilter.matches(it) }
 
         val waysBelowBridgesWithoutHeight = roadsWithoutHeight.filter { way ->
@@ -93,7 +117,7 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
 
             // applicable if with any bridge...
             geometry != null && bridges.any { bridge ->
-                val bridgeGeometry = mapData.getWayGeometry(bridge.id) as? ElementPolylinesGeometry
+                val bridgeGeometry = mapData.getWayGeometry(bridge.id)
                 val bridgeLayer = bridge.tags["layer"]?.toIntOrNull() ?: 0
 
                 // , that is in a layer above this way
@@ -105,7 +129,10 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
             }
         }
 
-        return nodesWithoutHeight + tunnelsWithoutHeight + waysBelowBridgesWithoutHeight
+        return nodesWithoutHeight +
+            railwayCrossingNodesWithoutHeight +
+            tunnelsWithoutHeight +
+            waysBelowBridgesWithoutHeight
     }
 
     override fun isApplicableTo(element: Element): Boolean? {
@@ -118,18 +145,20 @@ class AddMaxHeight : OsmElementQuestType<MaxHeightAnswer> {
         // for nodes that may be applicable we cannot finally determine it because that node must be
         // a vertex of a road
         if (nodeFilter.matches(element)) return null
+        // railway crossing
+        if (railwayCrossingsFilter.matches(element)) return null
         return false
     }
 
     override fun createForm() = AddMaxHeightForm()
 
-    override fun applyAnswerTo(answer: MaxHeightAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: MaxHeightAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
             is MaxHeight -> {
                 tags["maxheight"] = answer.value.toOsmValue()
             }
             is NoMaxHeightSign -> {
-                tags["maxheight"] = if (answer.isTallEnough) "default" else "below_default"
+                tags["maxheight:signed"] = "no"
             }
         }
     }

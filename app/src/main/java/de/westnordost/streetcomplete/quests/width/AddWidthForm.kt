@@ -2,23 +2,22 @@ package de.westnordost.streetcomplete.quests.width
 
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isGone
-import androidx.lifecycle.lifecycleScope
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLengthBinding
 import de.westnordost.streetcomplete.osm.ALL_ROADS
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
+import de.westnordost.streetcomplete.osm.Length
+import de.westnordost.streetcomplete.osm.hasDubiousRoadWidth
+import de.westnordost.streetcomplete.quests.AbstractArMeasureQuestForm
 import de.westnordost.streetcomplete.screens.measure.ArSupportChecker
-import de.westnordost.streetcomplete.screens.measure.TakeMeasurementLauncher
 import de.westnordost.streetcomplete.view.controller.LengthInputViewController
-import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
-class AddWidthForm : AbstractQuestFormAnswerFragment<WidthAnswer>() {
+class AddWidthForm : AbstractArMeasureQuestForm<WidthAnswer>() {
 
     override val contentLayoutResId = R.layout.quest_length
     private val binding by contentViewBinding(QuestLengthBinding::bind)
-    private val takeMeasurement = TakeMeasurementLauncher(this)
     private val checkArSupport: ArSupportChecker by inject()
     private var isARMeasurement: Boolean = false
     private lateinit var lengthInput: LengthInputViewController
@@ -31,7 +30,7 @@ class AddWidthForm : AbstractQuestFormAnswerFragment<WidthAnswer>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val isRoad = osmElement!!.tags["highway"] in ALL_ROADS
+        val isRoad = element.tags["highway"] in ALL_ROADS
         val explanation = if (isRoad) getString(R.string.quest_road_width_explanation) else null
         binding.widthExplanationTextView.isGone = explanation == null
         binding.widthExplanationTextView.text = explanation
@@ -41,26 +40,47 @@ class AddWidthForm : AbstractQuestFormAnswerFragment<WidthAnswer>() {
         }
         lengthInput.unitSelectItemResId = R.layout.spinner_item_centered_large
         lengthInput.isCompactMode = true
-        lengthInput.maxFeetDigits = if (isRoad) 3 else 2
-        lengthInput.maxMeterDigits = Pair(if (isRoad) 2 else 1, 2)
+        lengthInput.maxFeetDigits = 3
+        lengthInput.maxMeterDigits = Pair(2, 2)
         lengthInput.selectableUnits = countryInfo.lengthUnits
         lengthInput.onInputChanged = {
             isARMeasurement = false
             checkIsFormComplete()
         }
         binding.measureButton.isGone = !checkArSupport()
-        binding.measureButton.setOnClickListener { lifecycleScope.launch { takeMeasurement() } }
+        binding.measureButton.setOnClickListener { takeMeasurement() }
     }
 
-    private suspend fun takeMeasurement() {
+    private fun takeMeasurement() {
         val lengthUnit = lengthInput.unit ?: return
-        val length = takeMeasurement(requireContext(), lengthUnit, false) ?: return
+        takeMeasurement(lengthUnit, false)
+    }
+
+    override fun onMeasured(length: Length) {
         lengthInput.length = length
         isARMeasurement = true
     }
 
     override fun onClickOk() {
-        applyAnswer(WidthAnswer(lengthInput.length!!, isARMeasurement))
+        val length = lengthInput.length!!
+        val newTags = element.tags + ("width" to length.toMeters().toString())
+        if (hasDubiousRoadWidth(newTags) != true) {
+            applyAnswer(WidthAnswer(length, isARMeasurement))
+        } else {
+            confirmDubiousRoadWidth {
+                applyAnswer(WidthAnswer(length, isARMeasurement))
+            }
+        }
+    }
+
+    private fun confirmDubiousRoadWidth(onConfirmed: () -> Unit) {
+        activity?.let { AlertDialog.Builder(it)
+            .setTitle(R.string.quest_generic_confirmation_title)
+            .setMessage(R.string.quest_road_width_unusualInput_confirmation_description)
+            .setPositiveButton(R.string.quest_generic_confirmation_yes) { _, _ -> onConfirmed() }
+            .setNegativeButton(R.string.quest_generic_confirmation_no, null)
+            .show()
+        }
     }
 
     override fun isFormComplete(): Boolean = lengthInput.length != null

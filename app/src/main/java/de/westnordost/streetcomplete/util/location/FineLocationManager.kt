@@ -6,13 +6,13 @@ import android.location.Location
 import android.location.LocationManager
 import android.location.LocationManager.GPS_PROVIDER
 import android.location.LocationManager.NETWORK_PROVIDER
+import android.os.CancellationSignal
 import android.os.Looper
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.location.LocationListenerCompat
 import androidx.core.location.LocationManagerCompat
-import androidx.core.os.CancellationSignal
 import androidx.core.util.Consumer
 
 /** Convenience wrapper around the location manager with easier API, making use of both the GPS
@@ -53,11 +53,13 @@ class FineLocationManager(context: Context, locationUpdateCallback: (Location) -
     }
 
     @RequiresPermission(ACCESS_FINE_LOCATION)
-    fun requestUpdates(minTime: Long, minDistance: Float) {
-        if (deviceHasGPS)
-            locationManager.requestLocationUpdates(GPS_PROVIDER, minTime, minDistance, locationListener, Looper.getMainLooper())
-        if (deviceHasNetworkLocationProvider)
-            locationManager.requestLocationUpdates(NETWORK_PROVIDER, minTime, minDistance, locationListener, Looper.getMainLooper())
+    fun requestUpdates(minGpsTime: Long, minNetworkTime: Long, minDistance: Float) {
+        if (deviceHasGPS) {
+            locationManager.requestLocationUpdates(GPS_PROVIDER, minGpsTime, minDistance, locationListener, Looper.getMainLooper())
+        }
+        if (deviceHasNetworkLocationProvider) {
+            locationManager.requestLocationUpdates(NETWORK_PROVIDER, minNetworkTime, minDistance, locationListener, Looper.getMainLooper())
+        }
     }
 
     @RequiresPermission(ACCESS_FINE_LOCATION)
@@ -79,45 +81,5 @@ class FineLocationManager(context: Context, locationUpdateCallback: (Location) -
         locationManager.removeUpdates(locationListener)
         gpsCancellationSignal.cancel()
         networkCancellationSignal.cancel()
-    }
-}
-
-// Based on https://web.archive.org/web/20180424190538/https://developer.android.com/guide/topics/location/strategies.html#BestEstimate
-
-private const val TWO_MINUTES = 1000L * 60 * 2
-
-/** Determines whether this Location reading is better than the previous Location fix */
-private fun Location.isBetterThan(previous: Location?): Boolean {
-    // Check whether this is a valid location at all.
-    // Happened once that lat/lon is NaN, maybe issue of that particular device
-    if (this.longitude.isNaN() || this.latitude.isNaN()) return false
-
-    // A new location is always better than no location
-    if (previous == null) return true
-
-    // Check whether the new location fix is newer or older
-    val timeDelta = this.time - previous.time
-    val isMuchNewer = timeDelta > TWO_MINUTES
-    val isMuchOlder = timeDelta < -TWO_MINUTES
-    val isNewer = timeDelta > 0L
-
-    // Check whether the new location fix is more or less accurate
-    val accuracyDelta = this.accuracy - previous.accuracy
-    val isLessAccurate = accuracyDelta > 0f
-    val isMoreAccurate = accuracyDelta < 0f
-    val isMuchLessAccurate = accuracyDelta > 200f
-
-    val isFromSameProvider = this.provider == previous.provider
-
-    // Determine location quality using a combination of timeliness and accuracy
-    return when {
-        // the user has likely moved
-        isMuchNewer -> true
-        // If the new location is more than two minutes older, it must be worse
-        isMuchOlder -> false
-        isMoreAccurate -> true
-        isNewer && !isLessAccurate -> true
-        isNewer && !isMuchLessAccurate && isFromSameProvider -> true
-        else -> false
     }
 }

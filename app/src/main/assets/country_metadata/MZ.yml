@@ -1,5 +1,7 @@
-# Do not edit. Source files are in /res/country_metadata
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+atmOperators: [BCI, BIM, FNB, Barclays, Standard Bank, Millennium BIM, StandardBank, Moza, Millennium bim, Millennium Bim]
 centerLineStyle: white
+defaultSpeedLimitHasUrbanOrRural: true
 edgeLineStyle: yellow
 hasLivingStreet: true
 isLeftHandTraffic: true
@@ -8,5 +10,4 @@ mobileCountryCode: 643
 noParkingSignStyle: sadc
 noStoppingSignStyle: sadc
 officialLanguages: [pt]
-atmOperators: [BCI, BIM, Barclays, Millennium BIM, FNB, Standard Bank, StandardBank, Moza]
 orchardProduces: [cashew_nut, banana, coconut, tea, tomato, pineapple, guava, mango, mangosteen, papaya, grapefruit, sisal, lemon, lime, coffee, orange]

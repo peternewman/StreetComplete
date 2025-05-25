@@ -1,5 +1,7 @@
-# Do not edit. Source files are in /res/country_metadata
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+atmOperators: [Хаан банк, Хаан, хаан банк, Хаанбанк, Голомт, Төрийн банк, Голомт банк, АТМ, khaan bank, Khan bank, Khan Bank, Khaan bank, Golomt Bank, Худалдаа хөгжлийн банк, Хаан банк АТМ, Хаан Банк, ХХБ, zam, khaanbank, atm, Ger, Aa]
 centerLineStyle: white
+defaultSpeedLimitHasUrbanOrRural: true
 edgeLineStyle: white
 hasLivingStreet: true
 livingStreetSignStyle: russia
@@ -7,6 +9,6 @@ mobileCountryCode: 428
 noParkingLineStyle: dashed yellow
 noStoppingLineStyle: yellow
 officialLanguages: [mn]
-popularReligions: [buddhist, chinese_folk, taoist]
-atmOperators: [Хаан банк, Хаан, Хаанбанк, Голомт, Golomt Bank, АТМ, Голомт банк, Төрийн банк, khaan bank, Khan Bank, ХХБ, Худалдаа хөгжлийн банк, atm, Хаан банк АТМ, Ger, Aa, zam, khaanbank]
 orchardProduces: [hazelnut]
+popularReligions: [buddhist, chinese_folk, taoist]
+postboxesHaveCollectionTimes: true

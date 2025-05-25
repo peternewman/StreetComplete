@@ -1,11 +1,13 @@
 package de.westnordost.streetcomplete.quests.way_lit
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.PEDESTRIAN
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
-import de.westnordost.streetcomplete.osm.updateWithCheckDate
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.changeToSteps
+import de.westnordost.streetcomplete.osm.lit.applyTo
 
 class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
 
@@ -24,9 +26,11 @@ class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
           or highway ~ ${LIT_NON_RESIDENTIAL_ROADS.joinToString("|")} and
           (
             sidewalk ~ both|left|right|yes|separate
-            or ~${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")} ~ .*urban|.*zone.*
+            or sidewalk:both = yes
+            or sidewalk:left = yes
+            or sidewalk:right = yes
+            or ~"${(MAXSPEED_TYPE_KEYS + "maxspeed").joinToString("|")}" ~ ".*:(urban|.*zone.*|nsl_restricted)"
             or maxspeed <= 60
-            or maxspeed ~ "([1-9]|[1-2][0-9]|3[0-5]) mph"
           )
           or highway ~ ${LIT_WAYS.joinToString("|")}
           or highway = path and (foot = designated or bicycle = designated)
@@ -39,31 +43,35 @@ class AddWayLit : OsmFilterQuestType<WayLitOrIsStepsAnswer>() {
         )
         and (access !~ private|no or (foot and foot !~ private|no))
         and indoor != yes
+        and ~path|footway|cycleway !~ link
     """
 
-    override val changesetComment = "Add whether way is lit"
+    override val changesetComment = "Specify whether ways are lit"
     override val wikiLink = "Key:lit"
     override val icon = R.drawable.ic_quest_lantern
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(PEDESTRIAN)
+    override val achievements = listOf(PEDESTRIAN)
+    override val defaultDisabledMessage = R.string.default_disabled_msg_overlay
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_lit_title
 
     override fun createForm() = WayLitForm()
 
-    override fun applyAnswerTo(answer: WayLitOrIsStepsAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: WayLitOrIsStepsAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
-            is IsActuallyStepsAnswer -> tags["highway"] = "steps"
-            is WayLit -> tags.updateWithCheckDate("lit", answer.osmValue)
+            is IsActuallyStepsAnswer -> tags.changeToSteps()
+            is WayLit -> answer.litStatus.applyTo(tags)
         }
     }
 
     companion object {
-        private val LIT_RESIDENTIAL_ROADS = arrayOf("residential", "living_street", "pedestrian")
+        private val LIT_RESIDENTIAL_ROADS = arrayOf(
+            "residential", "living_street", "pedestrian", "busway"
+        )
 
-        private val LIT_NON_RESIDENTIAL_ROADS =
-            arrayOf("primary", "primary_link", "secondary", "secondary_link",
-                    "tertiary", "tertiary_link", "unclassified", "service")
+        private val LIT_NON_RESIDENTIAL_ROADS = arrayOf(
+            "motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link",
+            "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "service"
+        )
 
         private val LIT_WAYS = arrayOf("footway", "cycleway", "steps")
     }

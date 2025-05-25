@@ -1,29 +1,55 @@
 package de.westnordost.streetcomplete.data
 
-import android.util.Log
 import de.westnordost.streetcomplete.ApplicationConstants
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
+import de.westnordost.streetcomplete.data.logs.LogsController
+import de.westnordost.streetcomplete.data.maptiles.MapTilesDownloader
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.util.ktx.format
-import java.lang.System.currentTimeMillis
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
-/** Deletes old unused data in the background */
+/** Deletes old unused persisted data in the background */
 class Cleaner(
     private val noteController: NoteController,
     private val mapDataController: MapDataController,
-    private val questTypeRegistry: QuestTypeRegistry
+    private val questTypeRegistry: QuestTypeRegistry,
+    private val downloadedTilesController: DownloadedTilesController,
+    private val logsController: LogsController,
+    private val mapTilesDownloader: MapTilesDownloader,
 ) {
-    fun clean() {
-        val time = currentTimeMillis()
+    private val scope = CoroutineScope(SupervisorJob() + CoroutineName("Cleaner") + Dispatchers.IO)
 
-        val oldDataTimestamp = currentTimeMillis() - ApplicationConstants.DELETE_OLD_DATA_AFTER
+    fun cleanOld() = scope.launch {
+        val time = nowAsEpochMilliseconds()
+
+        val oldDataTimestamp = nowAsEpochMilliseconds() - ApplicationConstants.DELETE_OLD_DATA_AFTER
         noteController.deleteOlderThan(oldDataTimestamp, MAX_DELETE_ELEMENTS)
         mapDataController.deleteOlderThan(oldDataTimestamp, MAX_DELETE_ELEMENTS)
-        /* do this after cleaning map data and notes, because some metadata rely on map data */
+        downloadedTilesController.deleteOlderThan(oldDataTimestamp)
+        // do this after cleaning map data and notes, because some metadata rely on map data
         questTypeRegistry.forEach { it.deleteMetadataOlderThan(oldDataTimestamp) }
 
-        Log.i(TAG, "Cleaning took ${((currentTimeMillis() - time) / 1000.0).format(1)}s")
+        val oldLogTimestamp = nowAsEpochMilliseconds() - ApplicationConstants.DELETE_OLD_LOG_AFTER
+        logsController.deleteOlderThan(oldLogTimestamp)
+
+        Log.i(TAG, "Cleaning took ${((nowAsEpochMilliseconds() - time) / 1000.0).format(1)}s")
+    }
+
+    fun cleanAll() = scope.launch {
+        mapTilesDownloader.clear()
+        downloadedTilesController.clear()
+        mapDataController.clear()
+        noteController.clear()
+        logsController.clear()
+        questTypeRegistry.forEach { it.deleteMetadataOlderThan(nowAsEpochMilliseconds()) }
     }
 
     companion object {

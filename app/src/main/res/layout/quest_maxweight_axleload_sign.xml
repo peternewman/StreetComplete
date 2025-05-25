@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="112dp"
     android:layout_height="112dp"
@@ -31,10 +32,12 @@
                 android:background="#0fff"
                 android:gravity="center"
                 android:inputType="numberDecimal"
+                android:digits="0123456789.,"
                 android:textColor="@color/traffic_black"
                 android:textSize="24dp"
                 android:textStyle="bold"
                 android:minEms="1"
+                android:maxLines="1"
                 tools:text="8"
                 tools:ignore="SpUsage" />
 
@@ -57,7 +60,7 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_axleload"
+        app:srcCompat="@drawable/ic_axleload"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"/>
 

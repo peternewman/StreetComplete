@@ -1,33 +1,28 @@
 package de.westnordost.streetcomplete.util
 
-import android.app.Activity
 import android.content.Context
 import android.os.Build
-import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
+import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.BuildConfig
-import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.util.ktx.sendEmail
-import de.westnordost.streetcomplete.util.ktx.toast
-import java.io.IOException
-import java.io.PrintWriter
-import java.io.StringWriter
+import de.westnordost.streetcomplete.data.logs.LogsController
+import de.westnordost.streetcomplete.data.logs.format
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import kotlinx.io.IOException
 import java.util.Locale
 
-/** Exception handler that takes care of asking the user to send the report of the last crash
- *  to the email address [mailReportTo].
+/** Exception handler that takes care of storing the last crash as a file.
  *  When a crash occurs, the stack trace is saved to [crashReportFile] so that it can be accessed
  *  on next startup */
 class CrashReportExceptionHandler(
-    private val appCtx: Context,
-    private val mailReportTo: String,
+    private val context: Context,
+    private val logsController: LogsController,
     private val crashReportFile: String
 ) : Thread.UncaughtExceptionHandler {
 
     private var defaultUncaughtExceptionHandler: Thread.UncaughtExceptionHandler? = null
 
     fun install(): Boolean {
-        val installerPackageName = appCtx.packageManager.getInstallerPackageName(appCtx.packageName)
+        val installerPackageName = context.packageManager.getInstallerPackageName(context.packageName)
         // developer. Don't need this functionality (it might even interfere with unit tests)
         if (installerPackageName == null) return false
         // don't need this for google play users: they have their own crash reports
@@ -39,74 +34,75 @@ class CrashReportExceptionHandler(
         return true
     }
 
-    fun askUserToSendCrashReportIfExists(activityCtx: Activity) {
+    override fun uncaughtException(thread: Thread, error: Throwable) {
+        val report = createErrorReport(error, thread)
+
+        saveCrashReport(report)
+        defaultUncaughtExceptionHandler?.uncaughtException(thread, error)
+    }
+
+    fun popCrashReport(): String? {
         if (hasCrashReport()) {
-            val reportText = readCrashReportFromFile()
+            val errorReport = loadCrashReport()
             deleteCrashReport()
-            askUserToSendErrorReport(activityCtx, R.string.crash_title, reportText)
+            return errorReport
+        } else {
+            return null
         }
     }
 
-    fun askUserToSendErrorReport(activityCtx: Activity, @StringRes titleResourceId: Int, e: Exception) {
-        val stackTrace = StringWriter()
-        e.printStackTrace(PrintWriter(stackTrace))
-        askUserToSendErrorReport(activityCtx, titleResourceId, stackTrace.toString())
+    fun createErrorReport(error: Throwable, thread: Thread? = null): String {
+        val report = StringBuilder("")
+
+        if (thread != null) {
+            report.append("Thread: ${thread.name}")
+        }
+
+        report.append("""
+            App version: ${BuildConfig.VERSION_NAME}
+            Device: ${Build.BRAND}  ${Build.DEVICE}, Android ${Build.VERSION.RELEASE}
+            Locale: ${Locale.getDefault()}
+
+            Stack trace:
+
+            """.trimIndent()
+        )
+
+        report.append(error.stackTraceToString())
+
+        report.append("\nLog:\n")
+        report.append(readLogFromDatabase())
+
+        return report.toString()
     }
 
-    private fun askUserToSendErrorReport(activityCtx: Activity, @StringRes titleResourceId: Int, error: String?) {
-        val report = """
-        Describe how to reproduce it here:
-
-
-
-        $error
-        """.trimIndent()
-
-        AlertDialog.Builder(activityCtx)
-            .setTitle(titleResourceId)
-            .setMessage(R.string.crash_message)
-            .setPositiveButton(R.string.crash_compose_email) { _, _ ->
-                activityCtx.sendEmail(mailReportTo, "Error Report", report)
-            }
-            .setNegativeButton(android.R.string.no) { _, _ ->
-                activityCtx.toast("\uD83D\uDE22")
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-    override fun uncaughtException(t: Thread, e: Throwable) {
-        val stackTrace = StringWriter()
-        e.printStackTrace(PrintWriter(stackTrace))
-        writeCrashReportToFile("""
-        Thread: ${t.name}
-        App version: ${BuildConfig.VERSION_NAME}
-        Device: ${Build.BRAND}  ${Build.DEVICE}, Android ${Build.VERSION.RELEASE}
-        Locale: ${Locale.getDefault()}
-        Stack trace:
-        $stackTrace
-        """.trimIndent())
-        defaultUncaughtExceptionHandler!!.uncaughtException(t, e)
-    }
-
-    private fun writeCrashReportToFile(text: String) {
+    private fun saveCrashReport(text: String) {
         try {
-            appCtx.openFileOutput(crashReportFile, Context.MODE_PRIVATE).bufferedWriter().use { it.write(text) }
+            context.openFileOutput(crashReportFile, Context.MODE_PRIVATE).bufferedWriter().use { it.write(text) }
         } catch (ignored: IOException) {
         }
     }
 
-    private fun hasCrashReport(): Boolean = appCtx.fileList().contains(crashReportFile)
+    private fun hasCrashReport(): Boolean = context.fileList().contains(crashReportFile)
 
-    private fun readCrashReportFromFile(): String? {
+    private fun loadCrashReport(): String? {
         try {
-            return appCtx.openFileInput(crashReportFile).bufferedReader().use { it.readText() }
+            return context.openFileInput(crashReportFile).bufferedReader().use { it.readText() }
         } catch (ignore: IOException) {
         }
         return null
     }
 
     private fun deleteCrashReport() {
-        appCtx.deleteFile(crashReportFile)
+        context.deleteFile(crashReportFile)
+    }
+
+    private fun readLogFromDatabase(): String {
+        val newLogTimestamp =
+            nowAsEpochMilliseconds() - ApplicationConstants.DO_NOT_ATTACH_LOG_TO_CRASH_REPORT_AFTER
+
+        return logsController
+            .getLogs(newerThan = newLogTimestamp)
+            .format()
     }
 }

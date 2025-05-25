@@ -2,14 +2,25 @@ package de.westnordost.streetcomplete.data.meta
 
 import android.content.res.AssetManager
 import de.westnordost.countryboundaries.CountryBoundaries
-import de.westnordost.osmfeatures.AndroidFeatureDictionary
+import de.westnordost.osmfeatures.FeatureDictionary
+import de.westnordost.osmfeatures.create
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import java.util.concurrent.FutureTask
 
 val metadataModule = module {
     single { AbbreviationsByLocale(get()) }
     single { CountryInfos(get()) }
-    single(named("CountryBoundariesFuture")) { FutureTask { CountryBoundaries.load(get<AssetManager>().open("boundaries.ser")) } }
-    single(named("FeatureDictionaryFuture")) { FutureTask { AndroidFeatureDictionary.create(get(), "osmfeatures/default", "osmfeatures/brands") } }
+    single<Lazy<CountryBoundaries>>(named("CountryBoundariesLazy")) {
+        lazy {
+            val source = get<AssetManager>().open("boundaries.ser").asSource().buffered()
+            CountryBoundaries.deserializeFrom(source)
+        }
+    }
+    single<Lazy<FeatureDictionary>>(named("FeatureDictionaryLazy")) {
+        lazy {
+            FeatureDictionary.create(get<AssetManager>(), "osmfeatures/default", "osmfeatures/brands")
+        }
+    }
 }

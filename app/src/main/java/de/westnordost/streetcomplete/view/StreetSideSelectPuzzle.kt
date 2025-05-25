@@ -10,9 +10,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.RelativeLayout
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isGone
+import androidx.core.view.updateLayoutParams
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.ViewSideSelectPuzzleBinding
 import de.westnordost.streetcomplete.util.ktx.getBitmapDrawable
@@ -22,6 +24,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.round
 
 /** A very custom view that conceptually shows the left and right side of a street. Both sides
  *  are clickable.<br>
@@ -90,7 +93,7 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
                 binding.rotateContainer.layoutParams = params
             }
 
-            val streetWidth = if (onlyShowingOneSide) width else width / 2
+            val streetWidth = if (onlyShowingOneSide) width * 2 / 3 else width / 2
             val leftImage = leftImage
             if (!isLeftImageSet && leftImage != null) {
                 setStreetDrawable(leftImage, streetWidth, binding.leftSideImage, true)
@@ -115,11 +118,19 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
         get() = binding.rotateContainer.rotation
         set(value) {
             binding.rotateContainer.rotation = value
-            val scale = abs(cos(value * PI / 180)).toFloat()
-            binding.rotateContainer.scaleX = 1 + scale * 2 / 3f
-            binding.rotateContainer.scaleY = 1 + scale * 2 / 3f
+            val scale = 1 + abs(cos(value * PI / 180)).toFloat() * 2 / 3f
+            binding.rotateContainer.scaleX = scale
+            binding.rotateContainer.scaleY = scale
             binding.leftSideFloatingIcon.rotation = -value
             binding.rightSideFloatingIcon.rotation = -value
+
+            binding.leftSideTextView.rotation = -value
+            binding.rightSideTextView.rotation = -value
+
+            binding.leftSideTextView.scaleX = 1.5f / scale
+            binding.leftSideTextView.scaleY = 1.5f / scale
+            binding.rightSideTextView.scaleX = 1.5f / scale
+            binding.rightSideTextView.scaleY = 1.5f / scale
         }
 
     fun setLeftSideFloatingIcon(image: Image?) {
@@ -185,47 +196,33 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
     fun showOnlyRightSide() {
         isRightImageSet = false
         onlyShowingOneSide = true
-        val params = RelativeLayout.LayoutParams(0, 0)
-        params.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-        binding.strut.layoutParams = params
+        binding.leftSideContainer.isGone = true
+        binding.rightSideContainer.isGone = false
+        binding.strut.updateLayoutParams<ConstraintLayout.LayoutParams> { guidePercent = 1 / 3f }
     }
 
     fun showOnlyLeftSide() {
         isLeftImageSet = false
         onlyShowingOneSide = true
-        val params = RelativeLayout.LayoutParams(0, 0)
-        params.addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
-        binding.strut.layoutParams = params
+        binding.leftSideContainer.isGone = false
+        binding.rightSideContainer.isGone = true
+        binding.strut.updateLayoutParams<ConstraintLayout.LayoutParams> { guidePercent = 2 / 3f }
     }
 
     fun showBothSides() {
         isRightImageSet = false
-        isLeftImageSet = isRightImageSet
+        isLeftImageSet = false
         onlyShowingOneSide = false
-        val params = RelativeLayout.LayoutParams(0, 0)
-        params.addRule(RelativeLayout.CENTER_HORIZONTAL)
-        binding.strut.layoutParams = params
-    }
-
-    fun setOnlyLeftSideClickable() {
-        binding.leftSideContainer.isClickable = true
-        binding.rightSideContainer.isClickable = false
-    }
-
-    fun setOnlyRightSideClickable() {
-        binding.rightSideContainer.isClickable = true
-        binding.leftSideContainer.isClickable = false
-    }
-
-    fun setBothSidesClickable() {
-        binding.rightSideContainer.isClickable = true
-        binding.leftSideContainer.isClickable = true
+        binding.leftSideContainer.isGone = false
+        binding.rightSideContainer.isGone = false
+        binding.strut.updateLayoutParams<ConstraintLayout.LayoutParams> { guidePercent = .5f }
     }
 
     private fun replace(image: Image?, imgView: ImageView, flip180Degrees: Boolean) {
-        val width = if (onlyShowingOneSide) binding.rotateContainer.width else binding.rotateContainer.width / 2
-        if (width == 0) return
-        setStreetDrawable(image, width, imgView, flip180Degrees)
+        val width = binding.rotateContainer.width
+        val streetWidth = if (onlyShowingOneSide) width * 2 / 3 else width / 2
+        if (streetWidth == 0) return
+        setStreetDrawable(image, streetWidth, imgView, flip180Degrees)
     }
 
     private fun setStreetDrawable(image: Image?, width: Int, imageView: ImageView, flip180Degrees: Boolean) {
@@ -240,14 +237,16 @@ class StreetSideSelectPuzzle @JvmOverloads constructor(
 
     private fun scaleToWidth(drawable: BitmapDrawable, width: Int, flip180Degrees: Boolean): BitmapDrawable {
         val m = Matrix()
-        val scale = width.toFloat() / drawable.intrinsicWidth
-        m.postScale(scale, scale)
+        val scaleX = width.toFloat() / drawable.bitmap.width
+        // Scale y like x but snap to the nearest full pixel
+        val scaleY = round(drawable.bitmap.height * scaleX) / drawable.bitmap.height
+        m.postScale(scaleX, scaleY)
         if (flip180Degrees) m.postRotate(180f)
         val bitmap = Bitmap.createBitmap(
             drawable.bitmap, 0, 0,
-            drawable.intrinsicWidth, drawable.intrinsicHeight, m, true
+            drawable.bitmap.width, drawable.bitmap.height, m, true
         )
-        return BitmapDrawable(resources, bitmap)
+        return bitmap.toDrawable(resources)
     }
 }
 

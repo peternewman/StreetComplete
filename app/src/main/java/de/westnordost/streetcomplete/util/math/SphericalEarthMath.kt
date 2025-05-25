@@ -6,7 +6,7 @@ package de.westnordost.streetcomplete.util.math
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.splitAt180thMeridian
-import de.westnordost.streetcomplete.util.ktx.forEachLine
+import de.westnordost.streetcomplete.util.ktx.asSequenceOfPairs
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
@@ -19,15 +19,16 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tan
 
-/** Calculate stuff assuming a spherical Earth. The Earth is not spherical, but it is a good
+/* Calculate stuff assuming a spherical Earth. The Earth is not spherical, but it is a good
  * approximation and totally sufficient for our use here.  */
 
 /** In meters. See https://en.wikipedia.org/wiki/Earth_radius#Mean_radius */
 const val EARTH_RADIUS = 6371000.0
-/** In meters. See https://en.wikipedia.org/wiki/Earth%27s_circumference */
-const val EARTH_CIRCUMFERENCE = 40000000.0
+/** In meters. See https://en.wikipedia.org/wiki/Earth%27s_circumference
+ *  Mean between polar and equator circumference */
+const val EARTH_CIRCUMFERENCE = (40007863.0 + 40075017.0) / 2.0
 
-/* --------------------------------- LatLon extension functions --------------------------------- */
+//region LatLon extension functions
 
 /**
  * Return a bounding box that contains a circle with the given radius around this point. In
@@ -161,15 +162,33 @@ fun LatLon.distanceToArcs(polyLine: List<LatLon>, globeRadius: Double = EARTH_RA
     require(polyLine.isNotEmpty()) { "Polyline must not be empty" }
     if (polyLine.size == 1) return distanceTo(polyLine[0])
 
-    var shortestDistance = Double.MAX_VALUE
-    polyLine.forEachLine { first, second ->
-        val distance = distanceToArc(first, second, globeRadius)
-        if (distance < shortestDistance) shortestDistance = distance
-    }
-    return shortestDistance
+    return polyLine
+        .asSequenceOfPairs()
+        .minOf { distanceToArc(it.first, it.second, globeRadius) }
 }
 
-/* -------------------------------- Polyline extension functions -------------------------------- */
+/** Returns the point on the arc spanned between the given points that is closest to this
+ *  point */
+fun LatLon.nearestPointOnArc(start: LatLon, end: LatLon): LatLon {
+    val alongTrackDistance = alongTrackDistanceTo(start, end)
+    if (alongTrackDistance <= 0) return start
+    val arc = listOf(start, end)
+    return arc.pointOnPolylineFromStart(alongTrackDistance) ?: end
+}
+
+/** Returns the point on the given polyline that is closest to this point */
+fun LatLon.nearestPointOf(polyline: List<LatLon>): LatLon {
+    val arc = nearestArcOf(polyline)
+    return nearestPointOnArc(arc.first, arc.second)
+}
+
+/** Returns the segment of the given polyline that is closest to this point */
+fun LatLon.nearestArcOf(polyline: List<LatLon>): Pair<LatLon, LatLon> =
+    polyline.asSequenceOfPairs().minBy { distanceToArc(it.first, it.second) }
+
+//endregion
+
+//region Polyline extension functions
 
 /** Returns the shortest distance between this polyline and given polyline */
 fun List<LatLon>.distanceTo(polyline: List<LatLon>, globeRadius: Double = EARTH_RADIUS): Double {
@@ -184,15 +203,17 @@ fun List<LatLon>.intersectsWith(polyline: List<LatLon>): Boolean {
     require(size > 1 && polyline.size > 1) { "Polylines must each contain at least two elements" }
     val ns = map { it.toNormalOnSphere() }
     val npolyline = polyline.map { it.toNormalOnSphere() }
-    ns.forEachLine { first, second ->
-        npolyline.forEachLine { otherFirst, otherSecond ->
+    ns.asSequenceOfPairs().forEach { (first, second) ->
+        npolyline.asSequenceOfPairs().forEach { (otherFirst, otherSecond) ->
             val intersection = arcIntersection(first, second, otherFirst, otherSecond)
             if (intersection != null) {
                 // touching endpoints don't count
                 if (
                     first != npolyline.first() && first != npolyline.last()
                     && second != npolyline.first() && second != npolyline.last()
-                ) return true
+                ) {
+                    return true
+                }
             }
         }
     }
@@ -200,14 +221,13 @@ fun List<LatLon>.intersectsWith(polyline: List<LatLon>): Boolean {
 }
 
 /** Returns whether the arc spanned between p1 and p2 intersects with the arc spanned by p2 and p4 */
-fun intersectionOf(p1: LatLon, p2: LatLon, p3: LatLon, p4: LatLon): LatLon? {
-    return arcIntersection(
+fun intersectionOf(p1: LatLon, p2: LatLon, p3: LatLon, p4: LatLon): LatLon? =
+    arcIntersection(
         p1.toNormalOnSphere(),
         p2.toNormalOnSphere(),
         p3.toNormalOnSphere(),
         p4.toNormalOnSphere()
     )?.toLatLon()
-}
 
 /** Returns a bounding box that contains all points */
 fun Iterable<LatLon>.enclosingBoundingBox(): BoundingBox {
@@ -218,41 +238,49 @@ fun Iterable<LatLon>.enclosingBoundingBox(): BoundingBox {
     var minLonOffset = 0.0
     var maxLatOffset = 0.0
     var maxLonOffset = 0.0
+    var minLat = origin.latitude
+    var minLon = origin.longitude
+    var maxLat = origin.latitude
+    var maxLon = origin.longitude
     while (it.hasNext()) {
         val pos = it.next()
         // calculate with offsets here to properly handle 180th meridian
-        val lat = pos.latitude - origin.latitude
-        val lon = normalizeLongitude(pos.longitude - origin.longitude)
-        if (lat < minLatOffset) minLatOffset = lat
-        if (lon < minLonOffset) minLonOffset = lon
-        if (lat > maxLatOffset) maxLatOffset = lat
-        if (lon > maxLonOffset) maxLonOffset = lon
+        val latOffset = pos.latitude - origin.latitude
+        val lonOffset = normalizeLongitude(pos.longitude - origin.longitude)
+        if (latOffset < minLatOffset) {
+            minLatOffset = latOffset
+            minLat = pos.latitude
+        }
+        if (lonOffset < minLonOffset) {
+            minLonOffset = lonOffset
+            minLon = pos.longitude
+        }
+        if (latOffset > maxLatOffset) {
+            maxLatOffset = latOffset
+            maxLat = pos.latitude
+        }
+        if (lonOffset > maxLonOffset) {
+            maxLonOffset = lonOffset
+            maxLon = pos.longitude
+        }
     }
-    return BoundingBox(
-        origin.latitude + minLatOffset,
-        normalizeLongitude(origin.longitude + minLonOffset),
-        origin.latitude + maxLatOffset,
-        normalizeLongitude(origin.longitude + maxLonOffset)
-    )
+    return BoundingBox(minLat, minLon, maxLat, maxLon)
 }
 
 /** Returns the distance covered by this polyline */
-fun List<LatLon>.measuredLength(globeRadius: Double = EARTH_RADIUS): Double {
-    if (isEmpty()) return 0.0
-    var length = 0.0
-    forEachLine { first, second ->
-        length += first.distanceTo(second, globeRadius)
+fun List<LatLon>.measuredLength(globeRadius: Double = EARTH_RADIUS): Double =
+    asSequenceOfPairs().sumOf { (first, second) ->
+        first.distanceTo(second, globeRadius)
     }
-    return length
-}
 
 /** Returns the line around the center point of this polyline
- *  @throws IllegalArgumentException if list is empty  */
+ *  @throws IllegalArgumentException if list is empty
+ */
 fun List<LatLon>.centerLineOfPolyline(globeRadius: Double = EARTH_RADIUS): Pair<LatLon, LatLon> {
     require(size >= 2) { "positions list must contain at least 2 elements" }
     var halfDistance = measuredLength() / 2
 
-    forEachLine { first, second ->
+    asSequenceOfPairs().forEach { (first, second) ->
         halfDistance -= first.distanceTo(second, globeRadius)
         if (halfDistance <= 0) {
             return Pair(first, second)
@@ -263,6 +291,7 @@ fun List<LatLon>.centerLineOfPolyline(globeRadius: Double = EARTH_RADIUS): Pair<
 
 /**
  * Returns the center point of this polyline
+ * @throws IllegalArgumentException if list is empty
  */
 fun List<LatLon>.centerPointOfPolyline(globeRadius: Double = EARTH_RADIUS): LatLon {
     require(isNotEmpty()) { "list is empty" }
@@ -273,37 +302,57 @@ fun List<LatLon>.centerPointOfPolyline(globeRadius: Double = EARTH_RADIUS): LatL
 /**
  * Returns the point the distance into the polyline. Null if the polyline is not long enough.
  */
-fun List<LatLon>.pointOnPolylineFromStart(distance: Double): LatLon? {
-    return pointOnPolyline(distance, false)
-}
+fun List<LatLon>.pointOnPolylineFromStart(distance: Double): LatLon? =
+    pointsOnPolyline(false, distance).firstOrNull()
+
+/**
+ * Returns the points the distances into the polyline. Returns less points if the polyline is not
+ * long enough.
+ */
+fun List<LatLon>.pointsOnPolylineFromStart(distances: List<Double>): List<LatLon> =
+    pointsOnPolyline(false, *distances.toDoubleArray())
 
 /**
  * Returns the point the distance into the polyline, starting from the end. Null if the polyline is
  * not long enough.
  */
-fun List<LatLon>.pointOnPolylineFromEnd(distance: Double): LatLon? {
-    return pointOnPolyline(distance, true)
-}
+fun List<LatLon>.pointOnPolylineFromEnd(distance: Double): LatLon? =
+    pointsOnPolyline(true, distance).firstOrNull()
 
-private fun List<LatLon>.pointOnPolyline(distance: Double, fromEnd: Boolean): LatLon? {
+/**
+ * Returns the points the distances into the polyline, starting from the end. Returns less points if
+ * the polyline is not long enough.
+ */
+fun List<LatLon>.pointsOnPolylineFromEnd(distances: List<Double>): List<LatLon> =
+    pointsOnPolyline(true, *distances.toDoubleArray())
+
+private fun List<LatLon>.pointsOnPolyline(fromEnd: Boolean, vararg distances: Double): List<LatLon> {
+    if (distances.isEmpty()) return emptyList()
     val list = if (fromEnd) this.asReversed() else this
+    distances.sort()
+    var i = 0
     var d = 0.0
-    list.forEachLine { first, second ->
+    val result = ArrayList<LatLon>(distances.size)
+    list.asSequenceOfPairs().forEach { (first, second) ->
         val segmentDistance = first.distanceTo(second)
         if (segmentDistance > 0) {
             d += segmentDistance
-            if (d >= distance) {
-                val ratio = (d - distance) / segmentDistance
+            while (d >= distances[i]) {
+                val ratio = (d - distances[i]) / segmentDistance
                 val lat = second.latitude - ratio * (second.latitude - first.latitude)
                 val lon = normalizeLongitude(second.longitude - ratio * normalizeLongitude(second.longitude - first.longitude))
-                return LatLon(lat, lon)
+                result.add(LatLon(lat, lon))
+                ++i
+                if (i == distances.size) return result
             }
         }
     }
-    return null
+    return result
 }
 
-/* --------------------------------- Polygon extension functions -------------------------------- */
+//endregion
+
+//region Polygon extension functions
 
 /**
  * Returns the center point of the given polygon
@@ -317,7 +366,7 @@ fun List<LatLon>.centerPointOfPolygon(): LatLon {
     var lat = 0.0
     var area = 0.0
     val origin = first()
-    forEachLine { first, second ->
+    asSequenceOfPairs().forEach { (first, second) ->
         // calculating with offsets to avoid rounding imprecision and 180th meridian problem
         val dx1 = normalizeLongitude(first.longitude - origin.longitude)
         val dy1 = first.latitude - origin.latitude
@@ -330,10 +379,14 @@ fun List<LatLon>.centerPointOfPolygon(): LatLon {
     }
     area *= 3.0
 
-    return if (area == 0.0) origin else LatLon(
-        lat / area + origin.latitude,
-        normalizeLongitude(lon / area + origin.longitude)
-    )
+    return if (area == 0.0) {
+        origin
+    } else {
+        LatLon(
+            lat / area + origin.latitude,
+            normalizeLongitude(lon / area + origin.longitude)
+        )
+    }
 }
 
 /**
@@ -346,7 +399,7 @@ fun LatLon.isInPolygon(polygon: List<LatLon>): Boolean {
     var lastWasIntersectionAtVertex = false
     val lon = longitude
     val lat = latitude
-    polygon.forEachLine { first, second ->
+    polygon.asSequenceOfPairs().forEach { (first, second) ->
         val lat0 = first.latitude
         val lat1 = second.latitude
         // scanline check, disregard line segments parallel to the cast ray
@@ -377,16 +430,14 @@ private fun inside(v: Double, bound0: Double, bound1: Double): Boolean =
  * Returns the area of a this multipolygon, assuming the outer shell is defined counterclockwise and
  * any holes are defined clockwise
  */
-fun List<List<LatLon>>.measuredMultiPolygonArea(globeRadius: Double = EARTH_RADIUS): Double {
-    return sumOf { it.measuredAreaSigned(globeRadius) }
-}
+fun List<List<LatLon>>.measuredMultiPolygonArea(globeRadius: Double = EARTH_RADIUS): Double =
+    sumOf { it.measuredAreaSigned(globeRadius) }
 
 /**
  * Returns the area of a this polygon
  */
-fun List<LatLon>.measuredArea(globeRadius: Double = EARTH_RADIUS): Double {
-    return abs(measuredAreaSigned(globeRadius))
-}
+fun List<LatLon>.measuredArea(globeRadius: Double = EARTH_RADIUS): Double =
+    abs(measuredAreaSigned(globeRadius))
 
 /**
  * Returns the signed area of a this polygon. If it is defined counterclockwise, it'll return
@@ -399,7 +450,7 @@ fun List<LatLon>.measuredAreaSigned(globeRadius: Double = EARTH_RADIUS): Double 
     var area = 0.0
     /* The algorithm is basically the same as for the planar case, only the calculation of the area
      * for each polygon edge is the polar triangle area */
-    forEachLine { first, second ->
+    asSequenceOfPairs().forEach { (first, second) ->
         area += polarTriangleArea(
             first.latitude.toRadians(),
             first.longitude.toRadians(),
@@ -436,7 +487,7 @@ fun List<LatLon>.isRingDefinedClockwise(): Boolean {
 
     var sum = 0.0
     val origin = first()
-    forEachLine { first, second ->
+    asSequenceOfPairs().forEach { (first, second) ->
         // calculating with offsets to handle 180th meridian
         val lon0 = normalizeLongitude(first.longitude - origin.longitude)
         val lat0 = first.latitude - origin.latitude
@@ -447,7 +498,9 @@ fun List<LatLon>.isRingDefinedClockwise(): Boolean {
     return sum > 0
 }
 
-/* ------------------------------ Bounding Box extension functions  ----------------------------- */
+//endregion
+
+//region Bounding Box extension functions
 
 /** Returns the area enclosed by this bbox */
 fun BoundingBox.area(globeRadius: Double = EARTH_RADIUS): Double {
@@ -457,21 +510,19 @@ fun BoundingBox.area(globeRadius: Double = EARTH_RADIUS): Double {
 }
 
 /** Returns a new bounding box that is [radius] larger than this bounding box */
-fun BoundingBox.enlargedBy(radius: Double, globeRadius: Double = EARTH_RADIUS): BoundingBox {
-    return BoundingBox(
+fun BoundingBox.enlargedBy(radius: Double, globeRadius: Double = EARTH_RADIUS): BoundingBox =
+    BoundingBox(
         min.translate(radius, 225.0, globeRadius),
         max.translate(radius, 45.0, globeRadius)
     )
-}
 
 /** returns whether this bounding box contains the given position */
-fun BoundingBox.contains(pos: LatLon): Boolean {
-    return if (crosses180thMeridian) {
+operator fun BoundingBox.contains(pos: LatLon): Boolean =
+    if (crosses180thMeridian) {
         splitAt180thMeridian().any { it.containsCanonical(pos) }
     } else {
         containsCanonical(pos)
     }
-}
 
 /** returns whether this bounding box contains the given position, assuming the bounding box does
  *  not cross the 180th meridian */
@@ -508,8 +559,8 @@ private fun BoundingBox.isCompletelyInsideCanonical(other: BoundingBox): Boolean
 private inline fun BoundingBox.checkAlignment(
     other: BoundingBox,
     canonicalCheck: (bbox1: BoundingBox, bbox2: BoundingBox) -> Boolean
-): Boolean {
-    return if (crosses180thMeridian) {
+): Boolean =
+    if (crosses180thMeridian) {
         val these = splitAt180thMeridian()
         if (other.crosses180thMeridian) {
             val others = other.splitAt180thMeridian()
@@ -525,7 +576,8 @@ private inline fun BoundingBox.checkAlignment(
             canonicalCheck(this, other)
         }
     }
-}
+
+//endregion
 
 fun createTranslated(latitude: Double, longitude: Double): LatLon {
     var lat = latitude
@@ -551,10 +603,13 @@ private fun Double.toRadians() = this / 180.0 * PI
 private fun Double.toDegrees() = this / PI * 180.0
 
 fun normalizeLongitude(lon: Double): Double {
-    var lon = lon % 360 // lon is now -360..360
-    lon = (lon + 360) % 360 // lon is now 0..360
-    if (lon > 180) lon -= 360 // lon is now -180..180
-    return lon
+    var normalizedLon = lon % 360 // normalizedLon is -360..360
+    if (normalizedLon < -180) {
+        normalizedLon += 360
+    } else if (normalizedLon >= 180) {
+        normalizedLon -= 360
+    }
+    return normalizedLon
 }
 
 /* The following formulas have been adapted from this excellent source:
@@ -638,7 +693,7 @@ private fun angularDistanceToArc(φ1: Double, λ1: Double, φ2: Double, λ2: Dou
 }
 
 /** Returns the signed area of a triangle spanning between the north pole and the two given points.
- * */
+ */
 private fun polarTriangleArea(φ1: Double, λ1: Double, φ2: Double, λ2: Double): Double {
     val tanφ1 = tan((PI / 2 - φ1) / 2)
     val tanφ2 = tan((PI / 2 - φ2) / 2)

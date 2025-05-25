@@ -1,20 +1,20 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload.changesets
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import de.westnordost.streetcomplete.data.download.ConnectionException
-import de.westnordost.streetcomplete.data.user.AuthorizationException
+import de.westnordost.streetcomplete.data.AuthorizationException
+import de.westnordost.streetcomplete.data.ConnectionException
 
 class ChangesetAutoCloserWorker(
-    private val openQuestChangesetsManager: OpenQuestChangesetsManager,
+    private val openChangesetsManager: OpenChangesetsManager,
     context: Context,
     workerParams: WorkerParameters
-) : Worker(context, workerParams) {
+) : CoroutineWorker(context, workerParams) {
 
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
         try {
-            openQuestChangesetsManager.closeOldChangesets()
+            openChangesetsManager.closeOldChangesets()
         } catch (e: ConnectionException) {
             // wasn't able to connect to the server (i.e. connection timeout). Oh well, then,
             // never mind. Could also retry later with Result.retry() but the OSM API closes open

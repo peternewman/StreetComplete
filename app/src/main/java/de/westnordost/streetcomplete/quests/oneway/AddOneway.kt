@@ -2,13 +2,14 @@ package de.westnordost.streetcomplete.quests.oneway
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CAR
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
 import de.westnordost.streetcomplete.osm.ALL_ROADS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.estimateUsableRoadwayWidth
 import de.westnordost.streetcomplete.quests.oneway.OnewayAnswer.BACKWARD
 import de.westnordost.streetcomplete.quests.oneway.OnewayAnswer.FORWARD
@@ -23,18 +24,19 @@ class AddOneway : OsmElementQuestType<OnewayAnswer> {
 
     /** find only those roads eligible for asking for oneway */
     private val elementFilter by lazy { """
-        ways with highway ~ living_street|residential|service|tertiary|unclassified
+        ways with highway ~ living_street|residential|service|tertiary|unclassified|busway
          and width <= 4 and (!lanes or lanes <= 1)
          and !oneway and area != yes and junction != roundabout
          and (access !~ private|no or (foot and foot !~ private|no))
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add whether this road is a one-way road because it is quite slim"
+    override val changesetComment = "Specify whether narrow roads are one-ways"
     override val wikiLink = "Key:oneway"
     override val icon = R.drawable.ic_quest_oneway
     override val hasMarkersAtEnds = true
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(CAR)
+    override val achievements = listOf(CAR)
+
+    override val hint = R.string.quest_arrow_tutorial
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_oneway2_title
 
@@ -54,10 +56,11 @@ class AddOneway : OsmElementQuestType<OnewayAnswer> {
         }
 
         return onewayCandidates.filter {
-            /* ways that are simply at the border of the download bounding box are treated as if
-               they are dead ends. This is fine though, because it only leads to this quest not
-               showing up for those streets (which is better than the other way round)
-            */
+            /*
+                ways that are simply at the border of the download bounding box are treated as if
+                they are dead ends. This is fine though, because it only leads to this quest not
+                showing up for those streets (which is better than the other way round)
+             */
             // check if the way has connections to other roads at both ends
             (connectionCountByNodeIds[it.nodeIds.first()] ?: 0) > 1 &&
             (connectionCountByNodeIds[it.nodeIds.last()] ?: 0) > 1
@@ -80,7 +83,7 @@ class AddOneway : OsmElementQuestType<OnewayAnswer> {
 
     override fun createForm() = AddOnewayForm()
 
-    override fun applyAnswerTo(answer: OnewayAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: OnewayAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         tags["oneway"] = when (answer) {
             FORWARD -> "yes"
             BACKWARD -> "-1"

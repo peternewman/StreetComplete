@@ -7,7 +7,7 @@ import android.widget.Spinner
 import androidx.annotation.LayoutRes
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
-import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.meta.LengthUnit
 import de.westnordost.streetcomplete.osm.Length
@@ -57,7 +57,7 @@ class LengthInputViewController(
         }
 
     /** set/get which units can be selected from the dropdown */
-    var selectableUnits: List<LengthUnit> = LengthUnit.values().toList()
+    var selectableUnits: List<LengthUnit> = LengthUnit.entries
         set(value) {
             field = value
             unitSelect.isEnabled = value.size > 1
@@ -117,9 +117,9 @@ class LengthInputViewController(
         inchesInput.filters = arrayOf(acceptIntRange(0 until 12))
         metersInput.filters = arrayOf(acceptDecimalDigits(3, 2))
 
-        metersInput.addTextChangedListener { onInputChanged?.invoke() }
-        feetInput.addTextChangedListener { onInputChanged?.invoke() }
-        inchesInput.addTextChangedListener { onInputChanged?.invoke() }
+        metersInput.doAfterTextChanged { onInputChanged?.invoke() }
+        feetInput.doAfterTextChanged { onInputChanged?.invoke() }
+        inchesInput.doAfterTextChanged { onInputChanged?.invoke() }
 
         updateInputFieldsVisibility()
     }

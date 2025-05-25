@@ -2,28 +2,21 @@ package de.westnordost.streetcomplete.data.sync
 
 import android.app.Notification
 import android.app.PendingIntent
-import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW
+import androidx.core.app.PendingIntentCompat
 import de.westnordost.streetcomplete.ApplicationConstants.NAME
 import de.westnordost.streetcomplete.ApplicationConstants.NOTIFICATIONS_CHANNEL_SYNC
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.main.MainActivity
 
 /** Creates the notification for syncing in the Android notifications area. Used both by the upload
  *  and by the download service. */
-fun createSyncNotification(context: Context): Notification {
-    val intent = Intent(context, MainActivity::class.java)
-    val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        PendingIntent.getActivity(context, 0, intent, FLAG_IMMUTABLE)
-    } else {
-        PendingIntent.getActivity(context, 0, intent, 0)
-    }
+fun createSyncNotification(context: Context, cancelIntent: PendingIntent): Notification {
     val manager = NotificationManagerCompat.from(context)
     if (manager.getNotificationChannelCompat(NOTIFICATIONS_CHANNEL_SYNC) == null) {
         manager.createNotificationChannel(
@@ -33,11 +26,20 @@ fun createSyncNotification(context: Context): Notification {
         )
     }
 
+    val intent = Intent(context, MainActivity::class.java)
+    intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+    // Intent has to be mutable, otherwise the intent flags defined above are not applied
+    val mainActivityIntent = PendingIntentCompat.getActivity(context, 0, intent, 0, true)
+
     return NotificationCompat.Builder(context, NOTIFICATIONS_CHANNEL_SYNC)
         .setSmallIcon(R.mipmap.ic_notification)
         .setContentTitle(NAME)
-        .setContentText(context.resources.getString(R.string.notification_syncing))
-        .setContentIntent(pendingIntent)
+        .setTicker(context.resources.getString(R.string.notification_syncing))
+        .setContentIntent(cancelIntent)
+        .setOngoing(true)
         .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+        .setContentIntent(mainActivityIntent)
+        .setDeleteIntent(cancelIntent)
+        .addAction(android.R.drawable.ic_delete, context.resources.getString(android.R.string.cancel), cancelIntent)
         .build()
 }

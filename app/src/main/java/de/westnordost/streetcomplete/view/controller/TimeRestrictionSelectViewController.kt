@@ -12,13 +12,14 @@ import de.westnordost.streetcomplete.quests.opening_hours.adapter.OpeningHoursAd
 import de.westnordost.streetcomplete.quests.opening_hours.adapter.OpeningHoursRow
 import de.westnordost.streetcomplete.view.AdapterDataChangedWatcher
 import de.westnordost.streetcomplete.view.OnAdapterItemSelectedListener
+import java.util.Locale
 
 /** Manages inputting a time restriction, either inclusive or exclusive, based on opening hours.
  *
  *  I.e. the user can input...
  *  1. whether it applies all the time, only at specific times or always except at specific times
  *  2. specify the times like opening hours
- *  */
+ */
 class TimeRestrictionSelectViewController(
     private val timeRestrictionsSelect: Spinner,
     private val timesList: RecyclerView,
@@ -36,8 +37,12 @@ class TimeRestrictionSelectViewController(
         set(value) { timesAdapter.regularShoppingDays = value }
         get() = timesAdapter.regularShoppingDays
 
+    var locale: Locale
+        set(value) { timesAdapter.locale = value }
+        get() = timesAdapter.locale
+
     /** which time restrictions are selectable for the user */
-    var selectableTimeRestrictions: List<TimeRestriction> = TimeRestriction.values().toList()
+    var selectableTimeRestrictions: List<TimeRestriction> = TimeRestriction.entries
         set(value) {
             field = value
             timeRestrictionAdapter.clear()
@@ -61,13 +66,15 @@ class TimeRestrictionSelectViewController(
     private val timeRestrictionAdapter = ArrayAdapter(
         timeRestrictionsSelect.context,
         timeRestrictionsSelectItemResId,
-        TimeRestriction.values().map { it.toLocalizedString(timeRestrictionsSelect.context.resources) }.toMutableList()
+        TimeRestriction.entries.map { it.toLocalizedString(timeRestrictionsSelect.context.resources) }.toMutableList()
     )
 
     init {
         timesAdapter.registerAdapterDataObserver(AdapterDataChangedWatcher { onInputChanged?.invoke() })
         timesAdapter.firstDayOfWorkweek = firstDayOfWorkweek
         timesAdapter.regularShoppingDays = regularShoppingDays
+        timesAdapter.locale = locale
+
         timesList.adapter = timesAdapter
         addTimesButton.setOnClickListener { timesAdapter.addNewWeekdays() }
 

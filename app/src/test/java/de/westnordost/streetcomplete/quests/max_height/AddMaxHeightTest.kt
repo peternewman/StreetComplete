@@ -5,13 +5,13 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.osm.LengthInFeetAndInches
 import de.westnordost.streetcomplete.osm.LengthInMeters
 import de.westnordost.streetcomplete.quests.TestMapDataWithGeometry
-import de.westnordost.streetcomplete.quests.verifyAnswer
+import de.westnordost.streetcomplete.quests.answerApplied
 import de.westnordost.streetcomplete.testutils.node
 import de.westnordost.streetcomplete.testutils.p
 import de.westnordost.streetcomplete.testutils.way
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AddMaxHeightTest {
 
@@ -45,6 +45,29 @@ class AddMaxHeightTest {
 
         assertEquals(0, questType.getApplicableElements(mapData).toList().size)
         assertNull(questType.isApplicableTo(parkingEntrance))
+    }
+
+    @Test fun `applicable to railway crossing node that is a vertex of an electrified railway`() {
+        val crossing = node(2, tags = mapOf("railway" to "level_crossing"))
+        val railway = way(1, listOf(1, 2), mapOf(
+            "railway" to "rail",
+            "electrified" to "contact_line"
+        ))
+
+        val mapData = TestMapDataWithGeometry(listOf(railway, crossing))
+
+        assertEquals(1, questType.getApplicableElements(mapData).toList().size)
+        assertNull(questType.isApplicableTo(crossing))
+    }
+
+    @Test fun `not applicable to railway crossing node that is a vertex of a normal railway`() {
+        val crossing = node(2, tags = mapOf("railway" to "level_crossing"))
+        val railway = way(1, listOf(1, 2), mapOf("railway" to "rail"))
+
+        val mapData = TestMapDataWithGeometry(listOf(railway, crossing))
+
+        assertEquals(0, questType.getApplicableElements(mapData).toList().size)
+        assertNull(questType.isApplicableTo(crossing))
     }
 
     @Test fun `applicable to road below bridge`() {
@@ -120,30 +143,23 @@ class AddMaxHeightTest {
     }
 
     @Test fun `apply metric height answer`() {
-        questType.verifyAnswer(
-            MaxHeight(LengthInMeters(3.5)),
-            StringMapEntryAdd("maxheight", "3.5")
+        assertEquals(
+            setOf(StringMapEntryAdd("maxheight", "3.5")),
+            questType.answerApplied(MaxHeight(LengthInMeters(3.5)))
         )
     }
 
     @Test fun `apply imperial height answer`() {
-        questType.verifyAnswer(
-            MaxHeight(LengthInFeetAndInches(10, 6)),
-            StringMapEntryAdd("maxheight", "10'6\"")
+        assertEquals(
+            setOf(StringMapEntryAdd("maxheight", "10'6\"")),
+            questType.answerApplied(MaxHeight(LengthInFeetAndInches(10, 6)))
         )
     }
 
-    @Test fun `apply default height answer`() {
-        questType.verifyAnswer(
-            NoMaxHeightSign(true),
-            StringMapEntryAdd("maxheight", "default")
-        )
-    }
-
-    @Test fun `apply below default height answer`() {
-        questType.verifyAnswer(
-            NoMaxHeightSign(false),
-            StringMapEntryAdd("maxheight", "below_default")
+    @Test fun `apply no height sign answer`() {
+        assertEquals(
+            setOf(StringMapEntryAdd("maxheight:signed", "no")),
+            questType.answerApplied(NoMaxHeightSign)
         )
     }
 }

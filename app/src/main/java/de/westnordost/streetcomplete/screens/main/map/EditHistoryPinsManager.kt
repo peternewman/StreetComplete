@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.screens.main.map
 
-import android.content.res.Resources
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import de.westnordost.streetcomplete.data.edithistory.Edit
@@ -8,9 +7,7 @@ import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.edithistory.ElementEditKey
 import de.westnordost.streetcomplete.data.edithistory.NoteEditKey
-import de.westnordost.streetcomplete.data.edithistory.OsmNoteQuestHiddenKey
-import de.westnordost.streetcomplete.data.edithistory.OsmQuestHiddenKey
-import de.westnordost.streetcomplete.data.edithistory.icon
+import de.westnordost.streetcomplete.data.edithistory.QuestHiddenKey
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestHidden
@@ -18,6 +15,7 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.screens.main.edithistory.icon
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
 import kotlinx.coroutines.CoroutineScope
@@ -31,39 +29,52 @@ import kotlinx.coroutines.withContext
 class EditHistoryPinsManager(
     private val pinsMapComponent: PinsMapComponent,
     private val editHistorySource: EditHistorySource,
-    private val resources: Resources
 ) : DefaultLifecycleObserver {
-
-    /** Switch active-ness of edit history pins layer */
-    var isActive: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value) start() else stop()
-        }
 
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
+    /** Switch visibility of edit history pins layer */
+    var isVisible: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) show() else hide()
+        }
+
+    private var isStarted: Boolean = false
+
     private val editHistoryListener = object : EditHistorySource.Listener {
-        override fun onAdded(edit: Edit) { updatePins() }
-        override fun onSynced(edit: Edit) {}
-        override fun onDeleted(edits: List<Edit>) { updatePins() }
+        override fun onAdded(added: Edit) { updatePins() }
+        override fun onSynced(synced: Edit) {}
+        override fun onDeleted(deleted: List<Edit>) { updatePins() }
         override fun onInvalidated() { updatePins() }
     }
 
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        isStarted = true
+        show()
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        isStarted = false
+        hide()
+    }
+
     override fun onDestroy(owner: LifecycleOwner) {
-        stop()
         viewLifecycleScope.cancel()
     }
 
-    private fun start() {
+    private fun show() {
+        if (!isStarted || !isVisible) return
         updatePins()
         editHistorySource.addListener(editHistoryListener)
     }
 
-    private fun stop() {
-        pinsMapComponent.clear()
+    private fun hide() {
         viewLifecycleScope.coroutineContext.cancelChildren()
+        viewLifecycleScope.launch(Dispatchers.Main) { pinsMapComponent.clear() }
         editHistorySource.removeListener(editHistoryListener)
     }
 
@@ -71,11 +82,11 @@ class EditHistoryPinsManager(
         properties.toEditKey()
 
     private fun updatePins() {
+        if (!isVisible) return
         viewLifecycleScope.launch {
-            if (this@EditHistoryPinsManager.isActive) {
-                val edits = withContext(Dispatchers.IO) { editHistorySource.getAll() }
-                pinsMapComponent.set(createEditPins(edits))
-            }
+            val edits = withContext(Dispatchers.IO) { editHistorySource.getAll() }
+            val pins = createEditPins(edits)
+            pinsMapComponent.set(pins)
         }
     }
 
@@ -83,9 +94,9 @@ class EditHistoryPinsManager(
         edits.mapIndexed { index, edit ->
             Pin(
                 edit.position,
-                resources.getResourceEntryName(edit.icon),
+                edit.icon,
                 edit.toProperties(),
-                edits.size - index // most recent first
+                index // most recent first
             )
         }
 }
@@ -103,24 +114,24 @@ private const val EDIT_TYPE_NOTE = "note"
 private const val EDIT_TYPE_HIDE_OSM_NOTE_QUEST = "hide_osm_note_quest"
 private const val EDIT_TYPE_HIDE_OSM_QUEST = "hide_osm_quest"
 
-private fun Edit.toProperties(): Map<String, String> = when (this) {
-    is ElementEdit -> mapOf(
+private fun Edit.toProperties(): List<Pair<String, String>> = when (this) {
+    is ElementEdit -> listOf(
         MARKER_EDIT_TYPE to EDIT_TYPE_ELEMENT,
         MARKER_ID to id.toString()
     )
-    is NoteEdit -> mapOf(
+    is NoteEdit -> listOf(
         MARKER_EDIT_TYPE to EDIT_TYPE_NOTE,
         MARKER_ID to id.toString()
     )
-    is OsmNoteQuestHidden -> mapOf(
+    is OsmNoteQuestHidden -> listOf(
         MARKER_EDIT_TYPE to EDIT_TYPE_HIDE_OSM_NOTE_QUEST,
         MARKER_NOTE_ID to note.id.toString()
     )
-    is OsmQuestHidden -> mapOf(
+    is OsmQuestHidden -> listOf(
         MARKER_EDIT_TYPE to EDIT_TYPE_HIDE_OSM_QUEST,
         MARKER_ELEMENT_TYPE to elementType.name,
         MARKER_ELEMENT_ID to elementId.toString(),
-        MARKER_QUEST_TYPE to questType::class.simpleName!!
+        MARKER_QUEST_TYPE to questType.name
     )
     else -> throw IllegalArgumentException()
 }
@@ -131,12 +142,12 @@ private fun Map<String, String>.toEditKey(): EditKey? = when (get(MARKER_EDIT_TY
     EDIT_TYPE_NOTE ->
         NoteEditKey(getValue(MARKER_ID).toLong())
     EDIT_TYPE_HIDE_OSM_QUEST ->
-        OsmQuestHiddenKey(OsmQuestKey(
-            getValue(MARKER_ELEMENT_TYPE).let { ElementType.valueOf(it) },
+        QuestHiddenKey(OsmQuestKey(
+            ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
             getValue(MARKER_ELEMENT_ID).toLong(),
             getValue(MARKER_QUEST_TYPE)
         ))
     EDIT_TYPE_HIDE_OSM_NOTE_QUEST ->
-        OsmNoteQuestHiddenKey(OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong()))
+        QuestHiddenKey(OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong()))
     else -> null
 }

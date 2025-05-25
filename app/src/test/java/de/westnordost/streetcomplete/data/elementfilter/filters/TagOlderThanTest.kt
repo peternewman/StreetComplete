@@ -3,9 +3,10 @@ package de.westnordost.streetcomplete.data.elementfilter.filters
 import de.westnordost.streetcomplete.data.elementfilter.dateDaysAgo
 import de.westnordost.streetcomplete.data.elementfilter.matches
 import de.westnordost.streetcomplete.osm.toCheckDateString
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TagOlderThanTest {
     private val oldDate = dateDaysAgo(101f)
@@ -81,5 +82,9 @@ class TagOlderThanTest {
     @Test fun `does not match any new element without relevant tags`() {
         assertFalse(c.matches(mapOf("foo" to "bar"), newDate))
         assertFalse(c.matches(mapOf(), newDate))
+    }
+
+    @Test fun toStringMethod() {
+        assertEquals("opening_hours older ${c.dateFilter}", c.toString())
     }
 }

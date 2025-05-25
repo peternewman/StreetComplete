@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.data.osmnotes.edits
 
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.eq
 import de.westnordost.streetcomplete.testutils.mock
@@ -7,11 +9,11 @@ import de.westnordost.streetcomplete.testutils.note
 import de.westnordost.streetcomplete.testutils.noteEdit
 import de.westnordost.streetcomplete.testutils.on
 import de.westnordost.streetcomplete.testutils.p
-import org.junit.Before
-import org.junit.Test
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 class NoteEditsControllerTest {
 
@@ -19,7 +21,7 @@ class NoteEditsControllerTest {
     private lateinit var db: NoteEditsDao
     private lateinit var listener: NoteEditsSource.Listener
 
-    @Before fun setUp() {
+    @BeforeTest fun setUp() {
         db = mock()
         on(db.delete(anyLong())).thenReturn(true)
         on(db.markSynced(anyLong())).thenReturn(true)
@@ -49,10 +51,11 @@ class NoteEditsControllerTest {
         val note = note(1)
 
         ctrl.markSynced(edit, note)
+        val editSynced = edit.copy(isSynced = true)
 
         verify(db).markSynced(3)
         verify(db, never()).updateNoteId(anyLong(), anyLong())
-        verify(listener).onSyncedEdit(edit)
+        verify(listener).onSyncedEdit(editSynced)
     }
 
     @Test fun `synced with new id`() {
@@ -60,9 +63,22 @@ class NoteEditsControllerTest {
         val note = note(123)
 
         ctrl.markSynced(edit, note)
+        val editSynced = edit.copy(isSynced = true)
 
         verify(db).markSynced(3)
         verify(db).updateNoteId(-100L, 123L)
-        verify(listener).onSyncedEdit(edit)
+        verify(listener).onSyncedEdit(editSynced)
+    }
+
+    @Test fun `update element ids`() {
+        ctrl.updateElementIds(listOf(
+            ElementIdUpdate(ElementType.NODE, -9, 1234),
+            ElementIdUpdate(ElementType.WAY, 4, 999),
+            ElementIdUpdate(ElementType.RELATION, 8, 234),
+        ))
+
+        verify(db).replaceTextInUnsynced("osm.org/node/-9 ", "osm.org/node/1234 ")
+        verify(db).replaceTextInUnsynced("osm.org/way/4 ", "osm.org/way/999 ")
+        verify(db).replaceTextInUnsynced("osm.org/relation/8 ", "osm.org/relation/234 ")
     }
 }

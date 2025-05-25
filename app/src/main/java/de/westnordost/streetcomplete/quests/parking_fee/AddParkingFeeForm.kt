@@ -3,8 +3,8 @@ package de.westnordost.streetcomplete.quests.parking_fee
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestFeeHoursBinding
 import de.westnordost.streetcomplete.databinding.QuestMaxstayBinding
-import de.westnordost.streetcomplete.osm.opening_hours.parser.toOpeningHoursRules
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
+import de.westnordost.streetcomplete.osm.opening_hours.parser.toOpeningHours
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.quests.parking_fee.AddParkingFeeForm.Mode.FEE_AT_HOURS
 import de.westnordost.streetcomplete.quests.parking_fee.AddParkingFeeForm.Mode.FEE_YES_NO
@@ -16,7 +16,7 @@ import de.westnordost.streetcomplete.view.controller.TimeRestriction.EXCEPT_AT_H
 import de.westnordost.streetcomplete.view.controller.TimeRestriction.ONLY_AT_HOURS
 import de.westnordost.streetcomplete.view.controller.TimeRestrictionSelectViewController
 
-class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
+class AddParkingFeeForm : AbstractOsmQuestForm<FeeAndMaxStay>() {
 
     private var feeAtHoursSelect: TimeRestrictionSelectViewController? = null
 
@@ -24,11 +24,14 @@ class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
     private var maxstayAtHoursSelect: TimeRestrictionSelectViewController? = null
 
     override val buttonPanelAnswers get() =
-        if (mode == FEE_YES_NO) listOf(
-            AnswerItem(R.string.quest_generic_hasFeature_no) { applyAnswer(FeeAndMaxStay(HasNoFee)) },
-            AnswerItem(R.string.quest_generic_hasFeature_yes) { applyAnswer(FeeAndMaxStay(HasFee)) }
-        )
-        else emptyList()
+        if (mode == FEE_YES_NO) {
+            listOf(
+                AnswerItem(R.string.quest_generic_hasFeature_no) { applyAnswer(FeeAndMaxStay(HasNoFee)) },
+                AnswerItem(R.string.quest_generic_hasFeature_yes) { applyAnswer(FeeAndMaxStay(HasFee)) }
+            )
+        } else {
+            emptyList()
+        }
 
     override val otherAnswers = listOf(
         AnswerItem(R.string.quest_fee_answer_hours) { mode = FEE_AT_HOURS },
@@ -56,6 +59,7 @@ class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
             ).also {
                 it.firstDayOfWorkweek = countryInfo.firstDayOfWorkweek
                 it.regularShoppingDays = countryInfo.regularShoppingDays
+                it.locale = countryInfo.userPreferredLocale
                 it.onInputChanged = { checkIsFormComplete() }
                 // user already answered that it depends on the time, so don't show the "at any time" option
                 it.selectableTimeRestrictions = listOf(ONLY_AT_HOURS, EXCEPT_AT_HOURS)
@@ -76,6 +80,7 @@ class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
             ).also {
                 it.firstDayOfWorkweek = countryInfo.firstDayOfWorkweek
                 it.regularShoppingDays = countryInfo.regularShoppingDays
+                it.locale = countryInfo.userPreferredLocale
                 it.onInputChanged = { checkIsFormComplete() }
             }
         }
@@ -95,7 +100,7 @@ class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
     override fun onClickOk() {
         when (mode) {
             FEE_AT_HOURS -> {
-                val hours = feeAtHoursSelect!!.times.toOpeningHoursRules()
+                val hours = feeAtHoursSelect!!.times.toOpeningHours()
                 val fee = when (feeAtHoursSelect!!.timeRestriction) {
                     AT_ANY_TIME -> HasFee
                     ONLY_AT_HOURS -> HasFeeAtHours(hours)
@@ -104,19 +109,19 @@ class AddParkingFeeForm : AbstractQuestFormAnswerFragment<FeeAndMaxStay>() {
                 applyAnswer(FeeAndMaxStay(fee))
             }
             MAX_STAY -> {
-                val duration = MaxstayDuration(
+                val duration = MaxStayDuration(
                     maxstayDurationInput!!.durationValue,
                     when (maxstayDurationInput!!.durationUnit) {
-                        DurationUnit.MINUTES -> Maxstay.Unit.MINUTES
-                        DurationUnit.HOURS -> Maxstay.Unit.HOURS
-                        DurationUnit.DAYS -> Maxstay.Unit.DAYS
+                        DurationUnit.MINUTES -> MaxStay.Unit.MINUTES
+                        DurationUnit.HOURS -> MaxStay.Unit.HOURS
+                        DurationUnit.DAYS -> MaxStay.Unit.DAYS
                     }
                 )
-                val hours = maxstayAtHoursSelect!!.times.toOpeningHoursRules()
+                val hours = maxstayAtHoursSelect!!.times.toOpeningHours()
                 val maxstay = when (maxstayAtHoursSelect!!.timeRestriction) {
                     AT_ANY_TIME -> duration
-                    ONLY_AT_HOURS -> MaxstayAtHours(duration, hours)
-                    EXCEPT_AT_HOURS -> MaxstayExceptAtHours(duration, hours)
+                    ONLY_AT_HOURS -> MaxStayAtHours(duration, hours)
+                    EXCEPT_AT_HOURS -> MaxStayExceptAtHours(duration, hours)
                 }
                 applyAnswer(FeeAndMaxStay(HasNoFee, maxstay))
             }

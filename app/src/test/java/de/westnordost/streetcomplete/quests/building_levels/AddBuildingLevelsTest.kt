@@ -2,35 +2,29 @@ package de.westnordost.streetcomplete.quests.building_levels
 
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
 import de.westnordost.streetcomplete.quests.TestMapDataWithGeometry
-import de.westnordost.streetcomplete.quests.verifyAnswer
+import de.westnordost.streetcomplete.quests.answerApplied
 import de.westnordost.streetcomplete.testutils.way
-import org.junit.Assert
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class AddBuildingLevelsTest {
 
     private val questType = AddBuildingLevels()
 
     @Test fun `apply building levels answer`() {
-        questType.verifyAnswer(
-            BuildingLevelsAnswer(5, null),
-            StringMapEntryAdd("building:levels", "5")
+        assertEquals(
+            setOf(StringMapEntryAdd("building:levels", "5")),
+            questType.answerApplied(BuildingLevels(5, null))
         )
     }
 
-    @Test fun `apply building levels and zero roof levels answer`() {
-        questType.verifyAnswer(
-            BuildingLevelsAnswer(5, 0),
-            StringMapEntryAdd("building:levels", "5"),
-            StringMapEntryAdd("roof:levels", "0")
-        )
-    }
-
-    @Test fun `apply building and roof levels answer`() {
-        questType.verifyAnswer(
-            BuildingLevelsAnswer(5, 3),
-            StringMapEntryAdd("building:levels", "5"),
-            StringMapEntryAdd("roof:levels", "3")
+    @Test fun `apply building levels and roof levels answer`() {
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("building:levels", "5"),
+                StringMapEntryAdd("roof:levels", "0")
+            ),
+            questType.answerApplied(BuildingLevels(5, 0))
         )
     }
 
@@ -46,7 +40,7 @@ class AddBuildingLevelsTest {
                 "building" to "industrial"
             ))
         ))
-        Assert.assertEquals(0, questType.getApplicableElements(mapData).toList().size)
+        assertEquals(0, questType.getApplicableElements(mapData).toList().size)
     }
 
     @Test fun `applicable to residential buildings`() {
@@ -55,6 +49,6 @@ class AddBuildingLevelsTest {
                 "building" to "residential"
             ))
         ))
-        Assert.assertEquals(1, questType.getApplicableElements(mapData).toList().size)
+        assertEquals(1, questType.getApplicableElements(mapData).toList().size)
     }
 }

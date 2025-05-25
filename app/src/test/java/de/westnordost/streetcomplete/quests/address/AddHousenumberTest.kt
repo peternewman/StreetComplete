@@ -7,18 +7,20 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
+import de.westnordost.streetcomplete.osm.address.ConscriptionNumber
+import de.westnordost.streetcomplete.osm.address.HouseAndBlockNumber
+import de.westnordost.streetcomplete.osm.address.HouseNumber
+import de.westnordost.streetcomplete.quests.answerApplied
+import de.westnordost.streetcomplete.quests.answerAppliedTo
 import de.westnordost.streetcomplete.quests.createMapData
-import de.westnordost.streetcomplete.quests.verifyAnswer
 import de.westnordost.streetcomplete.testutils.member
 import de.westnordost.streetcomplete.testutils.node
 import de.westnordost.streetcomplete.testutils.p
 import de.westnordost.streetcomplete.testutils.rel
 import de.westnordost.streetcomplete.testutils.way
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AddHousenumberTest {
 
@@ -139,88 +141,62 @@ class AddHousenumberTest {
         assertNull(questType.isApplicableTo(building))
     }
 
-    @Test fun `housenumber regex`() {
-        val r = VALID_HOUSENUMBER_REGEX
-        assertTrue("1".matches(r))
-        assertTrue("1234".matches(r))
-
-        assertTrue("1234a".matches(r))
-        assertTrue("1234/a".matches(r))
-        assertTrue("1234 / a".matches(r))
-        assertTrue("1234 / A".matches(r))
-        assertTrue("1234A".matches(r))
-        assertTrue("1234/9".matches(r))
-        assertTrue("1234 / 9".matches(r))
-
-        assertTrue("12345".matches(r))
-        assertFalse("123456".matches(r))
-        assertFalse("1234 5".matches(r))
-        assertFalse("1234/55".matches(r))
-        assertFalse("1234AB".matches(r))
-    }
-
-    @Test fun `blocknumber regex`() {
-        val r = VALID_BLOCKNUMBER_REGEX
-        assertTrue("1".matches(r))
-        assertTrue("1234".matches(r))
-        assertFalse("12345".matches(r))
-
-        assertTrue("1234a".matches(r))
-        assertTrue("1234 a".matches(r))
-        assertFalse("1234 ab".matches(r))
-    }
-
     @Test fun `apply house number answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(HouseNumber("99b"), null),
-            StringMapEntryAdd("addr:housenumber", "99b")
+        assertEquals(
+            setOf(StringMapEntryAdd("addr:housenumber", "99b")),
+            questType.answerApplied(AddressNumberOrName(HouseNumber("99b"), null))
         )
     }
 
     @Test fun `apply house name answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(null, "La Escalera"),
-            StringMapEntryAdd("addr:housename", "La Escalera")
+        assertEquals(
+            setOf(StringMapEntryAdd("addr:housename", "La Escalera")),
+            questType.answerApplied(AddressNumberOrName(null, "La Escalera"))
         )
     }
 
     @Test fun `apply conscription number answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(ConscriptionNumber("I.123"), null),
-            StringMapEntryAdd("addr:conscriptionnumber", "I.123"),
-            StringMapEntryAdd("addr:housenumber", "I.123")
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("addr:conscriptionnumber", "I.123"),
+                StringMapEntryAdd("addr:housenumber", "I.123")
+            ),
+            questType.answerApplied(AddressNumberOrName(ConscriptionNumber("I.123"), null))
         )
     }
 
     @Test fun `apply conscription and street number answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(ConscriptionNumber("I.123", "12b"), null),
-            StringMapEntryAdd("addr:conscriptionnumber", "I.123"),
-            StringMapEntryAdd("addr:streetnumber", "12b"),
-            StringMapEntryAdd("addr:housenumber", "12b")
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("addr:conscriptionnumber", "I.123"),
+                StringMapEntryAdd("addr:streetnumber", "12b"),
+                StringMapEntryAdd("addr:housenumber", "12b")
+            ),
+            questType.answerApplied(AddressNumberOrName(ConscriptionNumber("I.123", "12b"), null))
         )
     }
 
     @Test fun `apply block and house number answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(HouseAndBlockNumber("12A", "123"), null),
-            StringMapEntryAdd("addr:block_number", "123"),
-            StringMapEntryAdd("addr:housenumber", "12A")
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("addr:block_number", "123"),
+                StringMapEntryAdd("addr:housenumber", "12A")
+            ),
+            questType.answerApplied(AddressNumberOrName(HouseAndBlockNumber("12A", "123"), null))
         )
     }
 
     @Test fun `apply no house number answer`() {
-        questType.verifyAnswer(
-            HouseNumberAndHouseName(null, null),
-            StringMapEntryAdd("nohousenumber", "yes")
+        assertEquals(
+            setOf(StringMapEntryAdd("nohousenumber", "yes")),
+            questType.answerApplied(AddressNumberOrName(null, null))
         )
     }
 
     @Test fun `apply wrong building type answer`() {
-        questType.verifyAnswer(
-            mapOf("building" to "residential"),
-            WrongBuildingType,
-            StringMapEntryModify("building", "residential", "yes")
+        assertEquals(
+            setOf(StringMapEntryModify("building", "residential", "yes")),
+            questType.answerAppliedTo(WrongBuildingType, mapOf("building" to "residential"))
         )
     }
 }

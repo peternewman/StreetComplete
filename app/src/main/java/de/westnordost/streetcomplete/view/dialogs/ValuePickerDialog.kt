@@ -21,7 +21,7 @@ class ValuePickerDialog<T>(
     title: CharSequence? = null,
     @LayoutRes layoutResId: Int = R.layout.dialog_number_picker,
     private val callback: (value: T) -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+) : AlertDialog(context) {
 
     init {
         val view = LayoutInflater.from(context).inflate(layoutResId, null)
@@ -42,7 +42,7 @@ class ValuePickerDialog<T>(
         numberPicker.minValue = 0
         numberPicker.maxValue = values.size - 1
         if (android.os.Build.VERSION.SDK_INT >= 29) {
-            numberPicker.textSize = context.spToPx(32)
+            numberPicker.textSize = context.resources.spToPx(32)
         }
         selectedValue?.let { numberPicker.value = values.indexOf(it) }
         // do not allow keyboard input

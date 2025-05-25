@@ -2,21 +2,20 @@ package de.westnordost.streetcomplete.quests.max_height
 
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isGone
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.view.controller.LengthInputViewController
 
-class AddMaxHeightForm : AbstractQuestFormAnswerFragment<MaxHeightAnswer>() {
+class AddMaxHeightForm : AbstractOsmQuestForm<MaxHeightAnswer>() {
 
     private lateinit var lengthInput: LengthInputViewController
 
     override val contentLayoutResId get() = when (countryInfo.countryCode) {
         "AU", "NZ", "US", "CA" -> R.layout.quest_maxheight_mutcd
+        "FI", "IS", "SE" -> R.layout.quest_maxheight_fi
         else -> R.layout.quest_maxheight
     }
 
@@ -27,9 +26,11 @@ class AddMaxHeightForm : AbstractQuestFormAnswerFragment<MaxHeightAnswer>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val splitWayHint = view.findViewById<TextView>(R.id.splitWayHint)
-        splitWayHint?.text = getString(R.string.quest_maxheight_split_way_hint, getString(R.string.quest_generic_answer_differs_along_the_way))
-        splitWayHint?.isGone = osmElement!!.type == ElementType.NODE
+        if (element.type == ElementType.WAY) {
+            setHint(getString(R.string.quest_maxheight_split_way_hint,
+                getString(R.string.quest_generic_answer_differs_along_the_way)
+            ))
+        }
 
         lengthInput = LengthInputViewController(
             unitSelect = view.findViewById(R.id.heightUnitSelect),
@@ -40,7 +41,7 @@ class AddMaxHeightForm : AbstractQuestFormAnswerFragment<MaxHeightAnswer>() {
             inchesInput = view.findViewById(R.id.inchInput)
         )
         lengthInput.maxFeetDigits = 2
-        lengthInput.maxMeterDigits = Pair(1, 2)
+        lengthInput.maxMeterDigits = Pair(2, 2)
         lengthInput.selectableUnits = countryInfo.lengthUnits
         lengthInput.onInputChanged = { checkIsFormComplete() }
     }
@@ -65,10 +66,10 @@ class AddMaxHeightForm : AbstractQuestFormAnswerFragment<MaxHeightAnswer>() {
     }
 
     private fun confirmNoSign() {
-        activity?.let { AlertDialog.Builder(it)
-            .setMessage(R.string.quest_maxheight_answer_noSign_question)
-            .setPositiveButton(R.string.quest_maxheight_answer_noSign_question_yes) { _, _ -> applyAnswer(NoMaxHeightSign(true)) }
-            .setNegativeButton(R.string.quest_maxheight_answer_noSign_question_no) { _, _ -> applyAnswer(NoMaxHeightSign(false)) }
+        activity?.let { AlertDialog.Builder(requireContext())
+            .setTitle(R.string.quest_generic_confirmation_title)
+            .setPositiveButton(R.string.quest_generic_confirmation_yes) { _, _ -> applyAnswer(NoMaxHeightSign) }
+            .setNegativeButton(R.string.quest_generic_confirmation_no, null)
             .show()
         }
     }

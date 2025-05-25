@@ -1,46 +1,46 @@
 package de.westnordost.streetcomplete.data.user.statistics
 
-import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
-import org.json.JSONObject
-import java.time.OffsetDateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.io.Source
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.io.decodeFromSource
 
-class StatisticsParser(
-    private val questTypeRegistry: QuestTypeRegistry,
-    private val questAliases: List<Pair<String, String>>
-) {
-    fun parse(json: String): Statistics {
-        val obj = JSONObject(json)
-        val questTypesJson = obj.getJSONObject("questTypes")
-        val questTypesByName: MutableMap<String, Int> = mutableMapOf()
-        for (questTypeName in questTypesJson.keys()) {
-            questTypesByName[questTypeName] = questTypesJson.getInt(questTypeName)
-        }
-        mergeQuestAliases(questTypesByName)
-        val questTypes = questTypesByName.mapNotNull {
-            val questType = questTypeRegistry.getByName(it.key)
-            if (questType != null) QuestTypeStatistics(questType, it.value) else null
-        }
+class StatisticsParser(private val typeAliases: List<Pair<String, String>>) {
+    private val jsonParser = Json { ignoreUnknownKeys = true }
 
-        val countriesJson = obj.getJSONObject("countries")
-        val countries: MutableMap<String, Int> = mutableMapOf()
-        for (country in countriesJson.keys()) {
-            countries[country] = countriesJson.getInt(country)
-        }
-        val countryRanksJson = obj.getJSONObject("countryRanks")
-        val countryRanks: MutableMap<String, Int> = mutableMapOf()
-        for (country in countryRanksJson.keys()) {
-            countryRanks[country] = countryRanksJson.getInt(country)
-        }
-        val countriesStatistics = countries.map { CountryStatistics(it.key, it.value, countryRanks[it.key]) }
-        val rank = obj.getInt("rank")
-        val daysActive = obj.getInt("daysActive")
-        val isAnalyzing = obj.getBoolean("isAnalyzing")
-        val lastUpdate = OffsetDateTime.parse(obj.getString("lastUpdate")).toInstant()
-        return Statistics(questTypes, countriesStatistics, rank, daysActive, lastUpdate.toEpochMilli(), isAnalyzing)
+    @OptIn(ExperimentalSerializationApi::class)
+    fun parse(json: Source): Statistics =
+        jsonParser.decodeFromSource<ApiStatistics>(json).toStatistics()
+
+    private fun ApiStatistics.toStatistics() = Statistics(
+        types = parseEditTypeStatistics(questTypes),
+        countries = countries.map { (key, value) ->
+            CountryStatistics(countryCode = key, count = value, rank = countryRanks[key])
+        }.sortedBy(CountryStatistics::countryCode),
+        rank = rank,
+        daysActive = daysActive,
+        currentWeekRank = currentWeekRank,
+        currentWeekTypes = parseEditTypeStatistics(currentWeekQuestTypes),
+        currentWeekCountries = currentWeekCountries.map { (key, value) ->
+            CountryStatistics(countryCode = key, count = value, rank = currentWeekCountryRanks[key])
+        }.sortedBy(CountryStatistics::countryCode),
+        activeDatesRange = activeDatesRange,
+        activeDates = activeDates,
+        lastUpdate = lastUpdate.toEpochMilliseconds(),
+        isAnalyzing = isAnalyzing,
+    )
+
+    private fun parseEditTypeStatistics(input: Map<String, Int>): List<EditTypeStatistics> {
+        val result = input.toMutableMap()
+        mergeTypeAliases(result)
+        return result.map { EditTypeStatistics(it.key, it.value) }
     }
 
-    private fun mergeQuestAliases(map: MutableMap<String, Int>) {
-        for ((oldName, newName) in questAliases) {
+    private fun mergeTypeAliases(map: MutableMap<String, Int>) {
+        for ((oldName, newName) in typeAliases) {
             val count = map[oldName]
             if (count != null) {
                 map.remove(oldName)
@@ -49,3 +49,20 @@ class StatisticsParser(
         }
     }
 }
+
+@Serializable
+private data class ApiStatistics(
+    val questTypes: Map<String, Int>,
+    val countries: Map<String, Int>,
+    val countryRanks: Map<String, Int>,
+    val rank: Int,
+    val currentWeekRank: Int,
+    val currentWeekQuestTypes: Map<String, Int>,
+    val currentWeekCountries: Map<String, Int>,
+    val currentWeekCountryRanks: Map<String, Int>,
+    val daysActive: Int,
+    val activeDatesRange: Int,
+    val activeDates: List<LocalDate>,
+    val lastUpdate: Instant,
+    val isAnalyzing: Boolean,
+)

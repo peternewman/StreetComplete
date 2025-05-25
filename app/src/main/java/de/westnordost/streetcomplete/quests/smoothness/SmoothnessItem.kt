@@ -20,7 +20,7 @@ import de.westnordost.streetcomplete.view.ResText
 import de.westnordost.streetcomplete.view.image_select.DisplayItem
 import de.westnordost.streetcomplete.view.image_select.Item2
 
-fun Array<Smoothness>.toItems(context: Context, surface: String) =
+fun Iterable<Smoothness>.toItems(context: Context, surface: String) =
     mapNotNull { it.asItem(context, surface) }
 
 // return null if not a valid combination
@@ -49,7 +49,7 @@ fun Smoothness.asItem(context: Context, surface: String): DisplayItem<Smoothness
 }
 
 /** return fitting vehicle type emoji that corresponds to the "usable by" column in the wiki */
-val Smoothness.icon get(): @DrawableRes Int = when (this) {
+val Smoothness.icon @DrawableRes get(): Int = when (this) {
     EXCELLENT ->     R.drawable.ic_smoothness_skateboard
     GOOD ->          R.drawable.ic_smoothness_scooter
     INTERMEDIATE ->  R.drawable.ic_smoothness_city_bike

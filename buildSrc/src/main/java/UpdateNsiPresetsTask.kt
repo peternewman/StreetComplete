@@ -6,8 +6,15 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.net.URL
-import java.util.Locale
 
+/** Download and split the brand presets from the name suggestion index by countries they are in:
+ *  Instead of one big presets file, sort those brands that only exist in certain countries into own
+ *  files (presets-DE.json etc.).
+ *
+ *  This is done because the name suggestion index presets JSON became so big (10MB and growing)
+ *  that it really slows down startup time. Many brand presets do not actually need to be loaded at
+ *  all because they exist only in select countries and the user will only be editing usually in one
+ *  country per session anyways. */
 open class UpdateNsiPresetsTask : DefaultTask() {
     @get:Input var targetDir: String? = null
     @get:Input var version: String? = null
@@ -32,8 +39,23 @@ open class UpdateNsiPresetsTask : DefaultTask() {
         // remove presets with locationSets that cannot be parsed by osmfeatures library
         presets.values.retainAll { value ->
             val locationSet = (value as JsonObject)["locationSet"] as? JsonObject
-            val include = locationSet?.get("include") as? JsonArray<*>
-            val exclude = locationSet?.get("exclude") as? JsonArray<*>
+            val include = locationSet?.get("include") as? JsonArray<Any?>
+            val exclude = locationSet?.get("exclude") as? JsonArray<Any?>
+            // remove unsupported includes. This ensures that presets that are *also* shown in
+            // unsupported regions are at least shown in those that are supported (see #6267).
+            // But only if then at least one include is left (because no includes would mean
+            // "available everywhere").
+            if (include != null) {
+                val validIncludes = include.filter { countryCodeIsParsable(it) }
+                if (validIncludes != include && validIncludes.isNotEmpty()) {
+                    include.clear()
+                    include.addAll(validIncludes)
+                }
+            }
+            // ALL (remaining) includes and excludes must be parsable. E.g. a preset that should be
+            // available in all of USA except in a 50km radius around Whateverdale should be
+            // excluded completely, as the alternative would be to also show it in Whateverdale and
+            // that would be a problem (cause there is usually good reason why it was excluded)
             return@retainAll include.orEmpty().all { countryCodeIsParsable(it) }
                 && exclude.orEmpty().all { countryCodeIsParsable(it) }
         }
@@ -45,6 +67,10 @@ open class UpdateNsiPresetsTask : DefaultTask() {
             val exclude = locationSet["exclude"] as? JsonArray<String>
             if (include != null) transform(include)
             if (exclude != null) transform(exclude)
+            // remove "locationSet": { "include": "001" } because that's the default
+            if (include?.singleOrNull() == "001" && exclude == null) {
+                value.remove("locationSet")
+            }
         }
 
         // sort into separate files
@@ -65,7 +91,7 @@ open class UpdateNsiPresetsTask : DefaultTask() {
         }
 
         for ((country, jsonObject) in byCountryMap.entries) {
-            val name = "$targetDir/presets${ if (country != null) "-${country.toUpperCase(Locale.US)}" else "" }.json"
+            val name = "$targetDir/presets${ if (country != null) "-${country.uppercase()}" else "" }.json"
             File(name).writeText(jsonObject.toJsonString())
         }
     }
@@ -112,7 +138,7 @@ private fun expandM49Codes(codes: MutableList<String>) {
         val expandedCodes = M49Codes[cc]
         if (expandedCodes != null) {
             codes.removeAt(i)
-            codes.addAll(i, expandedCodes.map { it.toLowerCase(Locale.US) })
+            codes.addAll(i, expandedCodes.map { it.lowercase() })
         } else {
             ++i
         }

@@ -1,8 +1,12 @@
 package de.westnordost.streetcomplete.data.osm.edits
 
+import de.westnordost.streetcomplete.data.ConflictException
+import de.westnordost.streetcomplete.data.osm.edits.move.MoveNodeAction
+import de.westnordost.streetcomplete.data.osm.edits.move.RevertMoveNodeAction
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryCreator
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometryEntry
+import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
@@ -16,19 +20,21 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataRepository
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometryUpdates
 import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapData
 import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
-import de.westnordost.streetcomplete.data.upload.ConflictException
+import de.westnordost.streetcomplete.data.osm.mapdata.key
+import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.util.math.contains
 import de.westnordost.streetcomplete.util.math.intersect
-import java.util.concurrent.CopyOnWriteArrayList
 
 /** Source for map data. It combines the original data downloaded with the edits made.
  *
  *  This class is threadsafe.
- * */
+ */
 class MapDataWithEditsSource internal constructor(
     private val mapDataController: MapDataController,
     private val elementEditsController: ElementEditsController,
@@ -47,7 +53,7 @@ class MapDataWithEditsSource internal constructor(
         /** Called when all map data has been cleared */
         fun onCleared()
     }
-    private val listeners: MutableList<Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<Listener>()
 
     /* For thread-safety, all access to these three fields is synchronized. Since there is no hell
      * of parallelism, simply any method that somehow accesses these fields (~just about any method
@@ -56,22 +62,61 @@ class MapDataWithEditsSource internal constructor(
     private val updatedElements = HashMap<ElementKey, Element>()
     private val updatedGeometries = HashMap<ElementKey, ElementGeometry?>()
 
+    // onReplacedForBBox may not be called in parallel
+    private val onReplacedForBBoxLock = Any()
+
+    // access to isReplacingForBBox is atomic (didn't want to pull in kotlinx-atomicfu dependency just for this)
+    private val isReplacingForBBoxLock = Any()
+    private var isReplacingForBBox: Boolean = false
+
+    private val updatesWhileReplacingBBox = MapDataWithGeometryUpdates()
+
     private val mapDataListener = object : MapDataController.Listener {
 
         override fun onUpdated(updated: MutableMapDataWithGeometry, deleted: Collection<ElementKey>) {
             val modifiedElements = ArrayList<Pair<Element, ElementGeometry?>>()
             val modifiedDeleted = ArrayList<ElementKey>()
             synchronized(this) {
+                /* We don't want to callOnUpdated if none of the changes affects map data provided
+                 * by MapDataWithEditsSource
+                 * This is the case if
+                 *  * All keys in deleted are already in deletedElements.
+                 *  * The modified versions of all elements in updated are the same before and after
+                 *    rebuildLocalChanges, except for the timestamp (expected to have few ms
+                 *    difference) and version (never updated locally).
+                 *   * No new elements are being added
+                 */
+                val deletedIsUnchanged = deletedElements.containsAll(deleted)
+                val hasNewElements = updated.any { it.key !in updatedElements }
+                val elementsThatMightHaveChangedByKey = updated.mapNotNull { element ->
+                    val key = element.key
+                    if (element.isEqualExceptVersionAndTimestamp(updatedElements[key])) {
+                        null // we already have the updated version, so this element is unchanged
+                    } else {
+                        key to get(element.type, element.id) // elementKey and element as provided by MapDataWithEditsSource
+                    }
+                }
+
                 rebuildLocalChanges()
 
+                /* nothingChanged can be false at this point when e.g. there are two edits on the
+                   same element, and onUpdated is called after the first edit is uploaded. */
+                val nothingChanged = deletedIsUnchanged && !hasNewElements && elementsThatMightHaveChangedByKey.all {
+                    val updatedElement = get(it.first.type, it.first.id)
+                    // old and new elements are equal except version and timestamp, or both are null
+                    it.second?.isEqualExceptVersionAndTimestamp(updatedElement) ?: (updatedElement == null)
+                }
+                if (nothingChanged) {
+                    return
+                }
+
                 for (element in updated) {
-                    val key = ElementKey(element.type, element.id)
-                    // an element contained in the update that was deleted by an edit shall be deleted
+                    val key = element.key
                     if (deletedElements.contains(key)) {
+                        // an element contained in the update that was deleted by an edit shall be deleted
                         modifiedDeleted.add(key)
-                    }
-                    // otherwise, update if it was modified at all
-                    else {
+                    } else {
+                        // otherwise, update if it was modified at all
                         val modifiedElement = updatedElements[key] ?: element
                         val modifiedGeometry = updatedGeometries[key] ?: updated.getGeometry(key.type, key.id)
                         modifiedElements.add(Pair(modifiedElement, modifiedGeometry))
@@ -80,12 +125,11 @@ class MapDataWithEditsSource internal constructor(
 
                 for (key in deleted) {
                     val modifiedElement = updatedElements[key]
-                    // en element that was deleted shall not be deleted but instead added to the updates if it was updated by an edit
                     if (modifiedElement != null) {
+                        // an element that was deleted shall not be deleted but instead added to the updates if it was updated by an edit
                         modifiedElements.add(Pair(modifiedElement, updatedGeometries[key]))
-                    }
-                    // otherwise, pass it through
-                    else {
+                    } else {
+                        // otherwise, pass it through
                         modifiedDeleted.add(key)
                     }
                 }
@@ -102,12 +146,25 @@ class MapDataWithEditsSource internal constructor(
         }
 
         override fun onReplacedForBBox(bbox: BoundingBox, mapDataWithGeometry: MutableMapDataWithGeometry) {
-            synchronized(this) {
-                rebuildLocalChanges()
-                modifyBBoxMapData(bbox, mapDataWithGeometry)
-            }
+            synchronized(onReplacedForBBoxLock) {
+                synchronized(isReplacingForBBoxLock) { isReplacingForBBox = true }
 
-            callOnReplacedForBBox(bbox, mapDataWithGeometry)
+                synchronized(this) {
+                    rebuildLocalChanges()
+                    modifyBBoxMapData(bbox, mapDataWithGeometry)
+                }
+
+                callOnReplacedForBBox(bbox, mapDataWithGeometry)
+
+                // copy data, as updatesWhileReplacingBBox can be modified after the synchronized line below
+                val updated = MutableMapDataWithGeometry(updatesWhileReplacingBBox.updated)
+                val deleted = ArrayList(updatesWhileReplacingBBox.deleted)
+                updatesWhileReplacingBBox.clear()
+
+                synchronized(isReplacingForBBoxLock) { isReplacingForBBox = false }
+
+                callOnUpdated(updated, deleted)
+            }
         }
 
         override fun onCleared() {
@@ -143,24 +200,34 @@ class MapDataWithEditsSource internal constructor(
 
         override fun onDeletedEdits(edits: List<ElementEdit>) {
             val mapData = MutableMapDataWithGeometry()
-            val elementsToDelete: MutableList<ElementKey>
+            val deletedElementKeys: MutableList<ElementKey>
             synchronized(this) {
                 rebuildLocalChanges()
 
-                elementsToDelete = edits.flatMap { elementEditsController.getIdProvider(it.id).getAll() }.toMutableList()
+                deletedElementKeys = edits
+                    .flatMap { elementEditsController.getIdProvider(it.id).getAll() }
+                    .toMutableList()
 
-                for (edit in edits) {
-                    val element = get(edit.elementType, edit.elementId)
+                val editedElementKeys = edits.flatMap { it.action.elementKeys }.toSet()
+
+                for (key in editedElementKeys) {
+                    val element = get(key.type, key.id)
                     if (element != null) {
-                        mapData.put(element, getGeometry(edit.elementType, edit.elementId))
+                        mapData.put(element, getGeometry(key.type, key.id))
                     } else {
                         // element that got edited by the deleted edit not found? Hmm, okay then (not sure if this can happen at all)
-                        elementsToDelete.add(ElementKey(edit.elementType, edit.elementId))
+                        deletedElementKeys.add(key)
+                    }
+                }
+
+                for (edit in edits) {
+                    for (element in getElementsWithChangedGeometry(edit)) {
+                        mapData.put(element, getGeometry(element.type, element.id))
                     }
                 }
             }
 
-            callOnUpdated(updated = mapData, deleted = elementsToDelete)
+            callOnUpdated(updated = mapData, deleted = deletedElementKeys)
         }
     }
 
@@ -170,7 +237,7 @@ class MapDataWithEditsSource internal constructor(
         elementEditsController.addListener(elementEditsListener)
     }
 
-    fun get(type: ElementType, id: Long): Element? = synchronized(this) {
+    override fun get(type: ElementType, id: Long): Element? = synchronized(this) {
         val key = ElementKey(type, id)
         if (deletedElements.contains(key)) return null
 
@@ -211,19 +278,18 @@ class MapDataWithEditsSource internal constructor(
 
     override fun getWayComplete(id: Long): MapData? = synchronized(this) {
         val way = getWay(id) ?: return null
-        val mapData = getWayElements(way) ?: return null
-        mapData.addAll(listOf(way))
-        return mapData
+        val nodes = getWayNodes(way) ?: return null
+        return MutableMapData(nodes + way)
     }
 
-    private fun getWayElements(way: Way): MutableMapData? = synchronized(this) {
+    private fun getWayNodes(way: Way): Collection<Node>? = synchronized(this) {
         val ids = way.nodeIds.toSet()
         val nodes = getNodes(ids)
 
-        /* If the way is (now) not complete, this is not acceptable */
+        // If the way is (now) not complete, this is not acceptable
         if (nodes.size < ids.size) return null
 
-        return MutableMapData(nodes)
+        return nodes
     }
 
     private fun getNodes(ids: Set<Long>): Collection<Node> = synchronized(this) {
@@ -257,7 +323,7 @@ class MapDataWithEditsSource internal constructor(
     private fun getRelationElements(relation: Relation): MutableMapData = synchronized(this) {
         val elements = ArrayList<Element>()
         for (member in relation.members) {
-            /* for way members, also get their nodes */
+            // for way members, also get their nodes
             if (member.type == WAY) {
                 val wayComplete = getWayComplete(member.ref)
                 if (wayComplete != null) {
@@ -283,13 +349,12 @@ class MapDataWithEditsSource internal constructor(
 
         for (element in updatedElements.values) {
             if (element is Way) {
-                // if the updated version of a way contains the node, put/replace the updated way
                 if (element.nodeIds.contains(id)) {
+                    // if the updated version of a way contains the node, put/replace the updated way
                     waysById[element.id] = element
-                }
-                // if the updated version does not contain the node (anymore), we need to remove it
-                // from the output set (=an edit removed that node) - if it was contained at all
-                else {
+                } else {
+                    // if the updated version does not contain the node (anymore), we need to remove it
+                    // from the output set (=an edit removed that node) - if it was contained at all
                     waysById.remove(element.id)
                 }
             }
@@ -320,13 +385,12 @@ class MapDataWithEditsSource internal constructor(
 
         for (element in updatedElements.values) {
             if (element is Relation) {
-                // if the updated version of a relation contains the node, put/replace the updated relation
                 if (element.members.any { it.type == type && it.ref == id }) {
+                    // if the updated version of a relation contains the node, put/replace the updated relation
                     relationsById[element.id] = element
-                }
-                // if the updated version does not contain the node (anymore), we need to remove it
-                // from the output set (=an edit removed that node) - if it was contained at all
-                else {
+                } else {
+                    // if the updated version does not contain the node (anymore), we need to remove it
+                    // from the output set (=an edit removed that node) - if it was contained at all
                     relationsById.remove(element.id)
                 }
             }
@@ -343,22 +407,46 @@ class MapDataWithEditsSource internal constructor(
     /* ------------------------------------------------------------------------------------------ */
 
     private fun modifyBBoxMapData(bbox: BoundingBox, mapData: MutableMapDataWithGeometry) = synchronized(this) {
+        val addWays = ArrayList<Way>()
         for ((key, geometry) in updatedGeometries) {
-            // add the modified data if it is in the bbox
+            // we will deal with nodes at the end
+            if (key.type == NODE) continue
+
             if (geometry != null && geometry.getBounds().intersect(bbox)) {
+                // add the modified data if it is in the bbox
                 val element = updatedElements[key]
                 if (element != null) {
                     mapData.put(element, geometry)
+                    if (element is Way) addWays.add(element)
                 }
-            }
-            // or otherwise remove if it is not (anymore)
-            else {
+            } else {
+                // or otherwise remove if it is not (anymore)
                 mapData.remove(key.type, key.id)
             }
         }
         // and remove elements that have been deleted
         for (key in deletedElements) {
             mapData.remove(key.type, key.id)
+        }
+
+        for (way in addWays) {
+            // !!: It should not be possible that a node referred to by a way is missing,
+            // as when a node is removed, it is removed from the way, too
+            val nodes = getWayNodes(way)!!
+            val geometries = nodes.map { ElementGeometryEntry(it.type, it.id, ElementPointGeometry(it.position)) }
+            mapData.putAll(nodes, geometries)
+        }
+
+        val wayNodes = mapData.ways.flatMapTo(HashSet()) { it.nodeIds }
+        for (node in updatedElements.values) {
+            if (node !is Node) continue
+            // nodes are included if they are either within the bbox or part of a way that is
+            // (partly) within the bbox)
+            if (node.position in bbox || node.id in wayNodes) {
+                mapData.put(node, ElementPointGeometry(node.position))
+            } else {
+                mapData.remove(node.type, node.id)
+            }
         }
     }
 
@@ -374,16 +462,15 @@ class MapDataWithEditsSource internal constructor(
 
     private fun applyEdit(edit: ElementEdit): MapDataUpdates? = synchronized(this) {
         val idProvider = elementEditsController.getIdProvider(edit.id)
-        val editElement = get(edit.elementType, edit.elementId) ?: return null
 
         val mapDataChanges: MapDataChanges
         try {
-            mapDataChanges = edit.action.createUpdates(edit.originalElement, editElement, this, idProvider)
+            mapDataChanges = edit.action.createUpdates(this, idProvider)
         } catch (e: ConflictException) {
             return null
         }
 
-        val deletedKeys = mapDataChanges.deletions.map { ElementKey(it.type, it.id) }
+        val deletedKeys = mapDataChanges.deletions.map { it.key }
         for (key in deletedKeys) {
             deletedElements.add(key)
             updatedElements.remove(key)
@@ -392,15 +479,37 @@ class MapDataWithEditsSource internal constructor(
         /* sorting by element type: first nodes, then ways, then relations. This is important
            because the geometry of (new) nodes is necessary to create the geometry of ways etc
          */
-        val updates = (mapDataChanges.creations + mapDataChanges.modifications).sortedBy { it.type.ordinal }
+        val updates = (
+            mapDataChanges.creations +
+            mapDataChanges.modifications +
+            getElementsWithChangedGeometry(edit)
+        ).sortedBy { it.type.ordinal }
 
         for (element in updates) {
-            val key = ElementKey(element.type, element.id)
+            val key = element.key
             deletedElements.remove(key)
             updatedElements[key] = element
             updatedGeometries[key] = createGeometry(element)
         }
+
         return MapDataUpdates(updated = updates, deleted = deletedKeys)
+    }
+
+    private fun getElementsWithChangedGeometry(edit: ElementEdit): Sequence<Element> {
+        val movedNode = when (edit.action) {
+            is MoveNodeAction -> edit.action.originalNode
+            is RevertMoveNodeAction -> edit.action.originalNode
+            else -> return emptySequence()
+        }
+        return sequence {
+            val waysContainingNode = getWaysForNode(movedNode.id)
+            val relationsContainingNode = getRelationsForNode(movedNode.id)
+            val relationsContainingWayContainingNode = waysContainingNode.flatMap { getRelationsForWay(it.id) }
+
+            yieldAll(waysContainingNode)
+            yieldAll(relationsContainingNode)
+            yieldAll(relationsContainingWayContainingNode)
+        }
     }
 
     private fun createGeometry(element: Element): ElementGeometry? {
@@ -409,8 +518,8 @@ class MapDataWithEditsSource internal constructor(
                 elementGeometryCreator.create(element)
             }
             is Way -> {
-                val wayMapData = getWayElements(element) ?: return null
-                elementGeometryCreator.create(element, wayMapData)
+                val wayNodes = getWayNodes(element) ?: return null
+                elementGeometryCreator.create(element, MutableMapData(wayNodes))
             }
             is Relation -> {
                 val relationMapData = getRelationElements(element)
@@ -426,9 +535,15 @@ class MapDataWithEditsSource internal constructor(
         listeners.remove(listener)
     }
 
-    private fun callOnUpdated(updated: MapDataWithGeometry = MutableMapDataWithGeometry(), deleted: Collection<ElementKey> = emptyList()) {
+    private fun callOnUpdated(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
         if (updated.size == 0 && deleted.isEmpty()) return
         listeners.forEach { it.onUpdated(updated, deleted) }
+
+        synchronized(isReplacingForBBoxLock) {
+            if (isReplacingForBBox) {
+                updatesWhileReplacingBBox.add(updated, deleted)
+            }
+        }
     }
     private fun callOnReplacedForBBox(bbox: BoundingBox, mapDataWithGeometry: MapDataWithGeometry) {
         if (mapDataWithGeometry.size == 0) return
@@ -438,3 +553,10 @@ class MapDataWithEditsSource internal constructor(
         listeners.forEach { it.onCleared() }
     }
 }
+
+private fun Element.isEqualExceptVersionAndTimestamp(element: Element?): Boolean =
+    id == element?.id && tags == element.tags && type == element.type && when (this) {
+        is Node -> position == (element as Node).position
+        is Way -> nodeIds == (element as Way).nodeIds
+        is Relation -> members == (element as Relation).members
+    }

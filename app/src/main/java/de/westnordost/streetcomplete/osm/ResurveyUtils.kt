@@ -1,9 +1,8 @@
 package de.westnordost.streetcomplete.osm
 
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import java.time.DateTimeException
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import de.westnordost.streetcomplete.util.ktx.systemTimeNow
+import de.westnordost.streetcomplete.util.ktx.toLocalDate
+import kotlinx.datetime.LocalDate
 
 /** Returns all the known keys used for recording the date at which the tag with the given key
  *  should be checked again. */
@@ -21,8 +20,10 @@ val LAST_CHECK_DATE_KEYS = listOf(
     "survey_date"
 )
 
-fun LocalDate.toCheckDateString(): String =
-    DateTimeFormatter.ISO_LOCAL_DATE.format(this)
+@Suppress("NOTHING_TO_INLINE")
+inline fun LocalDate.toCheckDateString(): String = this.toString()
+
+fun nowAsCheckDateString(): String = systemTimeNow().toLocalDate().toCheckDateString()
 
 fun String.toCheckDate(): LocalDate? {
     val groups = OSM_CHECK_DATE_REGEX.matchEntire(this)?.groupValues ?: return null
@@ -31,8 +32,8 @@ fun String.toCheckDate(): LocalDate? {
     val day = groups[3].toIntOrNull() ?: 1
 
     return try {
-        LocalDate.of(year, month, day)
-    } catch (e: DateTimeException) {
+        LocalDate(year, month, day)
+    } catch (e: IllegalArgumentException) {
         null
     }
 }
@@ -43,10 +44,11 @@ fun Tags.updateWithCheckDate(key: String, value: String) {
     val previousValue = get(key)
     set(key, value)
     /* if the value is changed, set the check date only if it has been set before. Behavior
-    *  before v32.0 was to delete the check date. However, this destroys data that was
-    *  previously collected by another surveyor - we don't want to destroy other people's data
-    *  */
-    if (previousValue == value || hasCheckDateForKey(key)) {
+     * before v32.0 was to delete the check date. However, this destroys data that was
+     * previously collected by another surveyor - we don't want to destroy other people's data.
+     * Also, to avoid ambiguities, we should also update (existence) check date.
+     */
+    if (previousValue == value || hasCheckDateForKey(key) || hasCheckDate()) {
         updateCheckDateForKey(key)
     }
 }
@@ -54,12 +56,13 @@ fun Tags.updateWithCheckDate(key: String, value: String) {
 /** Set/update solely the check date to today for the given key, this also removes other less
  *  preferred check date keys. */
 fun Tags.updateCheckDateForKey(key: String) {
-    setCheckDateForKey(key, LocalDate.now())
+    setCheckDateForKey(key, systemTimeNow().toLocalDate())
 }
 
 fun Tags.setCheckDateForKey(key: String, date: LocalDate) {
     removeCheckDatesForKey(key)
     set("$SURVEY_MARK_KEY:$key", date.toCheckDateString())
+    if (hasCheckDate()) setCheckDate(date)
 }
 
 /** Return whether a check date is set for the given key */
@@ -74,8 +77,12 @@ fun Tags.removeCheckDatesForKey(key: String) {
 /** Set/update solely the check date for the entire item to today, this also removes other less
  *  preferred check date keys for the entire item. */
 fun Tags.updateCheckDate() {
+    setCheckDate(systemTimeNow().toLocalDate())
+}
+
+fun Tags.setCheckDate(date: LocalDate) {
     removeCheckDates()
-    set(SURVEY_MARK_KEY, LocalDate.now().toCheckDateString())
+    set(SURVEY_MARK_KEY, date.toCheckDateString())
 }
 
 /** Return whether any check dates are set */

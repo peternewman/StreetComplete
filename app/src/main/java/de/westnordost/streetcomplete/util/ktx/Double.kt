@@ -7,3 +7,5 @@ fun Double.toShortString() = if (this % 1 == 0.0) toInt().toString() else toStri
 fun Double.format(digits: Int) = "%.${digits}f".format(null, this)
 
 fun Double.format(locale: Locale, digits: Int) = "%.${digits}f".format(locale, this)
+
+fun Double.truncateTo6Decimals() = (this * 1e6).toInt().toDouble() / 1e6

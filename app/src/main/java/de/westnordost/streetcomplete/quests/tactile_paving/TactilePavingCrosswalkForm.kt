@@ -1,15 +1,13 @@
 package de.westnordost.streetcomplete.quests.tactile_paving
 
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.quests.AbstractQuestAnswerFragment
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.quests.tactile_paving.TactilePavingCrosswalkAnswer.INCORRECT
 import de.westnordost.streetcomplete.quests.tactile_paving.TactilePavingCrosswalkAnswer.NO
 import de.westnordost.streetcomplete.quests.tactile_paving.TactilePavingCrosswalkAnswer.YES
 
-class TactilePavingCrosswalkForm : AbstractQuestAnswerFragment<TactilePavingCrosswalkAnswer>() {
-
-    override val contentLayoutResId = R.layout.quest_tactile_paving
+class TactilePavingCrosswalkForm : AbstractOsmQuestForm<TactilePavingCrosswalkAnswer>() {
 
     override val otherAnswers get() = listOf(
         AnswerItem(R.string.quest_tactilePaving_incorrect) { applyAnswer(INCORRECT) }

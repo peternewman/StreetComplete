@@ -4,7 +4,7 @@ import android.content.res.Resources
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Spinner
-import androidx.core.widget.addTextChangedListener
+import androidx.core.widget.doAfterTextChanged
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.util.ktx.numberOrNull
 import de.westnordost.streetcomplete.view.OnAdapterItemSelectedListener
@@ -19,7 +19,7 @@ class DurationInputViewController(
 
     var durationUnit: DurationUnit
         set(value) { unitSelect.setSelection(value.ordinal) }
-        get() = DurationUnit.values()[unitSelect.selectedItemPosition]
+        get() = DurationUnit.entries[unitSelect.selectedItemPosition]
 
     var durationValue: Double
         set(value) { input.setText(value.toString()) }
@@ -29,14 +29,14 @@ class DurationInputViewController(
         unitSelect.adapter = ArrayAdapter(
             unitSelect.context,
             R.layout.spinner_item_centered,
-            DurationUnit.values().map { it.toLocalizedString(unitSelect.context.resources) }
+            DurationUnit.entries.map { it.toLocalizedString(unitSelect.context.resources) }
         )
         if (unitSelect.selectedItemPosition < 0) unitSelect.setSelection(1)
         unitSelect.onItemSelectedListener = OnAdapterItemSelectedListener {
             onInputChanged?.invoke()
         }
         input.filters = arrayOf(acceptDecimalDigits(3, 1))
-        input.addTextChangedListener { onInputChanged?.invoke() }
+        input.doAfterTextChanged { onInputChanged?.invoke() }
     }
 }
 

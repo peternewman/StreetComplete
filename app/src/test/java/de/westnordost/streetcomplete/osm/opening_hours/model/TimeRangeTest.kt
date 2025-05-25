@@ -1,10 +1,10 @@
 package de.westnordost.streetcomplete.osm.opening_hours.model
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import java.util.Locale
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class TimeRangeTest {
 
@@ -60,20 +60,20 @@ class TimeRangeTest {
         )
 
         assertEquals(
-            "12:00 AM - 12:00 PM",
+            "12:00 AM - 12:00 PM",
             TimeRange(0, 720).toStringUsing(Locale.US, " - ")
         )
         assertEquals(
-            "8:25 AM - 8:25 PM",
+            "8:25 AM - 8:25 PM",
             TimeRange(505, 1225).toStringUsing(Locale.US, " - ")
         )
 
         assertEquals(
-            "12:00 AM - 12:00 AM",
+            "12:00 AM - 12:00 AM",
             TimeRange(0, 0).toStringUsing(Locale.US, " - ")
         )
         assertEquals(
-            "12:00 AM - 12:00 AM",
+            "12:00 AM - 12:00 AM",
             TimeRange(0, 24 * 60).toStringUsing(Locale.US, " - ")
         )
 

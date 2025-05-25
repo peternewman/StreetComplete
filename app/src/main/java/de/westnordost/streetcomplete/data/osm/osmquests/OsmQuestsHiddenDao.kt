@@ -9,7 +9,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Col
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.TIMESTAMP
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.NAME
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
-import java.lang.System.currentTimeMillis
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 
 /** Persists which osm quests should be hidden (because the user selected so) */
 class OsmQuestsHiddenDao(private val db: Database) {
@@ -17,9 +17,6 @@ class OsmQuestsHiddenDao(private val db: Database) {
     fun add(osmQuestKey: OsmQuestKey) {
         db.insert(NAME, osmQuestKey.toPairs())
     }
-
-    fun contains(osmQuestKey: OsmQuestKey): Boolean =
-        getTimestamp(osmQuestKey) != null
 
     fun getTimestamp(osmQuestKey: OsmQuestKey): Long? =
         db.queryOne(NAME,
@@ -41,21 +38,24 @@ class OsmQuestsHiddenDao(private val db: Database) {
             )
         ) == 1
 
-    fun getNewerThan(timestamp: Long): List<OsmQuestKeyWithTimestamp> =
-        db.query(NAME, where = "$TIMESTAMP > $timestamp") { it.toHiddenOsmQuest() }
+    fun getNewerThan(timestamp: Long): List<OsmQuestHiddenAt> =
+        db.query(NAME, where = "$TIMESTAMP > $timestamp") { it.toOsmQuestHiddenAt() }
 
-    fun getAllIds(): List<OsmQuestKey> =
-        db.query(NAME) { it.toOsmQuestKey() }
+    fun getAll(): List<OsmQuestHiddenAt> =
+        db.query(NAME) { it.toOsmQuestHiddenAt() }
 
     fun deleteAll(): Int =
         db.delete(NAME)
+
+    fun countAll(): Int =
+        db.queryOne(NAME, columns = arrayOf("COUNT(*)")) { it.getInt("COUNT(*)") } ?: 0
 }
 
 private fun OsmQuestKey.toPairs() = listOf(
     ELEMENT_TYPE to elementType.name,
     ELEMENT_ID to elementId,
     QUEST_TYPE to questTypeName,
-    TIMESTAMP to currentTimeMillis()
+    TIMESTAMP to nowAsEpochMilliseconds()
 )
 
 private fun CursorPosition.toOsmQuestKey() = OsmQuestKey(
@@ -64,6 +64,9 @@ private fun CursorPosition.toOsmQuestKey() = OsmQuestKey(
     getString(QUEST_TYPE)
 )
 
-private fun CursorPosition.toHiddenOsmQuest() = OsmQuestKeyWithTimestamp(toOsmQuestKey(), getLong(TIMESTAMP))
+private fun CursorPosition.toOsmQuestHiddenAt() = OsmQuestHiddenAt(
+    toOsmQuestKey(),
+    getLong(TIMESTAMP)
+)
 
-data class OsmQuestKeyWithTimestamp(val osmQuestKey: OsmQuestKey, val timestamp: Long)
+data class OsmQuestHiddenAt(val key: OsmQuestKey, val timestamp: Long)

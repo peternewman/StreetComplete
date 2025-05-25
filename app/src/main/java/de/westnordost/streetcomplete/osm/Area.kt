@@ -14,10 +14,11 @@ val IS_AREA_EXPRESSION = """
 
 private fun isAreaExpressionFragment(prefix: String? = null): String {
     val p = if (prefix != null) "$prefix:" else ""
-    /* roughly sorted by occurrence count */
+    // roughly sorted by occurrence count
     return """
         ${p}building
         or ${p}landuse
+        or ${p}landcover
         or ${p}natural ~ wood|scrub|heath|moor|grassland|fell|bare_rock|scree|shingle|sand|mud|water|wetland|glacier|beach|rock|sinkhole
         or ${p}amenity
         or (${p}leisure and ${p}leisure != track)
@@ -39,6 +40,9 @@ private fun isAreaExpressionFragment(prefix: String? = null): String {
         or ${p}cemetery ~ sector|grave
         or (${p}military and ${p}military != trench)
         or ${p}aerialway = station
+        or ${p}playground
         or ${p}allotments
+        or ${p}healthcare
+        or ${p}highway = services
     """.trimIndent()
 }

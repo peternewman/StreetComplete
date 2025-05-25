@@ -1,5 +1,7 @@
-# Do not edit. Source files are in /res/country_metadata
+# Do not edit. Data is from res/country/metadata and https://github.com/streetcomplete/countrymetadata
+atmOperators: [Standard Bank, National Bank, FDH, Ecobank, National Bank of Malawi, NBS Bank, FMB, FDH Bank]
 centerLineStyle: white
+defaultSpeedLimitHasUrbanOrRural: true
 edgeLineStyle: yellow
 hasLivingStreet: true
 isLeftHandTraffic: true
@@ -8,5 +10,4 @@ mobileCountryCode: 650
 noParkingSignStyle: sadc
 noStoppingSignStyle: sadc
 officialLanguages: [en, ny]
-atmOperators: [Standard Bank, National Bank, FDH, NBS Bank, FMB, FDH Bank, National Bank of Malawi, Ecobank]
 orchardProduces: [guava, mango, mangosteen, tomato, avocado, tea, orange, banana, pineapple, papaya, coffee, tung_nut, lemon, lime, peach, chilli_pepper, sweet_pepper, apple, sisal]

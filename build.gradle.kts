@@ -4,8 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        val kotlinVersion = "1.6.10"
-        classpath("com.android.tools.build:gradle:7.0.4")
+        val kotlinVersion = "2.1.10"
+        classpath("com.android.tools.build:gradle:8.9.2")
         classpath(kotlin("gradle-plugin", version = kotlinVersion))
     }
 }
@@ -14,40 +14,58 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // TODO remove when dependency to org.bitbucket.snakeyaml:snakeyaml-engine:8209bb9484 is no longer needed
-        maven { url = java.net.URI("https://jitpack.io") }
+        maven { url = uri("https://www.jitpack.io") }
     }
+}
+
+val poEditorProjectId = "97843"
+
+tasks.register<UpdateWebsiteTranslationsTask>("updateWebsiteTranslations") {
+    group = "streetcomplete"
+    targetDir = "$projectDir/../streetcomplete-website/res"
+    projectId = poEditorProjectId
+    apiToken = properties["POEditorAPIToken"] as String
 }
 
 tasks.register<UpdateStoreDescriptionsTask>("updateStoreDescriptions") {
     group = "streetcomplete"
     targetDir = "$projectDir/metadata"
+    projectId = poEditorProjectId
     apiToken = properties["POEditorAPIToken"] as String
 }
 
-tasks.register<SophoxCountValueByCountryTask>("updateAtmOperators") {
+tasks.register<QLeverCountValueByCountryTask>("updateAtmOperators") {
     group = "streetcomplete"
     targetFile = "$projectDir/res/country_metadata/atmOperators.yml"
     osmTag = "operator"
-    sparqlQueryPart = "osmt:amenity 'atm';"
+    sparqlQueryPart = "osmkey:amenity 'atm';"
     minCount = 2
     minPercent = 0.1
 }
 
-tasks.register<SophoxCountValueByCountryTask>("updateClothesContainerOperators") {
+tasks.register<QLeverCountValueByCountryTask>("updateParcelLockerBrand") {
+    group = "streetcomplete"
+    targetFile = "$projectDir/res/country_metadata/parcelLockerBrand.yml"
+    osmTag = "brand"
+    sparqlQueryPart = "osmkey:amenity 'parcel_locker';"
+    minCount = 2
+    minPercent = 0.1
+}
+
+tasks.register<QLeverCountValueByCountryTask>("updateClothesContainerOperators") {
     group = "streetcomplete"
     targetFile = "$projectDir/res/country_metadata/clothesContainerOperators.yml"
     osmTag = "operator"
-    sparqlQueryPart = "osmt:amenity 'recycling'; osmt:recycling_type 'container'; osmt:recycling:clothes 'yes';"
+    sparqlQueryPart = "osmkey:amenity 'recycling'; osmkey:recycling_type 'container'; osmkey:recycling:clothes 'yes';"
     minCount = 2
     minPercent = 0.1
 }
 
-tasks.register<SophoxCountValueByCountryTask>("updateChargingStationOperators") {
+tasks.register<QLeverCountValueByCountryTask>("updateChargingStationOperators") {
     group = "streetcomplete"
     targetFile = "$projectDir/res/country_metadata/chargingStationOperators.yml"
     osmTag = "operator"
-    sparqlQueryPart = "osmt:amenity 'charging_station';"
+    sparqlQueryPart = "osmkey:amenity 'charging_station';"
     minCount = 2
     minPercent = 0.1
 }
@@ -70,11 +88,11 @@ tasks.register<UpdateContributorStatisticsTask>("updateContributorStatistics") {
         "1908fc930397c17739e60c8da67f968361f52e89", // mechanical linting
         "74b6424d3310f62a5c0f7b0071ee81c2308db4f6", // mechanically optimized all graphics in the repo back then
         "4282c1e812764a2bb46c17bbdb0fd98aee598e83", // deletion of adding too many files prior
-        "a64d57efc3d8d51c564365088772fdac528ab069",  // deletion of adding too many files prior
-        "7fb216b8360ee85d84b36ad3fb0b0ea0ebf9977d",  // mechanical linting
-        "21aa1deabae7a563ba1475094f372590fb33d784",  // mechanical linting
-        "fef6877852d6a19a7b85e6f3ed3b09ea7c6538ec",  // mostly just moving a lot of packages around
-        "7a7d725154eb38d53936d154fc8011355679a8ae",  // just moving packages around
+        "a64d57efc3d8d51c564365088772fdac528ab069", // deletion of adding too many files prior
+        "7fb216b8360ee85d84b36ad3fb0b0ea0ebf9977d", // mechanical linting
+        "21aa1deabae7a563ba1475094f372590fb33d784", // mechanical linting
+        "fef6877852d6a19a7b85e6f3ed3b09ea7c6538ec", // mostly just moving a lot of packages around
+        "7a7d725154eb38d53936d154fc8011355679a8ae", // just moving packages around
     )
     val skipWords = listOf("lint", "linter", "reorder imports", "organize imports")
     skipCommitRegex = Regex(".*\\b(${skipWords.joinToString("|")})\\b.*", RegexOption.IGNORE_CASE)
@@ -95,16 +113,21 @@ tasks.register("updateStreetCompleteData") {
     dependsOn(
         "updateStoreDescriptions",
         "updateContributorStatistics",
-        // "updateChargingStationOperators",
-        // "updateClothesContainerOperators",
-        // "updateAtmOperators",
+        "updateChargingStationOperators",
+        "updateClothesContainerOperators",
+        "updateAtmOperators",
+        "updateParcelLockerBrand",
         "generateQuestList",
         "app:updatePresets",
         "app:updateNsiPresets",
         "app:updateTranslations",
         "app:updateTranslationCompleteness",
         "app:copyDefaultStringsToEnStrings",
+        "app:updateMapStyle",
+        "app:updateChangelog",
         "app:generateMetadataByCountry",
-        "app:updateTranslatorCredits"
+        "app:updateTranslatorCredits",
+        "app:updateAvailableLanguages",
+        "app:downloadAndConvertPresetIcons"
     )
 }

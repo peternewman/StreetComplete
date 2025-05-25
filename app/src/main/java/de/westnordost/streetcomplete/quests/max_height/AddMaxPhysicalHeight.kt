@@ -2,12 +2,13 @@ package de.westnordost.streetcomplete.quests.max_height
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement
 import de.westnordost.streetcomplete.osm.ALL_ROADS
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.screens.measure.ArSupportChecker
 
 class AddMaxPhysicalHeight(
@@ -19,26 +20,38 @@ class AddMaxPhysicalHeight(
           barrier = height_restrictor
           or amenity = parking_entrance and parking ~ underground|multi-storey
         )
-        and (maxheight = below_default or source:maxheight ~ ".*estimat.*")
+        and (
+          maxheight = below_default
+          or source:maxheight ~ ".*estimat.*"
+          or maxheight:signed = no and !maxheight
+        )
+        and maxheight != default
         and !maxheight:physical
         and access !~ private|no
         and vehicle !~ private|no
     """.toElementFilterExpression() }
+    // leaving out railway = level_crossing is deliberate, we do not want people to measure overhead
+    // cables by hand - bzzzt! - but also (if measured with laser) the result would be wrong, as
+    // the (signed) max height is always something like 1.5 meter distance to the cable itself
 
     private val wayFilter by lazy { """
         ways with
         highway ~ ${ALL_ROADS.joinToString("|")}
-        and (maxheight = below_default or source:maxheight ~ ".*estimat.*")
+        and (
+          maxheight = below_default
+          or source:maxheight ~ ".*estimat.*"
+          or maxheight:signed = no and !maxheight
+        )
+        and maxheight != default
         and !maxheight:physical
         and access !~ private|no
         and vehicle !~ private|no
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add maximum heights"
+    override val changesetComment = "Specify maximum physical heights"
     override val wikiLink = "Key:maxheight"
     override val icon = R.drawable.ic_quest_max_height_measure
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(QuestTypeAchievement.CAR)
+    override val achievements = listOf(EditTypeAchievement.CAR)
     override val defaultDisabledMessage: Int
         get() = if (!checkArSupport()) R.string.default_disabled_msg_no_ar else 0
 
@@ -63,7 +76,7 @@ class AddMaxPhysicalHeight(
 
     override fun createForm() = AddMaxPhysicalHeightForm()
 
-    override fun applyAnswerTo(answer: MaxPhysicalHeightAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: MaxPhysicalHeightAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         // overwrite maxheight value but retain the info that there is no sign onto another tag
         tags["maxheight"] = answer.height.toOsmValue()
         tags["maxheight:signed"] = "no"

@@ -1,9 +1,10 @@
 package de.westnordost.streetcomplete.quests.max_weight
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CAR
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CAR
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.max_weight.MaxWeightSign.MAX_AXLE_LOAD
 import de.westnordost.streetcomplete.quests.max_weight.MaxWeightSign.MAX_GROSS_VEHICLE_MASS
 import de.westnordost.streetcomplete.quests.max_weight.MaxWeightSign.MAX_TANDEM_AXLE_LOAD
@@ -13,7 +14,7 @@ class AddMaxWeight : OsmFilterQuestType<MaxWeightAnswer>() {
 
     override val elementFilter = """
         ways with
-         highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service
+         highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service|busway
          and bridge and bridge != no
          and service != driveway
          and !maxweight and maxweight:signed != no
@@ -27,17 +28,17 @@ class AddMaxWeight : OsmFilterQuestType<MaxWeightAnswer>() {
          and (access !~ private|no or (foot and foot !~ private|no))
          and area != yes
     """
-    override val changesetComment = "Add maximum allowed weight"
+    override val changesetComment = "Specify maximum allowed weights"
     override val wikiLink = "Key:maxweight"
     override val icon = R.drawable.ic_quest_max_weight
     override val hasMarkersAtEnds = true
-    override val questTypeAchievements = listOf(CAR)
+    override val achievements = listOf(CAR)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_maxweight_title
 
     override fun createForm() = AddMaxWeightForm()
 
-    override fun applyAnswerTo(answer: MaxWeightAnswer, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: MaxWeightAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         when (answer) {
             is MaxWeight -> {
                 tags[answer.sign.osmKey] = answer.weight.toString()

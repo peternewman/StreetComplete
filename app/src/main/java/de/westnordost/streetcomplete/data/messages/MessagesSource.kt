@@ -1,33 +1,43 @@
 package de.westnordost.streetcomplete.data.messages
 
-import android.content.SharedPreferences
+import com.russhwolf.settings.SettingsListener
+import de.westnordost.streetcomplete.ApplicationConstants.QUEST_COUNT_AT_WHICH_TO_SHOW_QUEST_SELECTION_HINT
 import de.westnordost.streetcomplete.BuildConfig
-import de.westnordost.streetcomplete.Prefs
+import de.westnordost.streetcomplete.data.changelog.Changelog
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.preferences.QuestSelectionHintState
+import de.westnordost.streetcomplete.data.quest.Quest
+import de.westnordost.streetcomplete.data.quest.QuestKey
+import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.user.UserDataController
 import de.westnordost.streetcomplete.data.user.UserDataSource
 import de.westnordost.streetcomplete.data.user.achievements.Achievement
 import de.westnordost.streetcomplete.data.user.achievements.AchievementsSource
-import java.util.concurrent.CopyOnWriteArrayList
+import de.westnordost.streetcomplete.data.user.achievements.Link
+import de.westnordost.streetcomplete.util.Listeners
 
 /** This class is to access user messages, which are basically dialogs that pop up when
  *  clicking on the mail icon, such as "you have a new OSM message in your inbox" etc. */
 class MessagesSource(
     private val userDataController: UserDataController,
     private val achievementsSource: AchievementsSource,
-    private val questSelectionHintController: QuestSelectionHintController,
-    private val prefs: SharedPreferences
+    private val visibleQuestsSource: VisibleQuestsSource,
+    private val prefs: Preferences,
+    private val changelog: Changelog,
 ) {
     /* Must be a singleton because there is a listener that should respond to a change in the
-    *  database table*/
+     * database table */
 
     interface UpdateListener {
-        fun onNumberOfMessagesUpdated(numberOfMessages: Int)
+        fun onNumberOfMessagesUpdated(messageCount: Int)
     }
-    private val listeners: MutableList<UpdateListener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<UpdateListener>()
+
+    private val settingsListeners = mutableListOf<SettingsListener>()
 
     /** Achievement levels unlocked since application start. I.e. when restarting the app, the
      *  messages about new achievements unlocked are lost, this is deliberate */
-    private val newAchievements = ArrayList<Pair<Achievement, Int>>()
+    private val newAchievements = ArrayList<NewAchievementMessage>()
 
     init {
         userDataController.addListener(object : UserDataSource.Listener {
@@ -36,8 +46,8 @@ class MessagesSource(
             }
         })
         achievementsSource.addListener(object : AchievementsSource.Listener {
-            override fun onAchievementUnlocked(achievement: Achievement, level: Int) {
-                newAchievements.add(achievement to level)
+            override fun onAchievementUnlocked(achievement: Achievement, level: Int, unlockedLinks: List<Link>) {
+                newAchievements.add(NewAchievementMessage(achievement, level, unlockedLinks))
                 onNumberOfMessagesUpdated()
             }
 
@@ -45,11 +55,20 @@ class MessagesSource(
                 // when all achievements have been updated, this doesn't spawn any messages
             }
         })
-        questSelectionHintController.addListener(object : QuestSelectionHintController.Listener {
-            override fun onQuestSelectionHintStateChanged() {
-                onNumberOfMessagesUpdated()
+        visibleQuestsSource.addListener(object : VisibleQuestsSource.Listener {
+            override fun onUpdated(added: Collection<Quest>, removed: Collection<QuestKey>) {
+                if (prefs.questSelectionHintState == QuestSelectionHintState.NOT_SHOWN) {
+                    if (added.size >= QUEST_COUNT_AT_WHICH_TO_SHOW_QUEST_SELECTION_HINT) {
+                        prefs.questSelectionHintState = QuestSelectionHintState.SHOULD_SHOW
+                    }
+                }
             }
+
+            override fun onInvalidated() {}
         })
+
+        // must hold a reference because the listener is a weak reference
+        settingsListeners += prefs.onQuestSelectionHintStateChanged { onNumberOfMessagesUpdated() }
     }
 
     fun addListener(listener: UpdateListener) {
@@ -60,12 +79,12 @@ class MessagesSource(
     }
 
     fun getNumberOfMessages(): Int {
-        val shouldShowQuestSelectionHint = questSelectionHintController.state == QuestSelectionHintState.SHOULD_SHOW
+        val shouldShowQuestSelectionHint = prefs.questSelectionHintState == QuestSelectionHintState.SHOULD_SHOW
         val hasUnreadMessages = userDataController.unreadMessagesCount > 0
-        val lastVersion = prefs.getString(Prefs.LAST_VERSION, null)
+        val lastVersion = prefs.lastChangelogVersion
         val hasNewVersion = lastVersion != null && BuildConfig.VERSION_NAME != lastVersion
         if (lastVersion == null) {
-            prefs.edit().putString(Prefs.LAST_VERSION, BuildConfig.VERSION_NAME).apply()
+            prefs.lastChangelogVersion = BuildConfig.VERSION_NAME
         }
 
         var messages = 0
@@ -76,27 +95,27 @@ class MessagesSource(
         return messages
     }
 
-    fun popNextMessage(): Message? {
-
-        val lastVersion = prefs.getString(Prefs.LAST_VERSION, null)
+    suspend fun popNextMessage(): Message? {
+        val lastVersion = prefs.lastChangelogVersion
         if (BuildConfig.VERSION_NAME != lastVersion) {
-            prefs.edit().putString(Prefs.LAST_VERSION, BuildConfig.VERSION_NAME).apply()
+            prefs.lastChangelogVersion = BuildConfig.VERSION_NAME
             if (lastVersion != null) {
+                val version = "v$lastVersion"
                 onNumberOfMessagesUpdated()
-                return NewVersionMessage("v$lastVersion")
+                return NewVersionMessage(changelog.getChangelog(version))
             }
         }
 
-        val shouldShowQuestSelectionHint = questSelectionHintController.state == QuestSelectionHintState.SHOULD_SHOW
+        val shouldShowQuestSelectionHint = prefs.questSelectionHintState == QuestSelectionHintState.SHOULD_SHOW
         if (shouldShowQuestSelectionHint) {
-            questSelectionHintController.state = QuestSelectionHintState.SHOWN
+            prefs.questSelectionHintState = QuestSelectionHintState.SHOWN
             return QuestSelectionHintMessage
         }
 
         val newAchievement = newAchievements.removeFirstOrNull()
         if (newAchievement != null) {
             onNumberOfMessagesUpdated()
-            return NewAchievementMessage(newAchievement.first, newAchievement.second)
+            return newAchievement
         }
 
         val unreadOsmMessages = userDataController.unreadMessagesCount
@@ -109,8 +128,6 @@ class MessagesSource(
     }
 
     private fun onNumberOfMessagesUpdated() {
-        for (listener in listeners) {
-            listener.onNumberOfMessagesUpdated(getNumberOfMessages())
-        }
+        listeners.forEach { it.onNumberOfMessagesUpdated(getNumberOfMessages()) }
     }
 }

@@ -10,6 +10,10 @@ class MutableMapDataWithGeometry() : MapDataWithGeometry {
         putAll(elements, geometryEntries)
     }
 
+    constructor(other: MapDataWithGeometry) : this() {
+        putAll(other)
+    }
+
     private val nodesById = HashMap<Long, Node>()
     private val waysById = HashMap<Long, Way>()
     private val relationsById = HashMap<Long, Relation>()
@@ -62,6 +66,18 @@ class MutableMapDataWithGeometry() : MapDataWithGeometry {
         }
     }
 
+    fun putAll(other: MapDataWithGeometry) {
+        for (node in other.nodes) {
+            put(node, other.getNodeGeometry(node.id))
+        }
+        for (way in other.ways) {
+            put(way, other.getWayGeometry(way.id))
+        }
+        for (relation in other.relations) {
+            put(relation, other.getRelationGeometry(relation.id))
+        }
+    }
+
     fun putElement(element: Element) {
         val id = element.id
         when (element) {
@@ -79,9 +95,23 @@ class MutableMapDataWithGeometry() : MapDataWithGeometry {
         }
     }
 
-    override fun iterator(): Iterator<Element> {
-        return (nodes.asSequence() + ways.asSequence() + relations.asSequence()).iterator()
+    fun removeAll(deleted: Collection<ElementKey>) {
+        for (key in deleted) {
+            remove(key.type, key.id)
+        }
     }
+
+    fun clear() {
+        nodesById.clear()
+        waysById.clear()
+        relationsById.clear()
+        nodeGeometriesById.clear()
+        wayGeometriesById.clear()
+        relationGeometriesById.clear()
+    }
+
+    override fun iterator(): Iterator<Element> =
+        (nodes.asSequence() + ways.asSequence() + relations.asSequence()).iterator()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

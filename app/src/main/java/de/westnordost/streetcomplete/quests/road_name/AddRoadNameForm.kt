@@ -3,16 +3,19 @@ package de.westnordost.streetcomplete.quests.road_name
 import android.content.DialogInterface
 import androidx.appcompat.app.AlertDialog
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.meta.AbbreviationsByLocale
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.databinding.QuestRoadnameBinding
+import de.westnordost.streetcomplete.osm.ALL_PATHS
+import de.westnordost.streetcomplete.osm.ALL_ROADS
+import de.westnordost.streetcomplete.osm.LocalizedName
 import de.westnordost.streetcomplete.quests.AAddLocalizedNameForm
 import de.westnordost.streetcomplete.quests.AnswerItem
-import de.westnordost.streetcomplete.quests.LocalizedName
+import de.westnordost.streetcomplete.quests.NameSuggestionsSource
 import org.koin.android.ext.android.inject
-import java.lang.IllegalStateException
 import java.util.LinkedList
 import java.util.Locale
 
@@ -32,25 +35,34 @@ class AddRoadNameForm : AAddLocalizedNameForm<RoadNameAnswer>() {
     )
 
     private val abbrByLocale: AbbreviationsByLocale by inject()
-    private val roadNameSuggestionsSource: RoadNameSuggestionsSource by inject()
+    private val nameSuggestionsSource: NameSuggestionsSource by inject()
+
+    private val roadsWithNamesFilter =
+        "ways with highway ~ ${(ALL_ROADS + ALL_PATHS).joinToString("|")} and name"
+            .toElementFilterExpression()
 
     override fun getAbbreviationsByLocale(): AbbreviationsByLocale = abbrByLocale
 
-    override fun getLocalizedNameSuggestions(): List<MutableMap<String, String>> {
-        val polyline = when (val geom = elementGeometry) {
+    override fun getLocalizedNameSuggestions(): List<List<LocalizedName>> {
+        val firstAndLast = when (val geom = geometry) {
             is ElementPolylinesGeometry -> geom.polylines.first()
             is ElementPolygonsGeometry -> geom.polygons.first()
             is ElementPointGeometry -> listOf(geom.center)
-        }
-        return roadNameSuggestionsSource.getNames(
-            listOf(polyline.first(), polyline.last()),
-            MAX_DIST_FOR_ROAD_NAME_SUGGESTION
+        }.let { listOf(it.first(), it.last()) }
+
+        return nameSuggestionsSource.getNames(
+            // only first and last point of polyline because a still unnamed section of road is
+            //  usually (if at all) a continuation of a neighbouring road section
+            points = firstAndLast,
+            // and hence we can also search only in a very small area only
+            maxDistance = 30.0,
+            filter = roadsWithNamesFilter
         )
     }
 
     override fun onClickOk(names: List<LocalizedName>) {
         val possibleAbbreviations = LinkedList<String>()
-        for ((languageTag, name) in adapter.localizedNames) {
+        for ((languageTag, name) in adapter?.names.orEmpty()) {
             val locale = if (languageTag.isEmpty()) countryInfo.locale else Locale.forLanguageTag(languageTag)
             val abbr = abbrByLocale.get(locale)
             val containsLocalizedAbbreviations = abbr?.containsAbbreviations(name) == true
@@ -61,12 +73,12 @@ class AddRoadNameForm : AAddLocalizedNameForm<RoadNameAnswer>() {
         }
 
         confirmPossibleAbbreviationsIfAny(possibleAbbreviations) {
-            val points = when (val g = elementGeometry) {
+            val points = when (val g = geometry) {
                 is ElementPolylinesGeometry -> g.polylines.first()
                 is ElementPolygonsGeometry -> g.polygons.first()
                 is ElementPointGeometry -> listOf(g.center)
             }
-            applyAnswer(RoadName(names, osmElement!!.id, points))
+            applyAnswer(RoadName(names, element.id, points))
         }
     }
 
@@ -77,7 +89,7 @@ class AddRoadNameForm : AAddLocalizedNameForm<RoadNameAnswer>() {
         val noName = resources.getString(R.string.quest_streetName_answer_noName_noname)
         val leaveNote = resources.getString(R.string.quest_streetName_answer_noProperStreet_leaveNote)
 
-        val highwayValue = osmElement!!.tags["highway"]
+        val highwayValue = element.tags["highway"]
         val mayBeLink = highwayValue?.matches("primary|secondary|tertiary".toRegex()) == true
 
         val answers = mutableListOf<String>()
@@ -133,9 +145,5 @@ class AddRoadNameForm : AAddLocalizedNameForm<RoadNameAnswer>() {
             .setPositiveButton(R.string.quest_name_noName_confirmation_positive) { _, _ -> applyAnswer(NoRoadName) }
             .setNegativeButton(R.string.quest_generic_confirmation_no, null)
             .show()
-    }
-
-    companion object {
-        const val MAX_DIST_FOR_ROAD_NAME_SUGGESTION = 30.0 // m
     }
 }

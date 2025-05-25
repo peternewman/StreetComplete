@@ -1,41 +1,42 @@
 package de.westnordost.streetcomplete.data.upload
 
-import android.util.Log
 import de.westnordost.streetcomplete.ApplicationConstants
-import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesDao
+import de.westnordost.streetcomplete.data.AuthorizationException
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilePos
 import de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsUploader
-import de.westnordost.streetcomplete.data.user.AuthorizationException
-import de.westnordost.streetcomplete.data.user.UserLoginStatusSource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import de.westnordost.streetcomplete.data.user.UserLoginController
+import de.westnordost.streetcomplete.data.user.UserLoginSource
+import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 class Uploader(
     private val noteEditsUploader: NoteEditsUploader,
     private val elementEditsUploader: ElementEditsUploader,
-    private val downloadedTilesDB: DownloadedTilesDao,
-    private val userLoginStatusSource: UserLoginStatusSource,
+    private val downloadedTilesController: DownloadedTilesController,
+    private val userLoginSource: UserLoginSource,
     private val versionIsBannedChecker: VersionIsBannedChecker,
+    private val userLoginController: UserLoginController,
     private val mutex: Mutex
-) {
-    var uploadedChangeListener: OnUploadedChangeListener? = null
+) : UploadProgressSource {
 
-    private val bannedInfo by lazy { versionIsBannedChecker.get() }
+    private val listeners = Listeners<UploadProgressSource.Listener>()
+
+    private lateinit var bannedInfo: BannedInfo
 
     private val uploadedChangeRelay = object : OnUploadedChangeListener {
         override fun onUploaded(questType: String, at: LatLon) {
-            uploadedChangeListener?.onUploaded(questType, at)
+            listeners.forEach { it.onUploaded(questType, at) }
         }
 
         override fun onDiscarded(questType: String, at: LatLon) {
             invalidateArea(at)
-            uploadedChangeListener?.onDiscarded(questType, at)
+            listeners.forEach { it.onDiscarded(questType, at) }
         }
     }
 
@@ -44,38 +45,66 @@ class Uploader(
         elementEditsUploader.uploadedChangeListener = uploadedChangeRelay
     }
 
+    override var isUploadInProgress: Boolean = false
+        private set
+
     suspend fun upload() {
-        val banned = withContext(Dispatchers.IO) { bannedInfo }
-        if (banned is IsBanned) {
-            throw VersionBannedException(banned.reason)
-        }
+        try {
+            isUploadInProgress = true
+            listeners.forEach { it.onStarted() }
 
-        // let's fail early in case of no authorization
-        if (!userLoginStatusSource.isLoggedIn) {
-            throw AuthorizationException("User is not authorized")
-        }
-
-        Log.i(TAG, "Starting upload")
-
-        mutex.withLock {
-            coroutineScope {
-                // uploaders can run concurrently
-                launch { noteEditsUploader.upload() }
-                launch { elementEditsUploader.upload() }
+            if (!::bannedInfo.isInitialized) {
+                bannedInfo = versionIsBannedChecker.get()
             }
-        }
+            val banned = bannedInfo
+            if (banned is IsBanned) {
+                throw VersionBannedException(banned.reason)
+            }
 
-        Log.i(TAG, "Finished upload")
+            // let's fail early in case of no authorization
+            if (!userLoginSource.isLoggedIn) {
+                throw AuthorizationException("User is not authorized")
+            }
+
+            Log.i(TAG, "Starting upload")
+
+            mutex.withLock {
+                // element edit and note edit uploader must run in sequence because the notes may need
+                // to be updated if the element edit uploader creates new elements to which notes refer
+                elementEditsUploader.upload()
+                noteEditsUploader.upload()
+            }
+            Log.i(TAG, "Finished upload")
+        } catch (e: CancellationException) {
+            Log.i(TAG, "Upload cancelled")
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to upload", e)
+            if (e is AuthorizationException) {
+                userLoginController.logOut()
+            }
+            listeners.forEach { it.onError(e) }
+            throw e
+        } finally {
+            isUploadInProgress = false
+            listeners.forEach { it.onFinished() }
+        }
+    }
+
+    override fun addListener(listener: UploadProgressSource.Listener) {
+        listeners.add(listener)
+    }
+    override fun removeListener(listener: UploadProgressSource.Listener) {
+        listeners.remove(listener)
     }
 
     private fun invalidateArea(pos: LatLon) {
         // called after a conflict. If there is a conflict, the user is not the only one in that
         // area, so best invalidate all downloaded quests here and redownload on next occasion
         val tile = pos.enclosingTilePos(ApplicationConstants.DOWNLOAD_TILE_ZOOM)
-        downloadedTilesDB.remove(tile)
+        downloadedTilesController.invalidate(tile)
     }
 
     companion object {
-        private const val TAG = "Upload"
+        const val TAG = "Upload"
     }
 }

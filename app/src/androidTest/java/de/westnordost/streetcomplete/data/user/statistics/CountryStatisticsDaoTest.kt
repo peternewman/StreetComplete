@@ -1,15 +1,15 @@
 package de.westnordost.streetcomplete.data.user.statistics
 
 import de.westnordost.streetcomplete.data.ApplicationDbTestCase
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class CountryStatisticsDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: CountryStatisticsDao
 
-    @Before fun createDao() {
-        dao = CountryStatisticsDao(database)
+    @BeforeTest fun createDao() {
+        dao = CountryStatisticsDao(database, CountryStatisticsTables.NAME)
     }
 
     @Test fun addAndSubtract() {

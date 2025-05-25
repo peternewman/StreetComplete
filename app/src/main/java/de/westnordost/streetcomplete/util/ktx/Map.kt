@@ -1,4 +1,3 @@
 package de.westnordost.streetcomplete.util.ktx
 
-/** Returns true if the map contains any of the specified [keys]. */
-fun <K, V> Map<K, V>.containsAnyKey(vararg keys: K): Boolean = keys.any { this.keys.contains(it) }
+fun <X, Y> Map<X, Y>.containsAll(other: Map<X, Y>) = other.all { this[it.key] == it.value }

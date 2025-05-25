@@ -7,6 +7,8 @@ about: Suggest a new question to ask the user
 <!-- 
 Please read the guidelines for new quest suggestions before posting one: 
 https://github.com/streetcomplete/StreetComplete/blob/master/QUEST_GUIDELINES.md
+
+Also please search existing issues (both open and closed) to see if such quest was already suggested before.
 -->
 
 ### General
@@ -18,7 +20,7 @@ Question asked: **Is there an example tag on item XY?**
 Checklist for quest suggestions (see [guidelines](https://github.com/streetcomplete/StreetComplete/blob/master/QUEST_GUIDELINES.md)):
 - [ ] 🚧 To be added tag is established and has a useful purpose
 - [ ] 🤔 Any answer the user can give must have an equivalent tagging (Quest should not reappear to other users when solved by one)
-- [ ] 🐿️ Easily answerable by everyone from the outside but a survey is necessary
+- [ ] 🐿️ Easily answerable by any pedestrian from the outside but a survey is necessary
 - [ ] 💤 Not an overwhelming percentage of quests have the same answer (No spam)
 - [ ] 🕓 Applies to a reasonable number of map data (Worth the effort)
 

@@ -6,24 +6,21 @@ import android.widget.EditText
 import de.westnordost.streetcomplete.data.meta.Abbreviations
 import de.westnordost.streetcomplete.view.DefaultTextWatcher
 
-/** Automatically expands abbreviations when finishing a word (via space, "-" or
- * ".") and capitalizes the first letter of each word that is longer than 3 letters.  */
+/** Automatically expands abbreviations when finishing a word (via space, "-" or ".")  */
 class AutoCorrectAbbreviationsViewController(private val editText: EditText) {
 
     var abbreviations: Abbreviations? = null
 
     init {
-        editText.imeOptions = EditorInfo.IME_ACTION_DONE or editText.imeOptions
-
-        editText.inputType =
-            EditorInfo.TYPE_CLASS_TEXT or
-                EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-                EditorInfo.TYPE_TEXT_FLAG_CAP_SENTENCES
+        if (editText.imeOptions and EditorInfo.IME_ACTION_DONE == 0
+            || editText.imeOptions and EditorInfo.IME_ACTION_NEXT == 0) {
+            editText.imeOptions = EditorInfo.IME_ACTION_DONE or editText.imeOptions
+        }
 
         editText.addTextChangedListener(AbbreviationAutoCorrecter())
 
         editText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
                 editText.text?.let { autoCorrectTextAt(it, editText.length()) }
             }
             false
@@ -44,19 +41,15 @@ class AutoCorrectAbbreviationsViewController(private val editText: EditText) {
 
         val replacement = abbrs.getExpansion(lastWordBeforeCursor, isFirstWord, isLastWord)
 
-        val wordStart = textToCursor.indexOf(lastWordBeforeCursor)
         if (replacement != null) {
+            val wordStart = textToCursor.indexOf(lastWordBeforeCursor)
             fixedReplace(s, wordStart, wordStart + lastWordBeforeCursor.length, replacement)
-        } else if (lastWordBeforeCursor.length > 3) {
-            val locale = abbrs.locale
-            val capital = lastWordBeforeCursor.substring(0, 1).uppercase(locale)
-            s.replace(wordStart, wordStart + 1, capital)
         }
     }
 
     private fun fixedReplace(s: Editable, replaceStart: Int, replaceEnd: Int, replaceWith: CharSequence) {
         // if I only call s.replace to replace the abbreviations with their respective expansions,
-        // the caret seems to get confused. On my Android API level 19, if i.e. an abbreviation of
+        // the caret seems to get confused. On my Android API level 19, if e.g. an abbreviation of
         // two letters is replaced with a word with ten letters, then I can not edit/delete the first
         // eight letters of the edit text anymore.
         // This method re-sets the text completely, so the caret and text length are also set anew

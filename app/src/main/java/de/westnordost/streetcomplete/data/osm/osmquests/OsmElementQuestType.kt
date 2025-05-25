@@ -1,11 +1,14 @@
 package de.westnordost.streetcomplete.data.osm.osmquests
 
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChangesBuilder
+import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.quest.AllCountries
 import de.westnordost.streetcomplete.data.quest.Countries
 import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 
 /** Quest type where each quest refers to one OSM element.
  *
@@ -13,16 +16,8 @@ import de.westnordost.streetcomplete.data.quest.QuestType
  *  [isApplicableTo] methods for which OSM elements a quest of this type should be created.
  *  Quest types that do not require complex filters that depend on the geometry of surrounding
  *  elements subclass [OsmFilterQuestType][de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType]
- *  */
-interface OsmElementQuestType<T> : QuestType<T> {
-
-    /** The changeset comment to be used for this quest type when uploading to the OSM API. It
-     *  should briefly explain what is being changed (in English). */
-    val changesetComment: String
-
-    /** The OpenStreetMap wiki page with the documentation for the tag or feature that is being
-     *  edited by this quest type */
-    val wikiLink: String?
+ */
+interface OsmElementQuestType<T> : QuestType, ElementEditType {
 
     /** In which countries the quest should be shown. By default, in all countries.
      *
@@ -43,14 +38,6 @@ interface OsmElementQuestType<T> : QuestType<T> {
      * makes sense if the pins are in the middle. */
     val hasMarkersAtEnds: Boolean get() = false
 
-    /** Whether the user should be given the option to split the way instead - shown in the
-     * "Other answers..." menu. By default: false.
-     *
-     *  Splitting of a way is necessary when the property the quest is asked for in reality changes
-     *  over the course of the way. E.g. a street has a sidewalk for only a part of the whole
-     *  length. */
-    val isSplitWayEnabled: Boolean get() = false
-
     /** Whether the user should be able to delete this element instead. Only elements that
      *  are not expected...
      *  - to be part of a relation
@@ -66,18 +53,14 @@ interface OsmElementQuestType<T> : QuestType<T> {
     /** Whether the user should be able to replace this element with another preset. Only
      *  elements that are expected to be some kind of shop/amenity should be replaceable this way,
      *  i.e. anything that when it's gone, there is a vacant shop then.
-     *  */
-    val isReplaceShopEnabled: Boolean get() = false
+     */
+    val isReplacePlaceEnabled: Boolean get() = false
 
     override val title: Int get() = getTitle(emptyMap())
 
     /** the string resource used to display the quest's question for when the element has the
      *  specified [tags] */
     fun getTitle(tags: Map<String, String>): Int
-
-    /** the replacement string(s) to fill the string templates included in the selected string id
-     *  as specified in [getTitle], if any */
-    fun getTitleArgs(tags: Map<String, String>): Array<String> = arrayOf()
 
     /** All elements within the given map data that are applicable to this quest type, i.e. for
      *  which a quest of this type should be created.
@@ -110,14 +93,10 @@ interface OsmElementQuestType<T> : QuestType<T> {
      *  any misunderstandings which element is meant that far apart. */
     val highlightedElementsRadius: Double get() = 30.0
 
-    /** applies the data from [answer] to the element that has last been edited at [timestampEdited].
-     * The element is not directly modified, instead, a map of [tags] is built */
-    fun applyAnswerTo(answer: T, tags: Tags, timestampEdited: Long)
+    /** Applies the data from [answer] to the element that has last been edited at [timestampEdited]
+     * with the given [tags] and the given [geometry].
+     * The element is not directly modified, instead, a map of [tags] is modified */
+    fun applyAnswerTo(answer: T, tags: Tags, geometry: ElementGeometry, timestampEdited: Long)
 
-    @Suppress("UNCHECKED_CAST")
-    fun applyAnswerToUnsafe(answer: Any, tags: Tags, timestampEdited: Long) {
-        applyAnswerTo(answer as T, tags, timestampEdited)
-    }
+    override fun createForm(): AbstractOsmQuestForm<T>
 }
-
-typealias Tags = StringMapChangesBuilder

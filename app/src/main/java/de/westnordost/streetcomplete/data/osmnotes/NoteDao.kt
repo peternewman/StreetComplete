@@ -13,10 +13,9 @@ import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.LATITUDE
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.LONGITUDE
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.STATUS
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.NAME
-import kotlinx.serialization.decodeFromString
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.lang.System.currentTimeMillis
 
 /** Stores OSM notes */
 class NoteDao(private val db: Database) {
@@ -43,7 +42,7 @@ class NoteDao(private val db: Database) {
                 it.timestampCreated,
                 it.timestampClosed,
                 Json.encodeToString(it.comments),
-                currentTimeMillis()
+                nowAsEpochMilliseconds()
             ) }
         )
     }
@@ -62,14 +61,16 @@ class NoteDao(private val db: Database) {
         return db.query(NAME, where = "$ID IN (${ids.joinToString(",")})") { it.toNote() }
     }
 
-    fun getIdsOlderThan(timestamp: Long, limit: Int? = null): List<Long> {
-        if (limit != null && limit <= 0) return emptyList()
-        else return db.query(NAME,
-            columns = arrayOf(ID),
-            where = "$LAST_SYNC < $timestamp",
-            limit = limit?.toString()
-        ) { it.getLong(ID) }
-    }
+    fun getIdsOlderThan(timestamp: Long, limit: Int? = null): List<Long> =
+        if (limit != null && limit <= 0) {
+            emptyList()
+        } else {
+            db.query(NAME,
+                columns = arrayOf(ID),
+                where = "$LAST_SYNC < $timestamp",
+                limit = limit
+            ) { it.getLong(ID) }
+        }
 
     fun deleteAll(ids: Collection<Long>): Int {
         if (ids.isEmpty()) return 0
@@ -88,7 +89,7 @@ class NoteDao(private val db: Database) {
         CREATED to timestampCreated,
         CLOSED to timestampClosed,
         COMMENTS to Json.encodeToString(comments),
-        LAST_SYNC to currentTimeMillis()
+        LAST_SYNC to nowAsEpochMilliseconds()
     )
 
     private fun CursorPosition.toNote() = Note(
