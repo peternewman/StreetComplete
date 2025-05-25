@@ -1,9 +1,6 @@
 package de.westnordost.streetcomplete.data.osm.osmquests
 
-import android.util.Log
 import de.westnordost.countryboundaries.CountryBoundaries
-import de.westnordost.countryboundaries.intersects
-import de.westnordost.countryboundaries.isInAny
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
@@ -12,20 +9,29 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapDataWithGeometry
+import de.westnordost.streetcomplete.data.osm.mapdata.key
 import de.westnordost.streetcomplete.data.osmnotes.Note
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
-import de.westnordost.streetcomplete.ktx.format
 import de.westnordost.streetcomplete.quests.address.AddHousenumber
 import de.westnordost.streetcomplete.quests.cycleway.AddCycleway
 import de.westnordost.streetcomplete.quests.existence.CheckExistence
-import de.westnordost.streetcomplete.quests.oneway_suspects.AddSuspectedOneway
+import de.westnordost.streetcomplete.quests.max_height.AddMaxHeight
 import de.westnordost.streetcomplete.quests.opening_hours.AddOpeningHours
 import de.westnordost.streetcomplete.quests.place_name.AddPlaceName
-import de.westnordost.streetcomplete.util.contains
-import de.westnordost.streetcomplete.util.enclosingBoundingBox
-import de.westnordost.streetcomplete.util.enlargedBy
+import de.westnordost.streetcomplete.quests.shop_type.CheckShopExistence
+import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.util.ktx.format
+import de.westnordost.streetcomplete.util.ktx.intersects
+import de.westnordost.streetcomplete.util.ktx.isInAny
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import de.westnordost.streetcomplete.util.ktx.truncateTo6Decimals
+import de.westnordost.streetcomplete.util.logs.Log
+import de.westnordost.streetcomplete.util.math.contains
+import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
+import de.westnordost.streetcomplete.util.math.enlargedBy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -34,32 +40,18 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.lang.System.currentTimeMillis
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.FutureTask
 
 /** Controller for managing OsmQuests. Takes care of persisting OsmQuest objects and notifying
  *  listeners about changes */
 class OsmQuestController internal constructor(
     private val db: OsmQuestDao,
-    private val hiddenDB: OsmQuestsHiddenDao,
     private val mapDataSource: MapDataWithEditsSource,
     private val notesSource: NotesWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
-    private val countryBoundariesFuture: FutureTask<CountryBoundaries>
+    private val countryBoundaries: Lazy<CountryBoundaries>
 ) : OsmQuestSource {
 
-    /* Must be a singleton because there is a listener that should respond to a change in the
-     *  database table */
-
-    interface HideOsmQuestListener {
-        fun onHid(edit: OsmQuestHidden)
-        fun onUnhid(edit: OsmQuestHidden)
-        fun onUnhidAll()
-    }
-    private val hideListeners: MutableList<HideOsmQuestListener> = CopyOnWriteArrayList()
-
-    private val listeners: MutableList<OsmQuestSource.Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<OsmQuestSource.Listener>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -72,7 +64,7 @@ class OsmQuestController internal constructor(
          *  OSM elements are updated, so the quests that reference that element need to be updated
          *  as well. */
         override fun onUpdated(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
-            val time = currentTimeMillis()
+            val time = nowAsEpochMilliseconds()
 
             val deferredQuests = mutableListOf<Deferred<OsmQuest?>>()
 
@@ -83,24 +75,25 @@ class OsmQuestController internal constructor(
             val quests = runBlocking { deferredQuests.awaitAll().filterNotNull() }
 
             for (quest in quests) {
-                val questTypeName = quest.type::class.simpleName!!
-                Log.d(TAG, "Created $questTypeName for ${quest.elementType.name}#${quest.elementId}")
+                Log.d(TAG, "Created ${quest.type.name} for ${quest.elementType.name}#${quest.elementId}")
             }
 
             val obsoleteQuestKeys: List<OsmQuestKey>
+            val visibleQuests: Collection<OsmQuest>
             synchronized(this) {
-                val previousQuests = db.getAllForElements(updated.map { ElementKey(it.type, it.id) })
+                val previousQuests = db.getAllForElements(updated.map { it.key })
                 // quests that refer to elements that have been deleted shall be deleted
                 val deleteQuestKeys = db.getAllForElements(deleted).map { it.key }
 
-                val seconds = (currentTimeMillis() - time) / 1000.0
-                Log.i(TAG, "Created ${quests.size} quests for ${updated.size} updated elements in ${seconds.format(1)}s")
+                val millis = nowAsEpochMilliseconds() - time
+                Log.i(TAG, "Created ${quests.size} quests for ${updated.size} updated elements in ${millis}ms")
 
                 obsoleteQuestKeys = getObsoleteQuestKeys(quests, previousQuests, deleteQuestKeys)
                 updateQuests(quests, obsoleteQuestKeys)
+                visibleQuests = quests.filterVisible()
             }
 
-            onUpdated(added = quests, deletedKeys = obsoleteQuestKeys)
+            onUpdated(added = visibleQuests, deleted = obsoleteQuestKeys)
         }
 
         /** Replace all quests of the given types in the given bounding box with the given quests.
@@ -108,13 +101,15 @@ class OsmQuestController internal constructor(
         override fun onReplacedForBBox(bbox: BoundingBox, mapDataWithGeometry: MapDataWithGeometry) {
             val quests = createQuestsForBBox(bbox, mapDataWithGeometry, allQuestTypes)
             val obsoleteQuestKeys: List<OsmQuestKey>
+            val visibleQuests: Collection<OsmQuest>
             synchronized(this) {
                 val previousQuests = db.getAllInBBox(bbox)
                 obsoleteQuestKeys = getObsoleteQuestKeys(quests, previousQuests, emptyList())
                 updateQuests(quests, obsoleteQuestKeys)
+                visibleQuests = quests.filterVisible()
             }
 
-            onUpdated(added = quests, deletedKeys = obsoleteQuestKeys)
+            onUpdated(added = visibleQuests, deleted = obsoleteQuestKeys)
         }
 
         override fun onCleared() {
@@ -143,21 +138,32 @@ class OsmQuestController internal constructor(
         mapDataWithGeometry: MapDataWithGeometry,
         questTypes: Collection<OsmElementQuestType<*>>,
     ): Collection<OsmQuest> {
-        val time = currentTimeMillis()
+        val time = nowAsEpochMilliseconds()
 
-        val countryBoundaries = countryBoundariesFuture.get()
+        val countryBoundaries = countryBoundaries.value
+
+        // Remove elements without tags, to be used for quests that are never applicable without
+        // tags. These quests are usually OsmFilterQuestType, where questType.filter.mayEvaluateToTrueWithNoTags
+        // guarantees we can skip elements without tags completely. Also those quests don't use geometry.
+        // This shortcut reduces time for creating quests by ~15-30%.
+        val onlyElementsWithTags = MutableMapDataWithGeometry(mapDataWithGeometry.filter { it.tags.isNotEmpty() }, emptyList())
 
         val deferredQuests: List<Deferred<List<OsmQuest>>> = questTypes.map { questType ->
             scope.async {
                 val questsForType = ArrayList<OsmQuest>()
-                val questTypeName = questType::class.simpleName!!
+                val questTypeName = questType.name
                 if (!countryBoundaries.intersects(bbox, questType.enabledInCountries)) {
                     Log.d(TAG, "$questTypeName: Skipped because it is disabled for this country")
                     emptyList()
                 } else {
-                    val questTime = currentTimeMillis()
+                    val questTime = nowAsEpochMilliseconds()
                     var questCount = 0
-                    for (element in questType.getApplicableElements(mapDataWithGeometry)) {
+                    val mapDataToUse = if (questType is OsmFilterQuestType && !questType.filter.mayEvaluateToTrueWithNoTags) {
+                        onlyElementsWithTags
+                    } else {
+                        mapDataWithGeometry
+                    }
+                    for (element in questType.getApplicableElements(mapDataToUse)) {
                         val geometry = mapDataWithGeometry.getGeometry(element.type, element.id)
                             ?: continue
                         if (!mayCreateQuest(questType, geometry, bbox)) continue
@@ -165,7 +171,7 @@ class OsmQuestController internal constructor(
                         questCount++
                     }
 
-                    val questSeconds = currentTimeMillis() - questTime
+                    val questSeconds = nowAsEpochMilliseconds() - questTime
                     Log.d(TAG, "$questTypeName: Found $questCount quests in ${questSeconds}ms")
                     questsForType
                 }
@@ -173,7 +179,7 @@ class OsmQuestController internal constructor(
         }
         val quests = runBlocking { deferredQuests.awaitAll().flatten() }
 
-        val seconds = (currentTimeMillis() - time) / 1000.0
+        val seconds = (nowAsEpochMilliseconds() - time) / 1000.0
         Log.i(TAG, "Created ${quests.size} quests for bbox in ${seconds.format(1)}s")
 
         return quests
@@ -189,13 +195,9 @@ class OsmQuestController internal constructor(
 
         return questTypes.map { questType ->
             scope.async {
-                /* shortcut: if the element has no tags, it is just part of the geometry of another
-                *  element, so no need to check for quests for that element */
-                if (element.tags.isNullOrEmpty()) return@async null
-
                 var appliesToElement = questType.isApplicableTo(element)
                 if (appliesToElement == null) {
-                    Log.d(TAG, "${questType::class.simpleName!!} requires surrounding map data to determine applicability to ${element.type.name}#${element.id}")
+                    Log.d(TAG, "${questType.name} requires surrounding map data to determine applicability to ${element.type.name}#${element.id}")
                     val mapData = withContext(Dispatchers.IO) { lazyMapData }
                     appliesToElement = questType.getApplicableElements(mapData)
                         .any { it.id == element.id && it.type == element.type }
@@ -227,12 +229,12 @@ class OsmQuestController internal constructor(
     }
 
     private fun updateQuests(questsNow: Collection<OsmQuest>, obsoleteQuestKeys: Collection<OsmQuestKey>) {
-        val time = currentTimeMillis()
+        val time = nowAsEpochMilliseconds()
 
         db.deleteAll(obsoleteQuestKeys)
         db.putAll(questsNow)
 
-        val seconds = (currentTimeMillis() - time) / 1000.0
+        val seconds = (nowAsEpochMilliseconds() - time) / 1000.0
         Log.i(TAG, "Persisted ${questsNow.size} new and removed ${obsoleteQuestKeys.size} already resolved quests in ${seconds.format(1)}s")
     }
 
@@ -248,40 +250,37 @@ class OsmQuestController internal constructor(
 
         // do not create quests in countries where the quest is not activated
         val countries = questType.enabledInCountries
-        if (!countryBoundariesFuture.get().isInAny(pos, countries)) return false
+        if (!countryBoundaries.value.isInAny(pos, countries)) return false
 
         return true
     }
 
     fun delete(key: OsmQuestKey) {
         db.delete(key)
-        onUpdated(deletedKeys = listOf(key))
+        onUpdated(deleted = listOf(key))
     }
 
     override fun get(key: OsmQuestKey): OsmQuest? {
         val entry = db.get(key) ?: return null
-        if (hiddenDB.contains(entry.key)) return null
         val geometry = mapDataSource.getGeometry(entry.elementType, entry.elementId) ?: return null
         if (isBlacklistedPosition(geometry.center)) return null
         return createOsmQuest(entry, geometry)
     }
 
-    override fun getAllVisibleInBBox(bbox: BoundingBox, questTypes: Collection<String>?): List<OsmQuest> {
-        val hiddenIds = getHiddenQuests()
+    override fun getAllInBBox(bbox: BoundingBox, questTypes: Collection<String>?): List<OsmQuest> {
         val hiddenPositions = getBlacklistedPositions(bbox)
         val entries = db.getAllInBBox(bbox, questTypes).filter {
-            it.key !in hiddenIds && it.position.truncateTo5Decimals() !in hiddenPositions
+            it.position.truncateTo6Decimals() !in hiddenPositions
         }
 
         val elementKeys = HashSet<ElementKey>()
         entries.mapTo(elementKeys) { ElementKey(it.elementType, it.elementId) }
 
-        val geometriesByKey = mapDataSource.getGeometries(elementKeys)
-            .associateBy { ElementKey(it.elementType, it.elementId) }
+        val geometriesByKey = mapDataSource.getGeometries(elementKeys).associateBy { it.key }
 
         return entries.mapNotNull { entry ->
-            val geometryEntry = geometriesByKey[ElementKey(entry.elementType, entry.elementId)]
-            createOsmQuest(entry, geometryEntry?.geometry)
+            val geometry = geometriesByKey[ElementKey(entry.elementType, entry.elementId)]?.geometry
+            createOsmQuest(entry, geometry)
         }
     }
 
@@ -291,76 +290,14 @@ class OsmQuestController internal constructor(
         return OsmQuest(questType, entry.elementType, entry.elementId, geometry)
     }
 
-    /* ----------------------------------- Hiding / Unhiding  ----------------------------------- */
-
     private fun getBlacklistedPositions(bbox: BoundingBox): Set<LatLon> =
         notesSource
-            .getAllPositions(bbox.enlargedBy(1.2))
-            .map { it.truncateTo5Decimals() }
+            .getAllPositions(bbox.enlargedBy(0.2))
+            .map { it.truncateTo6Decimals() }
             .toSet()
 
     private fun isBlacklistedPosition(pos: LatLon): Boolean =
-        pos.truncateTo5Decimals() in getBlacklistedPositions(BoundingBox(pos, pos))
-
-    private fun getHiddenQuests(): Set<OsmQuestKey> =
-        hiddenDB.getAllIds().toSet()
-
-    /** Mark the quest as hidden by user interaction */
-    fun hide(key: OsmQuestKey) {
-        synchronized(this) { hiddenDB.add(key) }
-
-        val hidden = getHidden(key)
-        if (hidden != null) onHid(hidden)
-        onUpdated(deletedKeys = listOf(key))
-    }
-
-    fun unhide(key: OsmQuestKey): Boolean {
-        val hidden = getHidden(key)
-        synchronized(this) {
-            if (!hiddenDB.delete(key)) return false
-        }
-        if (hidden != null) onUnhid(hidden)
-        val quest = get(key)
-        if (quest != null) onUpdated(added = listOf(quest))
-        return true
-    }
-
-    /** Un-hides all previously hidden quests by user interaction */
-    fun unhideAll(): Int {
-        val unhidCount = synchronized(this) { hiddenDB.deleteAll() }
-        onUnhidAll()
-        onInvalidated()
-        return unhidCount
-    }
-
-    fun getHidden(key: OsmQuestKey): OsmQuestHidden? {
-        val timestamp = hiddenDB.getTimestamp(key) ?: return null
-        val pos = mapDataSource.getGeometry(key.elementType, key.elementId)?.center
-        return createOsmQuestHidden(key, pos, timestamp)
-    }
-
-    fun getAllHiddenNewerThan(timestamp: Long): List<OsmQuestHidden> {
-        val questKeysWithTimestamp = hiddenDB.getNewerThan(timestamp)
-
-        val elementKeys = HashSet<ElementKey>()
-        questKeysWithTimestamp.mapTo(elementKeys) {
-            ElementKey(it.osmQuestKey.elementType, it.osmQuestKey.elementId)
-        }
-
-        val geometriesByKey = mapDataSource.getGeometries(elementKeys)
-            .associateBy { ElementKey(it.elementType, it.elementId) }
-
-        return questKeysWithTimestamp.mapNotNull { (key, timestamp) ->
-            val pos = geometriesByKey[ElementKey(key.elementType, key.elementId)]?.geometry?.center
-            createOsmQuestHidden(key, pos, timestamp)
-        }
-    }
-
-    private fun createOsmQuestHidden(key: OsmQuestKey, position: LatLon?, timestamp: Long): OsmQuestHidden? {
-        if (position == null) return null
-        val questType = questTypeRegistry.getByName(key.questTypeName) as? OsmElementQuestType<*> ?: return null
-        return OsmQuestHidden(key.elementType, key.elementId, questType, position, timestamp)
-    }
+        pos.truncateTo6Decimals() in getBlacklistedPositions(BoundingBox(pos, pos))
 
     /* ---------------------------------------- Listeners --------------------------------------- */
 
@@ -373,42 +310,24 @@ class OsmQuestController internal constructor(
 
     private fun onUpdated(
         added: Collection<OsmQuest> = emptyList(),
-        deletedKeys: Collection<OsmQuestKey> = emptyList()
+        deleted: Collection<OsmQuestKey> = emptyList()
     ) {
-        if (added.isEmpty() && deletedKeys.isEmpty()) return
+        if (added.isEmpty() && deleted.isEmpty()) return
 
-        val visibleAdded = if (added.isNotEmpty()) {
-            val hiddenIds = getHiddenQuests()
-            val bbox = added.map { it.position }.enclosingBoundingBox()
+        listeners.forEach { it.onUpdated(added, deleted) }
+    }
+
+    private fun Collection<OsmQuest>.filterVisible(): Collection<OsmQuest> =
+        if (isNotEmpty()) {
+            val bbox = map { it.position }.enclosingBoundingBox()
             val hiddenPositions = getBlacklistedPositions(bbox)
-            added.filter { it.key !in hiddenIds && it.position.truncateTo5Decimals() !in hiddenPositions }
+            filter { it.position.truncateTo6Decimals() !in hiddenPositions }
         } else {
-            added
+            this
         }
 
-        listeners.forEach { it.onUpdated(visibleAdded, deletedKeys) }
-    }
     private fun onInvalidated() {
         listeners.forEach { it.onInvalidated() }
-    }
-
-    /* ------------------------------------- Hide Listeners ------------------------------------- */
-
-    fun addHideQuestsListener(listener: HideOsmQuestListener) {
-        hideListeners.add(listener)
-    }
-    fun removeHideQuestsListener(listener: HideOsmQuestListener) {
-        hideListeners.remove(listener)
-    }
-
-    private fun onHid(edit: OsmQuestHidden) {
-        hideListeners.forEach { it.onHid(edit) }
-    }
-    private fun onUnhid(edit: OsmQuestHidden) {
-        hideListeners.forEach { it.onUnhid(edit) }
-    }
-    private fun onUnhidAll() {
-        hideListeners.forEach { it.onUnhidAll() }
     }
 
     companion object {
@@ -416,20 +335,16 @@ class OsmQuestController internal constructor(
     }
 }
 
-// the resulting precision is about ~1 meter (see #1089)
-private fun LatLon.truncateTo5Decimals() = LatLon(latitude.truncateTo5Decimals(), longitude.truncateTo5Decimals())
-
-private fun Double.truncateTo5Decimals() = (this * 1e5).toInt().toDouble() / 1e5
-
 /** an index by which a list of quest types can be sorted so that quests that are the slowest to
  *  evaluate are evaluated first. This is a performance improvement because the evaluation is done
  *  in parallel on as many threads as there are CPU cores. So if all threads are done except one,
  *  all have to wait for that one thread. So, better enqueue the expensive work at the beginning. */
 private val OsmElementQuestType<*>.chonkerIndex: Int get() = when (this) {
     is AddOpeningHours -> 0 // OpeningHoursParser, extensive filter
-    is AddSuspectedOneway -> 0 // Download, IO TODO
     is CheckExistence -> 1 // FeatureDictionary, extensive filter
+    is CheckShopExistence -> 1 // FeatureDictionary, extensive filter
     is AddHousenumber -> 1 // complex filter
+    is AddMaxHeight -> 1 // complex filter
     is AddCycleway -> 2 // complex filter
     is AddPlaceName -> 2 // FeatureDictionary, extensive filter
     else -> 10

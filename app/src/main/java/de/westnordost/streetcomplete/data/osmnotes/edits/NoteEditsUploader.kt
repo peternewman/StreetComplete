@@ -1,14 +1,18 @@
 package de.westnordost.streetcomplete.data.osmnotes.edits
 
-import android.util.Log
+import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
-import de.westnordost.streetcomplete.data.osmnotes.NotesApi
-import de.westnordost.streetcomplete.data.osmnotes.StreetCompleteImageUploader
+import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
+import de.westnordost.streetcomplete.data.osmnotes.PhotoServiceApiClient
 import de.westnordost.streetcomplete.data.osmnotes.deleteImages
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.COMMENT
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.CREATE
-import de.westnordost.streetcomplete.data.upload.ConflictException
+import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
+import de.westnordost.streetcomplete.data.osmtracks.TracksApiClient
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
+import de.westnordost.streetcomplete.data.user.UserDataSource
+import de.westnordost.streetcomplete.util.logs.Log
+import io.ktor.http.encodeURLPathPart
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,8 +24,10 @@ import kotlinx.coroutines.withContext
 class NoteEditsUploader(
     private val noteEditsController: NoteEditsController,
     private val noteController: NoteController,
-    private val notesApi: NotesApi,
-    private val imageUploader: StreetCompleteImageUploader
+    private val userDataSource: UserDataSource,
+    private val notesApi: NotesApiClient,
+    private val tracksApi: TracksApiClient,
+    private val imageUploader: PhotoServiceApiClient
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
 
@@ -43,7 +49,7 @@ class NoteEditsUploader(
     private suspend fun uploadMissedImageActivations() {
         while (true) {
             val edit = noteEditsController.getOldestNeedingImagesActivation() ?: break
-            /* see uploadEdits */
+            // see uploadEdits
             withContext(scope.coroutineContext) {
                 imageUploader.activate(edit.noteId)
                 noteEditsController.markImagesActivated(edit.id)
@@ -61,9 +67,13 @@ class NoteEditsUploader(
         }
     }
 
-    private fun uploadEdit(edit: NoteEdit) {
-        val text = edit.text.orEmpty() + uploadAndGetAttachedPhotosText(edit.imagePaths)
+    private suspend fun uploadEdit(edit: NoteEdit) {
+        // try to upload the image and track if we have them
+        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths)
+        val trackText = uploadAndGetAttachedTrackText(edit.track, edit.text)
+        val text = edit.text.orEmpty() + imageText + trackText
 
+        // done, try to upload the note to OSM
         try {
             val note = when (edit.action) {
                 CREATE -> notesApi.create(edit.position, text)
@@ -95,14 +105,17 @@ class NoteEditsUploader(
 
             // should update the note if there was a conflict, so it doesn't happen again
             val updatedNote = notesApi.get(edit.noteId)
-            if (updatedNote != null) noteController.put(updatedNote)
-            else noteController.delete(edit.noteId)
+            if (updatedNote != null) {
+                noteController.put(updatedNote)
+            } else {
+                noteController.delete(edit.noteId)
+            }
 
             deleteImages(edit.imagePaths)
         }
     }
 
-    private fun uploadAndGetAttachedPhotosText(imagePaths: List<String>): String {
+    private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>): String {
         if (imagePaths.isNotEmpty()) {
             val urls = imageUploader.upload(imagePaths)
             if (urls.isNotEmpty()) {
@@ -110,6 +123,16 @@ class NoteEditsUploader(
             }
         }
         return ""
+    }
+
+    private suspend fun uploadAndGetAttachedTrackText(
+        trackpoints: List<Trackpoint>,
+        noteText: String?
+    ): String {
+        if (trackpoints.isEmpty()) return ""
+        val trackId = tracksApi.create(trackpoints, noteText)
+        val encodedUsername = userDataSource.userName!!.encodeURLPathPart()
+        return "\n\nGPS Trace: https://www.openstreetmap.org/user/$encodedUsername/traces/$trackId\n"
     }
 
     companion object {

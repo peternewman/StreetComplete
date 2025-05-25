@@ -1,18 +1,18 @@
 package de.westnordost.streetcomplete.data.osmnotes
 
-import android.util.Log
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.ktx.format
-import java.lang.System.currentTimeMillis
-import java.util.concurrent.CopyOnWriteArrayList
+import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.util.ktx.format
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import de.westnordost.streetcomplete.util.logs.Log
 
 /** Manages access to the notes storage */
 class NoteController(
     private val dao: NoteDao
 ) {
     /* Must be a singleton because there is a listener that should respond to a change in the
-    *  database table */
+     * database table */
 
     /** Interface to be notified of new notes, updated notes and notes that have been deleted */
     interface Listener {
@@ -21,11 +21,11 @@ class NoteController(
         /** called when all notes have been cleared */
         fun onCleared()
     }
-    private val listeners: MutableList<Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<Listener>()
 
     /** Replace all notes in the given bounding box with the given notes */
     fun putAllForBBox(bbox: BoundingBox, notes: Collection<Note>) {
-        val time = currentTimeMillis()
+        val time = nowAsEpochMilliseconds()
 
         val oldNotesById = mutableMapOf<Long, Note>()
         val addedNotes = mutableListOf<Note>()
@@ -46,7 +46,7 @@ class NoteController(
             dao.deleteAll(oldNotesById.keys)
         }
 
-        val seconds = (currentTimeMillis() - time) / 1000.0
+        val seconds = (nowAsEpochMilliseconds() - time) / 1000.0
         Log.i(TAG, "Persisted ${addedNotes.size} and deleted ${oldNotesById.size} notes in ${seconds.format(1)}s")
 
         onUpdated(added = addedNotes, updated = updatedNotes, deleted = oldNotesById.keys)
@@ -66,8 +66,11 @@ class NoteController(
     fun put(note: Note) {
         val hasNote = synchronized(this) { dao.get(note.id) != null }
 
-        if (hasNote) onUpdated(updated = listOf(note))
-        else onUpdated(added = listOf(note))
+        if (hasNote) {
+            onUpdated(updated = listOf(note))
+        } else {
+            onUpdated(added = listOf(note))
+        }
 
         dao.put(note)
     }

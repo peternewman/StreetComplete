@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.westnordost.streetcomplete.R
 
-/** A dialog in which you can one item of a range of items */
+/** A dialog in which you can select one item of a range of items */
 class ImageListPickerDialog<T>(
     context: Context,
     items: List<DisplayItem<T>>,
@@ -17,7 +17,7 @@ class ImageListPickerDialog<T>(
     columns: Int = 2,
     @StringRes titleResId: Int = R.string.quest_select_hint,
     onSelection: (DisplayItem<T>) -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+) : AlertDialog(context) {
 
     init {
         val horizontalMargin = context.resources.getDimensionPixelOffset(R.dimen.dialog_horizontal_margin)

@@ -1,7 +1,5 @@
 package de.westnordost.streetcomplete.data.elementfilter
 
-import java.util.LinkedList
-
 abstract class BooleanExpression<I : Matcher<T>, T> {
     var parent: Chain<I, T>? = null
         internal set
@@ -10,11 +8,11 @@ abstract class BooleanExpression<I : Matcher<T>, T> {
 }
 
 abstract class Chain<I : Matcher<T>, T> : BooleanExpression<I, T>() {
-    protected val nodes: LinkedList<BooleanExpression<I, T>> = LinkedList()
+    protected val nodes = ArrayList<BooleanExpression<I, T>>()
 
     val children: List<BooleanExpression<I, T>> get() = nodes.toList()
 
-    fun addChild(child: BooleanExpression<I, T>) {
+    open fun addChild(child: BooleanExpression<I, T>) {
         child.parent = this
         nodes.add(child)
     }
@@ -57,8 +55,8 @@ abstract class Chain<I : Matcher<T>, T> : BooleanExpression<I, T>() {
         val it = nodes.listIterator()
         while (it.hasNext()) {
             val child = it.next() as? Chain ?: continue
-            if (child.nodes.size == 1) {
-                replaceChildAt(it, child.nodes.first)
+            if (child.nodes.size == 1 && child !is Not<I, T>) {
+                replaceChildAt(it, child.nodes.first())
                 it.previous() // = the just replaced node will be checked again
             } else {
                 child.removeEmptyNodes()
@@ -71,6 +69,9 @@ abstract class Chain<I : Matcher<T>, T> : BooleanExpression<I, T>() {
         val it = nodes.listIterator()
         while (it.hasNext()) {
             val child = it.next() as? Chain ?: continue
+            if (child is Not<I, T>) {
+                continue
+            }
             child.mergeNodesWithSameOperator()
 
             // merge two successive nodes of same type
@@ -94,6 +95,17 @@ class AllOf<I : Matcher<T>, T> : Chain<I, T>() {
 class AnyOf<I : Matcher<T>, T> : Chain<I, T>() {
     override fun matches(obj: T) = nodes.any { it.matches(obj) }
     override fun toString() = nodes.joinToString(" or ") { "$it" }
+}
+
+class Not<I : Matcher<T>, T> : Chain<I, T>() {
+    override fun addChild(child: BooleanExpression<I, T>) {
+        check(nodes.isEmpty()) { "Adding a second child to '!' (NOT) operator is not allowed" }
+        super.addChild(child)
+    }
+
+    override fun matches(obj: T) = !nodes.first().matches(obj)
+
+    override fun toString() = "!(${nodes.firstOrNull() ?: ""})"
 }
 
 interface Matcher<in T> {

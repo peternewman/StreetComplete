@@ -7,16 +7,16 @@ import de.westnordost.streetcomplete.testutils.mock
 import de.westnordost.streetcomplete.testutils.note
 import de.westnordost.streetcomplete.testutils.on
 import kotlinx.coroutines.runBlocking
-import org.junit.Before
-import org.junit.Test
 import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.verify
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 class NotesDownloaderTest {
     private lateinit var noteController: NoteController
-    private lateinit var notesApi: NotesApi
+    private lateinit var notesApi: NotesApiClient
 
-    @Before fun setUp() {
+    @BeforeTest fun setUp() {
         noteController = mock()
         notesApi = mock()
     }
@@ -25,7 +25,7 @@ class NotesDownloaderTest {
         val note1 = note()
         val bbox = bbox()
 
-        on(notesApi.getAll(any(), anyInt(), anyInt())).thenReturn(listOf(note1))
+        on(notesApi.getAllOpen(any(), anyInt())).thenReturn(listOf(note1))
         val dl = NotesDownloader(notesApi, noteController)
         dl.download(bbox)
 

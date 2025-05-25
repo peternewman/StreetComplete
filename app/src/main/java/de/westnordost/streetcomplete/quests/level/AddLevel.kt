@@ -2,15 +2,16 @@ package de.westnordost.streetcomplete.quests.level
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
-import de.westnordost.streetcomplete.data.meta.isKindOfShopExpression
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolygonsGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
-import de.westnordost.streetcomplete.util.contains
-import de.westnordost.streetcomplete.util.isInMultipolygon
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.isPlace
+import de.westnordost.streetcomplete.util.math.contains
+import de.westnordost.streetcomplete.util.math.isInMultipolygon
 
 class AddLevel : OsmElementQuestType<String> {
 
@@ -30,25 +31,24 @@ class AddLevel : OsmElementQuestType<String> {
     """.toElementFilterExpression() }
 
     /* only nodes because ways/relations are not likely to be floating around freely in a mall
-    *  outline */
+     * outline */
     private val filter by lazy { """
         nodes with
-         (${isKindOfShopExpression()})
-         and !level and (name or brand)
+          !level
+          and (name or brand or noname = yes or name:signed = no)
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add level to shops"
+    override val changesetComment = "Determine on which level shops are in a building"
     override val wikiLink = "Key:level"
     override val icon = R.drawable.ic_quest_level
     /* disabled because in a mall with multiple levels, if there are nodes with no level defined,
-    *  it really makes no sense to tag something as vacant if the level is not known. Instead, if
-    *  the user cannot find the place on any level in the mall, delete the element completely. */
-    override val isReplaceShopEnabled = false
+     * it really makes no sense to tag something as vacant if the level is not known. Instead, if
+     * the user cannot find the place on any level in the mall, delete the element completely. */
+    override val isReplacePlaceEnabled = false
     override val isDeleteElementEnabled = true
+    override val achievements = listOf(CITIZEN)
 
-    override val questTypeAchievements = listOf(CITIZEN)
-
-    override fun getTitle(tags: Map<String, String>) = R.string.quest_level_title
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_level_title2
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
         // get geometry of all malls in the area
@@ -83,7 +83,7 @@ class AddLevel : OsmElementQuestType<String> {
 
         // now, return all shops that have no level tagged and are inside those multi-level malls
         val shopsWithoutLevel = mapData
-            .filter { filter.matches(it) }
+            .filter { filter.matches(it) && it.isPlace() }
             .toMutableList()
         if (shopsWithoutLevel.isEmpty()) return emptyList()
 
@@ -105,7 +105,7 @@ class AddLevel : OsmElementQuestType<String> {
     }
 
     override fun isApplicableTo(element: Element): Boolean? {
-        if (!filter.matches(element)) return false
+        if (!filter.matches(element) || !element.isPlace()) return false
         // for shops with no level, we actually need to look at geometry in order to find if it is
         // contained within any multi-level mall
         return null
@@ -113,7 +113,7 @@ class AddLevel : OsmElementQuestType<String> {
 
     override fun createForm() = AddLevelForm()
 
-    override fun applyAnswerTo(answer: String, tags: Tags, timestampEdited: Long) {
+    override fun applyAnswerTo(answer: String, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         tags["level"] = answer
     }
 }

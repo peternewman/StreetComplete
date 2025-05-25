@@ -7,14 +7,14 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapData
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Relation
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
-import de.westnordost.streetcomplete.ktx.isArea
-import de.westnordost.streetcomplete.util.centerPointOfPolygon
-import de.westnordost.streetcomplete.util.centerPointOfPolyline
-import de.westnordost.streetcomplete.util.isRingDefinedClockwise
+import de.westnordost.streetcomplete.util.ktx.isArea
+import de.westnordost.streetcomplete.util.math.centerPointOfPolygon
+import de.westnordost.streetcomplete.util.math.centerPointOfPolyline
+import de.westnordost.streetcomplete.util.math.isRingDefinedClockwise
 import kotlin.collections.ArrayList
 
 /** Creates an ElementGeometry from an element and a collection of positions. */
-class ElementGeometryCreator() {
+class ElementGeometryCreator {
 
     /** Create an ElementGeometry from any element, using the given MapData to find the positions
      *  of the nodes.
@@ -78,20 +78,17 @@ class ElementGeometryCreator() {
      *
      * @return an ElementPolygonsGeometry if the relation describes an area or an
      *         ElementPolylinesGeometry if it describes is a linear feature */
-    fun create(relation: Relation, wayGeometries: Map<Long, List<LatLon>>): ElementGeometry? {
-
-        return if (relation.isArea()) {
+    fun create(relation: Relation, wayGeometries: Map<Long, List<LatLon>>): ElementGeometry? =
+        if (relation.isArea()) {
             createMultipolygonGeometry(relation, wayGeometries)
         } else {
             createPolylinesGeometry(relation, wayGeometries)
         }
-    }
 
     private fun createMultipolygonGeometry(
         relation: Relation,
         wayGeometries: Map<Long, List<LatLon>>
     ): ElementPolygonsGeometry? {
-
         val outer = createNormalizedRingGeometry(relation, "outer", false, wayGeometries)
         val inner = createNormalizedRingGeometry(relation, "inner", true, wayGeometries)
         if (outer.isEmpty()) return null
@@ -109,7 +106,6 @@ class ElementGeometryCreator() {
         relation: Relation,
         wayGeometries: Map<Long, List<LatLon>>
     ): ElementPolylinesGeometry? {
-
         val waysNodePositions = getRelationMemberWaysNodePositions(relation, wayGeometries)
         val joined = waysNodePositions.joined()
 
@@ -130,7 +126,6 @@ class ElementGeometryCreator() {
         clockwise: Boolean,
         wayGeometries: Map<Long, List<LatLon>>
     ): ArrayList<ArrayList<LatLon>> {
-
         val waysNodePositions = getRelationMemberWaysNodePositions(relation, role, wayGeometries)
         val ringGeometry = waysNodePositions.joined().rings
         ringGeometry.setOrientation(clockwise)
@@ -140,21 +135,19 @@ class ElementGeometryCreator() {
     private fun getRelationMemberWaysNodePositions(
         relation: Relation,
         wayGeometries: Map<Long, List<LatLon>>
-    ): List<List<LatLon>> {
-        return relation.members
+    ): List<List<LatLon>> =
+        relation.members
             .filter { it.type == ElementType.WAY }
             .mapNotNull { getValidNodePositions(wayGeometries[it.ref]) }
-    }
 
     private fun getRelationMemberWaysNodePositions(
         relation: Relation,
         withRole: String,
         wayGeometries: Map<Long, List<LatLon>>
-    ): List<List<LatLon>> {
-        return relation.members
+    ): List<List<LatLon>> =
+        relation.members
             .filter { it.type == ElementType.WAY && it.role == withRole }
             .mapNotNull { getValidNodePositions(wayGeometries[it.ref]) }
-    }
 
     private fun getValidNodePositions(wayGeometry: List<LatLon>?): List<LatLon>? {
         if (wayGeometry == null) return null

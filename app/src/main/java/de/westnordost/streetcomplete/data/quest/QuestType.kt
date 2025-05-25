@@ -1,26 +1,26 @@
 package de.westnordost.streetcomplete.data.quest
 
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement
-import de.westnordost.streetcomplete.quests.AbstractQuestAnswerFragment
+import de.westnordost.streetcomplete.data.osm.edits.EditType
+import de.westnordost.streetcomplete.quests.AbstractQuestForm
 
-interface QuestType<T> {
+/** A quest type appears as a pin with an icon on the map and when opened, the quest type's
+ *  question is displayed along with a UI to answer that quest.
+ *
+ *  How many quests of which types have been solved is persisted for the statistics and each quest
+ *  type can contribute to unlocking new achievement levels of certain types.
+ *
+ *  Most QuestType inherit from [OsmElementQuestType][de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType] */
+interface QuestType : EditType {
 
-    /** the icon resource id used to display this quest type on the map */
-    val icon: Int
+    /** Hint text to be shown when the user taps on the ℹ️ button */
+    val hint: Int? get() = null
 
-    /** the title resource id used to display the quest's question */
-    val title: Int
+    /** Hint pictures to be shown when the user taps on the ℹ️ button */
+    val hintImages: List<Int> get() = emptyList()
 
-    /** returns the string resource id that explains why this quest is disabled by default or zero
-     * if it is not disabled by default */
-    val defaultDisabledMessage: Int get() = 0
-
-    /** returns the dialog in which the user can add the data */
-    fun createForm(): AbstractQuestAnswerFragment<T>
+    /** returns the fragment in which the user can add the data */
+    fun createForm(): AbstractQuestForm
 
     /** The quest type can clean it's metadata that is older than the given timestamp here, if any  */
     fun deleteMetadataOlderThan(timestamp: Long) {}
-
-    /** towards which achievements the quest should count */
-    val questTypeAchievements: List<QuestTypeAchievement>
 }

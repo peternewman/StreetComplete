@@ -3,27 +3,17 @@ package de.westnordost.streetcomplete.data.osm.edits
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.ElementEditKey
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
-import de.westnordost.streetcomplete.data.osm.mapdata.Element
-import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 
 data class ElementEdit(
     /** (row) id of the edit. 0 if not inserted into DB yet */
     var id: Long,
 
-    /** quest type associated with the edit. This is used to sort this edit into a changeset
+    /** edit type associated with the edit. This is used to sort this edit into a changeset
      *  associated with the quest type. A changeset gets its comment from the quest type */
-    val questType: OsmElementQuestType<*>,
+    val type: ElementEditType,
 
-    /** element type this edit refers to */
-    val elementType: ElementType,
-    /** element id this edit refers to. Unlike element.id, this field may change when the OSM API
-     *  returns element ID updates */
-    val elementId: Long,
-    /** original element this edit was made on */
-    val originalElement: Element,
-    /** original geometry of element this edit refers to */
+    /** original geometry of element this edit refers to. For display purposes only */
     val originalGeometry: ElementGeometry,
 
     /** what is the source of this edit? (Currently, always "survey"). Used for the changeset
@@ -37,7 +27,10 @@ data class ElementEdit(
     override val isSynced: Boolean,
 
     /** The action to perform */
-    val action: ElementEditAction
+    val action: ElementEditAction,
+
+    /** Whether the user was near the element that is being edited when this edit was created */
+    val isNearUserLocation: Boolean
 ) : Edit {
     override val isUndoable: Boolean get() = !isSynced || action is IsActionRevertable
     override val key: ElementEditKey get() = ElementEditKey(id)

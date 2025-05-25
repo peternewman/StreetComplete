@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.data.osm.mapdata
 
+import de.westnordost.streetcomplete.util.ktx.format
+import de.westnordost.streetcomplete.util.math.normalizeLongitude
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -17,17 +19,40 @@ data class BoundingBox(val min: LatLon, val max: LatLon) {
         }
     }
 
-    val crosses180thMeridian get() = min.longitude > max.longitude
+    val crosses180thMeridian get() =
+        normalizeLongitude(min.longitude) > normalizeLongitude(max.longitude)
 }
 
 /** @return two new bounds split alongside the 180th meridian or, if these bounds do not cross
  * the 180th meridian, just this
  */
-fun BoundingBox.splitAt180thMeridian(): List<BoundingBox> {
-    return if (crosses180thMeridian) {
+fun BoundingBox.splitAt180thMeridian(): List<BoundingBox> =
+    if (crosses180thMeridian) {
         listOf(
-            BoundingBox(min.latitude, min.longitude, max.latitude, 180.0),
+            // - 1e-13 because the two bboxes should not intersect. I.e. we want the last possible
+            // value before it wraps around to -180.0
+            // (1e-13 is the maximum decimal precision for when there is 180 before the point)
+            BoundingBox(min.latitude, min.longitude, max.latitude, 180.0 - 1e-13),
             BoundingBox(min.latitude, -180.0, max.latitude, max.longitude)
         )
-    } else listOf(this)
-}
+    } else {
+        listOf(this)
+    }
+
+/** @return a polygon with the same extent as this bounding box, defined in counter-clockwise order
+ */
+fun BoundingBox.toPolygon() = listOf(
+    min,
+    LatLon(min.latitude, max.longitude),
+    max,
+    LatLon(max.latitude, min.longitude),
+    min,
+)
+
+/** bounding box bounds in counter-clockwise direction, starting with min longitude */
+fun BoundingBox.toOsmApiString(): String = listOf(
+    min.longitude,
+    min.latitude,
+    max.longitude,
+    max.latitude
+).joinToString(",") { it.format(7) }

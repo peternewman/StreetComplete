@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete
 
+import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
+
 object ApplicationConstants {
     const val NAME = "StreetComplete"
     const val USER_AGENT = NAME + " " + BuildConfig.VERSION_NAME
@@ -7,8 +9,6 @@ object ApplicationConstants {
 
     const val MAX_DOWNLOADABLE_AREA_IN_SQKM = 12.0
     const val MIN_DOWNLOADABLE_AREA_IN_SQKM = 0.1
-
-    const val COPYRIGHT_YEARS = "2016-2022"
 
     const val DATABASE_NAME = "streetcomplete_v2.db"
     const val OLD_DATABASE_NAME = "streetcomplete.db"
@@ -24,6 +24,12 @@ object ApplicationConstants {
     /** the duration after which OSM data, notes, quest meta data etc. will be deleted from the
      *  database if not used anymore and have not been refreshed in the meantime  */
     const val DELETE_OLD_DATA_AFTER = 14L * 24 * 60 * 60 * 1000 // 14 days in ms
+
+    /** the duration after which logs will be deleted from the database */
+    const val DELETE_OLD_LOG_AFTER = 14L * 24 * 60 * 60 * 1000 // 14 days in ms
+
+    /** the duration after which logs won't be attached to the crash report */
+    const val DO_NOT_ATTACH_LOG_TO_CRASH_REPORT_AFTER = 5L * 60 * 1000 // 5 minutes in ms
 
     const val NOTE_MIN_ZOOM = 15
 
@@ -41,15 +47,19 @@ object ApplicationConstants {
 
     const val AVATARS_CACHE_DIRECTORY = "osm_user_avatars"
 
-    const val SC_PHOTO_SERVICE_URL = "https://westnordost.de/streetcomplete/photo-upload/" // must have trailing /
+    const val SC_PHOTO_SERVICE_URL = "https://streetcomplete.app/photo-upload/" // must have trailing /
 
-    const val ATTACH_PHOTO_QUALITY = 80
-    const val ATTACH_PHOTO_MAXWIDTH = 1280 // WXGA
-    const val ATTACH_PHOTO_MAXHEIGHT = 1280 // WXGA
+    const val ATTACH_PHOTO_QUALITY = 65 // doesn't need to look super pretty
+    const val ATTACH_PHOTO_MAX_SIZE = 1920 // Full HD
 
     // name is "downloading" for historic reasons, not sure if it has any side-effects if it is changed now
     const val NOTIFICATIONS_CHANNEL_SYNC = "downloading"
     const val NOTIFICATIONS_ID_SYNC = 1
+
+    // where to send the error reports to
+    const val ERROR_REPORTS_EMAIL = "streetcomplete_errors@westnordost.de"
+
+    const val STREETMEASURE = "de.westnordost.streetmeasure"
 
     val IGNORED_RELATION_TYPES = setOf(
         // could be useful, but sometimes/often very very large
@@ -63,4 +73,20 @@ object ApplicationConstants {
         // no wiki entry, sounds like it could span large areas
         "power", "pipeline", "railway"
     )
+
+    val EDIT_ACTIONS_NOT_ALLOWED_TO_USE_LOCAL_CHANGES = setOf(
+        /* because this action may edit route relations but route relations are not persisted
+           locally for performance reasons */
+        SplitWayAction::class
+    )
+
+    /*
+    During development it might be better to work against the Test-API, rather than the
+    Live-API. Developers are reminded that they need a separate login for the Test-API and
+    can register/logon via https://master.apis.dev.openstreetmap.org/
+    Note that test actions not applied to the database do not require test API (test edits that are reverted
+    locally before an upload etc) and that test API has a separate database that is mostly empty
+    (test data needs to be created there).
+     */
+    const val USE_TEST_API = false
 }

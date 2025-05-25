@@ -2,23 +2,25 @@ package de.westnordost.streetcomplete.quests.level
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.widget.doAfterTextChanged
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.databinding.QuestLevelBinding
-import de.westnordost.streetcomplete.ktx.getLevelsOrNull
-import de.westnordost.streetcomplete.ktx.getSelectableLevels
-import de.westnordost.streetcomplete.ktx.isSomeKindOfShop
-import de.westnordost.streetcomplete.ktx.toShortString
-import de.westnordost.streetcomplete.ktx.viewLifecycleScope
-import de.westnordost.streetcomplete.map.getPinIcon
-import de.westnordost.streetcomplete.osm.SingleLevel
-import de.westnordost.streetcomplete.osm.levelsIntersect
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
-import de.westnordost.streetcomplete.quests.ShowsGeometryMarkers
-import de.westnordost.streetcomplete.util.TextChangedWatcher
-import de.westnordost.streetcomplete.util.enclosingBoundingBox
+import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
+import de.westnordost.streetcomplete.osm.level.SingleLevel
+import de.westnordost.streetcomplete.osm.level.levelsIntersect
+import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
+import de.westnordost.streetcomplete.osm.level.parseSelectableLevels
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
+import de.westnordost.streetcomplete.screens.main.map.Marker
+import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
+import de.westnordost.streetcomplete.screens.main.map.getIcon
+import de.westnordost.streetcomplete.screens.main.map.getTitle
+import de.westnordost.streetcomplete.util.ktx.toShortString
+import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
+import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,7 +28,7 @@ import org.koin.android.ext.android.inject
 import kotlin.math.ceil
 import kotlin.math.floor
 
-class AddLevelForm : AbstractQuestFormAnswerFragment<String>() {
+class AddLevelForm : AbstractOsmQuestForm<String>() {
 
     private val mapDataSource: MapDataWithEditsSource by inject()
 
@@ -44,16 +46,18 @@ class AddLevelForm : AbstractQuestFormAnswerFragment<String>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.levelInput.addTextChangedListener(TextChangedWatcher { onSelectedLevel() })
+        binding.levelInput.doAfterTextChanged { onSelectedLevel() }
 
         viewLifecycleScope.launch { initializeButtons() }
     }
 
     private suspend fun initializeButtons() {
-        val bbox = elementGeometry.center.enclosingBoundingBox(50.0)
+        val bbox = geometry.center.enclosingBoundingBox(50.0)
         val mapData = withContext(Dispatchers.IO) { mapDataSource.getMapDataWithGeometry(bbox) }
 
-        val shopsWithLevels = mapData.filter { it.tags["level"] != null && it.isSomeKindOfShop() }
+        val shopsWithLevels = mapData.filter {
+            it.tags["level"] != null && it.isPlaceOrDisusedPlace()
+        }
 
         shopElementsAndGeometry = shopsWithLevels.mapNotNull { e ->
             mapData.getGeometry(e.type, e.id)?.let { geometry -> e to geometry }
@@ -62,7 +66,7 @@ class AddLevelForm : AbstractQuestFormAnswerFragment<String>() {
             updateMarkers(selectedLevel)
         }
 
-        val selectableLevels = shopsWithLevels.getSelectableLevels()
+        val selectableLevels = parseSelectableLevels(shopsWithLevels.map { it.tags })
         binding.plusMinusContainer.addButton.setOnClickListener {
             val level = selectedLevel
             selectedLevel = if (level != null) {
@@ -92,15 +96,16 @@ class AddLevelForm : AbstractQuestFormAnswerFragment<String>() {
     }
 
     private fun updateMarkers(level: Double?) {
-        showsGeometryMarkersListener?.clearMarkersForCurrentQuest()
+        showsGeometryMarkersListener?.clearMarkersForCurrentHighlighting()
         if (level == null) return
         val levels = listOf(SingleLevel(level))
-        for ((element, geometry) in shopElementsAndGeometry) {
-            if (!element.getLevelsOrNull().levelsIntersect(levels)) continue
-            val icon = getPinIcon(element.tags)
-            val title = element.tags["name"] ?: element.tags["brand"]
-            showsGeometryMarkersListener?.putMarkerForCurrentQuest(geometry, icon, title)
+        val markers = shopElementsAndGeometry.mapNotNull { (element, geometry) ->
+            if (!parseLevelsOrNull(element.tags).levelsIntersect(levels)) return@mapNotNull null
+            val icon = getIcon(featureDictionary, element)
+            val title = getTitle(element.tags)
+            Marker(geometry, icon, title)
         }
+        showsGeometryMarkersListener?.putMarkersForCurrentHighlighting(markers)
     }
 
     override fun onClickOk() {

@@ -6,7 +6,6 @@ import de.westnordost.streetcomplete.data.osmnotes.NoteComment
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.user.User
 import de.westnordost.streetcomplete.data.user.UserDataSource
-import de.westnordost.streetcomplete.ktx.containsExactlyInAnyOrder
 import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.bbox
 import de.westnordost.streetcomplete.testutils.comment
@@ -15,12 +14,13 @@ import de.westnordost.streetcomplete.testutils.note
 import de.westnordost.streetcomplete.testutils.noteEdit
 import de.westnordost.streetcomplete.testutils.on
 import de.westnordost.streetcomplete.testutils.p
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
 import org.mockito.Mockito.verify
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class NotesWithEditsSourceTest {
 
@@ -31,7 +31,7 @@ class NotesWithEditsSourceTest {
     private lateinit var noteEditsListener: NoteEditsSource.Listener
     private lateinit var userDataSource: UserDataSource
 
-    @Before fun setUp() {
+    @BeforeTest fun setUp() {
         noteController = mock()
         noteEditsController = mock()
         userDataSource = mock()
@@ -236,7 +236,6 @@ class NotesWithEditsSourceTest {
 
     @Test
     fun `getAll returns updated notes`() {
-
         on(userDataSource.userId).thenReturn(-1)
         on(noteController.getAll(any<BoundingBox>())).thenReturn(initialNotes1)
         on(noteEditsController.getAllUnsynced(any())).thenReturn(edits1)

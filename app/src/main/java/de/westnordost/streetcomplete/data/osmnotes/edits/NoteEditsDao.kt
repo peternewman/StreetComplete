@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.LONGITUDE
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.NOTE_ID
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.TEXT
+import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.TRACK
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.TYPE
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.NAME
 import kotlinx.serialization.decodeFromString
@@ -71,20 +72,18 @@ class NoteEditsDao(private val db: Database) {
         ) { it.toNoteEdit() }
     }
 
-    fun getAllUnsynced(bbox: BoundingBox): List<NoteEdit> {
-        return db.query(NAME,
+    fun getAllUnsynced(bbox: BoundingBox): List<NoteEdit> =
+        db.query(NAME,
             where = "$IS_SYNCED = 0 AND " + inBoundsSql(bbox),
             orderBy = CREATED_TIMESTAMP
         ) { it.toNoteEdit() }
-    }
 
-    fun getAllUnsyncedPositions(bbox: BoundingBox): List<LatLon> {
-        return db.query(NAME,
+    fun getAllUnsyncedPositions(bbox: BoundingBox): List<LatLon> =
+        db.query(NAME,
             columns = arrayOf(LATITUDE, LONGITUDE),
             where = "$IS_SYNCED = 0 AND " + inBoundsSql(bbox),
             orderBy = CREATED_TIMESTAMP
         ) { LatLon(it.getDouble(LATITUDE), it.getDouble(LONGITUDE)) }
-    }
 
     fun markSynced(id: Long): Boolean =
         db.update(NAME, listOf(IS_SYNCED to 1), "$ID = $id", null) == 1
@@ -109,6 +108,13 @@ class NoteEditsDao(private val db: Database) {
     fun markImagesActivated(id: Long): Boolean =
         db.update(NAME, listOf(IMAGES_NEED_ACTIVATION to 0), "$ID = $id") == 1
 
+    fun replaceTextInUnsynced(text: String, replacement: String) {
+        db.exec(
+            "UPDATE $NAME SET $TEXT = replace($TEXT, ?, ?) WHERE $IS_SYNCED = 0",
+            arrayOf(text, replacement)
+        )
+    }
+
     private fun inBoundsSql(bbox: BoundingBox): String = """
         ($LATITUDE BETWEEN ${bbox.min.latitude} AND ${bbox.max.latitude}) AND
         ($LONGITUDE BETWEEN ${bbox.min.longitude} AND ${bbox.max.longitude})
@@ -123,6 +129,7 @@ class NoteEditsDao(private val db: Database) {
         TEXT to text,
         IMAGE_PATHS to Json.encodeToString(imagePaths),
         IMAGES_NEED_ACTIVATION to if (imagesNeedActivation) 1 else 0,
+        TRACK to Json.encodeToString(track),
         TYPE to action.name
     )
 
@@ -135,6 +142,7 @@ class NoteEditsDao(private val db: Database) {
         Json.decodeFromString(getString(IMAGE_PATHS)),
         getLong(CREATED_TIMESTAMP),
         getInt(IS_SYNCED) == 1,
-        getInt(IMAGES_NEED_ACTIVATION) == 1
+        getInt(IMAGES_NEED_ACTIVATION) == 1,
+        Json.decodeFromString(getString(TRACK)),
     )
 }

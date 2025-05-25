@@ -3,8 +3,8 @@ package de.westnordost.streetcomplete.quests.oneway
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.quests.TestMapDataWithGeometry
 import de.westnordost.streetcomplete.testutils.way
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class AddOnewayTest {
     private val questType = AddOneway()
@@ -17,8 +17,7 @@ class AddOnewayTest {
     @Test fun `applies to slim road`() {
         val mapData = TestMapDataWithGeometry(noDeadEndWays(mapOf(
             "highway" to "residential",
-            "width" to "4",
-            "lanes" to "1"
+            "width" to "4"
         )))
         assertEquals(1, questType.getApplicableElements(mapData).toList().size)
     }

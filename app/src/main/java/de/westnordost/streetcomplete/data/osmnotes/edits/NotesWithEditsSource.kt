@@ -9,7 +9,7 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.COMMENT
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.CREATE
 import de.westnordost.streetcomplete.data.user.User
 import de.westnordost.streetcomplete.data.user.UserDataSource
-import java.util.concurrent.CopyOnWriteArrayList
+import de.westnordost.streetcomplete.util.Listeners
 
 class NotesWithEditsSource(
     private val noteController: NoteController,
@@ -22,7 +22,7 @@ class NotesWithEditsSource(
 
         fun onCleared()
     }
-    private val listeners: MutableList<Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<Listener>()
 
     private val noteControllerListener = object : NoteController.Listener {
         override fun onUpdated(added: Collection<Note>, updated: Collection<Note>, deleted: Collection<Long>) {
@@ -45,12 +45,15 @@ class NotesWithEditsSource(
     private val noteEditsListener = object : NoteEditsSource.Listener {
         override fun onAddedEdit(edit: NoteEdit) {
             /* can't just get the associated note from DB and apply this edit to it because this
-            *  edit might just be the last in a long chain of edits, i.e. if several comments
-            *  are added to a note, or if a note is created through an edit (and then commented) */
+             * edit might just be the last in a long chain of edits, i.e. if several comments
+             * are added to a note, or if a note is created through an edit (and then commented) */
             val note = get(edit.noteId) ?: return
 
-            if (edit.action == CREATE) callOnUpdated(added = listOf(note))
-            else callOnUpdated(updated = listOf(note))
+            if (edit.action == CREATE) {
+                callOnUpdated(added = listOf(note))
+            } else {
+                callOnUpdated(updated = listOf(note))
+            }
         }
 
         override fun onSyncedEdit(edit: NoteEdit) {
@@ -108,7 +111,7 @@ class NotesWithEditsSource(
 
     /** returns collection with modified notes */
     private fun editsAppliedToNotes(originalNotes: Collection<Note>, noteEdits: List<NoteEdit>): Collection<Note> {
-        if (originalNotes.isEmpty()) return originalNotes
+        if (originalNotes.isEmpty() && noteEdits.isEmpty()) return originalNotes
 
         val notesById = HashMap<Long, Note>(originalNotes.size)
         originalNotes.associateByTo(notesById) { it.id }
@@ -141,7 +144,7 @@ class NotesWithEditsSource(
 
     private fun NoteEdit.createNoteComment(action: NoteComment.Action = NoteComment.Action.COMMENTED): NoteComment {
         var commentText = text ?: ""
-        if (!imagePaths.isNullOrEmpty()) {
+        if (imagePaths.isNotEmpty()) {
             commentText += "\n\n(Photo(s) will be attached on upload)"
         }
 

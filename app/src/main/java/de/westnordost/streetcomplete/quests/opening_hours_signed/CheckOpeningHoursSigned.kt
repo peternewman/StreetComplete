@@ -1,93 +1,67 @@
 package de.westnordost.streetcomplete.quests.opening_hours_signed
 
-import de.westnordost.osmfeatures.FeatureDictionary
+import de.westnordost.osmfeatures.Feature
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
-import de.westnordost.streetcomplete.data.meta.getLastCheckDateKeys
-import de.westnordost.streetcomplete.data.meta.isKindOfShopExpression
-import de.westnordost.streetcomplete.data.meta.setCheckDateForKey
-import de.westnordost.streetcomplete.data.meta.toCheckDate
-import de.westnordost.streetcomplete.data.meta.updateCheckDateForKey
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
-import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.CITIZEN
-import de.westnordost.streetcomplete.ktx.containsAny
-import de.westnordost.streetcomplete.quests.YesNoQuestAnswerFragment
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.util.concurrent.FutureTask
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.CITIZEN
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.getLastCheckDateKeys
+import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
+import de.westnordost.streetcomplete.osm.setCheckDateForKey
+import de.westnordost.streetcomplete.osm.toCheckDate
+import de.westnordost.streetcomplete.osm.updateCheckDateForKey
+import de.westnordost.streetcomplete.quests.YesNoQuestForm
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
-class CheckOpeningHoursSigned (
-    private val featureDictionaryFuture: FutureTask<FeatureDictionary>
+class CheckOpeningHoursSigned(
+    private val getFeature: (Element) -> Feature?
 ) : OsmElementQuestType<Boolean> {
 
     private val filter by lazy { """
-        nodes, ways, relations with
+        nodes, ways with
           opening_hours:signed = no
           and (
             $hasOldOpeningHoursCheckDateFilter
-            or older today -1 years
+            or older today -2 years
           )
           and access !~ private|no
           and (
             name or brand or noname = yes or name:signed = no
-            or amenity ~ recycling|toilets|bicycle_rental|charging_station or leisure=park or barrier
+            or amenity ~ recycling|toilets|bicycle_rental|charging_station or leisure = park or barrier
           )
     """.toElementFilterExpression() }
 
     private val hasOldOpeningHoursCheckDateFilter: String get() =
         getLastCheckDateKeys("opening_hours").joinToString("\nor ") {
-            "$it < today -1 years"
+            "$it < today -2 years"
         }
 
-    private val nameTags = listOf("name", "brand")
-
-    override val changesetComment = "Check whether opening hours are signed"
+    override val changesetComment = "Survey whether opening hours are signed"
     override val wikiLink = "Key:opening_hours:signed"
     override val icon = R.drawable.ic_quest_opening_hours_signed
-    override val isReplaceShopEnabled = true
-    override val questTypeAchievements = listOf(CITIZEN)
+    override val isReplacePlaceEnabled = true
+    override val achievements = listOf(CITIZEN)
 
-    override fun getTitle(tags: Map<String, String>): Int {
-        val hasProperName = hasProperName(tags)
-        val hasFeatureName = hasFeatureName(tags)
-        return  when {
-            !hasProperName  -> R.string.quest_openingHours_signed_no_name_title
-            !hasFeatureName -> R.string.quest_openingHours_signed_name_title
-            else            -> R.string.quest_openingHours_signed_name_type_title
-        }
-    }
-
-    override fun getTitleArgs(tags: Map<String, String>, featureName: Lazy<String?>): Array<String> {
-        val name = tags["name"] ?: tags["brand"]
-        val hasProperName = name != null
-        val hasFeatureName = hasFeatureName(tags)
-        return when {
-            !hasProperName  -> arrayOf(featureName.value.toString())
-            !hasFeatureName -> arrayOf(name!!)
-            else            -> arrayOf(name!!, featureName.value.toString())
-        }
-    }
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_openingHours_signed_title
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> =
         mapData.filter { isApplicableTo(it) }
 
     override fun isApplicableTo(element: Element): Boolean =
-        filter.matches(element) && hasName(element.tags)
+        filter.matches(element) && hasName(element)
 
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
-        getMapData().filter("nodes, ways, relations with " +
-            isKindOfShopExpression() + " or " + isKindOfShopExpression("disused")
-        )
+        getMapData().asSequence().filter { it.isPlaceOrDisusedPlace() }
 
-    override fun createForm() = YesNoQuestAnswerFragment()
+    override fun createForm() = YesNoQuestForm()
 
-    override fun applyAnswerTo(answer: Boolean, tags: Tags, timestampEdited: Long) {
-
+    override fun applyAnswerTo(answer: Boolean, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
         if (answer) {
             tags.remove("opening_hours:signed")
             /* it is now signed: we set the check date for the opening hours to the previous edit
@@ -99,22 +73,21 @@ class CheckOpeningHoursSigned (
                 .any { tags[it]?.toCheckDate() != null }
 
             if (!hasCheckDate) {
-                tags.setCheckDateForKey("opening_hours", LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(timestampEdited), ZoneId.systemDefault()
-                ).toLocalDate())
+                tags.setCheckDateForKey("opening_hours", Instant.fromEpochMilliseconds(timestampEdited)
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date)
             }
         } else {
             tags["opening_hours:signed"] = "no"
-            /* still unsigned: just set the check date to now, user was on-site */
+            // still unsigned: just set the check date to now, user was on-site
             tags.updateCheckDateForKey("opening_hours")
         }
     }
 
-    private fun hasName(tags: Map<String, String>) = hasProperName(tags) || hasFeatureName(tags)
+    private fun hasName(element: Element) = hasProperName(element.tags) || hasFeatureName(element)
 
     private fun hasProperName(tags: Map<String, String>): Boolean =
-        tags.keys.containsAny(nameTags)
+        tags.containsKey("name") || tags.containsKey("brand")
 
-    private fun hasFeatureName(tags: Map<String, String>): Boolean =
-        featureDictionaryFuture.get().byTags(tags).isSuggestion(false).find().isNotEmpty()
+    private fun hasFeatureName(element: Element) = getFeature(element)?.name != null
 }

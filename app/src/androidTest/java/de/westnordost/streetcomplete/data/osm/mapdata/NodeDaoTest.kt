@@ -1,20 +1,20 @@
 package de.westnordost.streetcomplete.data.osm.mapdata
 
 import de.westnordost.streetcomplete.data.ApplicationDbTestCase
-import de.westnordost.streetcomplete.ktx.containsExactlyInAnyOrder
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
-import java.lang.System.currentTimeMillis
+import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class NodeDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: NodeDao
 
-    @Before fun createDao() {
+    @BeforeTest fun createDao() {
         dao = NodeDao(database)
     }
 
@@ -76,13 +76,13 @@ class NodeDaoTest : ApplicationDbTestCase() {
 
     @Test fun getUnusedAndOldIds() {
         dao.putAll(listOf(nd(1L), nd(2L), nd(3L)))
-        val unusedIds = dao.getIdsOlderThan(currentTimeMillis() + 10)
+        val unusedIds = dao.getIdsOlderThan(nowAsEpochMilliseconds() + 10)
         assertTrue(unusedIds.containsExactlyInAnyOrder(listOf(1L, 2L, 3L)))
     }
 
     @Test fun getUnusedAndOldIdsButAtMostX() {
         dao.putAll(listOf(nd(1L), nd(2L), nd(3L)))
-        val unusedIds = dao.getIdsOlderThan(currentTimeMillis() + 10, 2)
+        val unusedIds = dao.getIdsOlderThan(nowAsEpochMilliseconds() + 10, 2)
         assertEquals(2, unusedIds.size)
     }
 

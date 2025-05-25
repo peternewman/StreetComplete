@@ -8,34 +8,39 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import de.westnordost.osm_opening_hours.parser.toOpeningHours
+import de.westnordost.osm_opening_hours.parser.toOpeningHoursOrNull
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestOpeningHoursBinding
 import de.westnordost.streetcomplete.databinding.QuestOpeningHoursCommentBinding
 import de.westnordost.streetcomplete.osm.opening_hours.parser.toOpeningHoursRows
-import de.westnordost.streetcomplete.osm.opening_hours.parser.toOpeningHoursRules
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
+import de.westnordost.streetcomplete.quests.opening_hours.adapter.OpeningHoursAdapter
 import de.westnordost.streetcomplete.quests.opening_hours.adapter.OpeningMonthsRow
 import de.westnordost.streetcomplete.quests.opening_hours.adapter.OpeningWeekdaysRow
-import de.westnordost.streetcomplete.quests.opening_hours.adapter.RegularOpeningHoursAdapter
-import de.westnordost.streetcomplete.util.AdapterDataChangedWatcher
-import kotlinx.serialization.decodeFromString
+import de.westnordost.streetcomplete.view.AdapterDataChangedWatcher
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class AddOpeningHoursForm : AbstractQuestFormAnswerFragment<OpeningHoursAnswer>() {
+class AddOpeningHoursForm : AbstractOsmQuestForm<OpeningHoursAnswer>() {
 
     override val contentLayoutResId = R.layout.quest_opening_hours
     private val binding by contentViewBinding(QuestOpeningHoursBinding::bind)
 
     override val buttonPanelAnswers get() =
-        if (isDisplayingPreviousOpeningHours) listOf(
-            AnswerItem(R.string.quest_generic_hasFeature_no) { setAsResurvey(false) },
-            AnswerItem(R.string.quest_generic_hasFeature_yes) {
-                applyAnswer(RegularOpeningHours(osmElement!!.tags["opening_hours"]!!.toOpeningHoursRules()!!))
-            }
-        )
-        else emptyList()
+        if (isDisplayingPreviousOpeningHours) {
+            listOf(
+                AnswerItem(R.string.quest_generic_hasFeature_no) { setAsResurvey(false) },
+                AnswerItem(R.string.quest_generic_hasFeature_yes) {
+                    applyAnswer(RegularOpeningHours(
+                        element.tags["opening_hours"]!!.toOpeningHours(lenient = true)
+                    ))
+                }
+            )
+        } else {
+            emptyList()
+        }
 
     override val otherAnswers = listOf(
         AnswerItem(R.string.quest_openingHours_no_sign) { confirmNoSign() },
@@ -47,14 +52,17 @@ class AddOpeningHoursForm : AbstractQuestFormAnswerFragment<OpeningHoursAnswer>(
         }
     )
 
-    private lateinit var openingHoursAdapter: RegularOpeningHoursAdapter
+    private lateinit var openingHoursAdapter: OpeningHoursAdapter
 
     private var isDisplayingPreviousOpeningHours: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        openingHoursAdapter = RegularOpeningHoursAdapter(requireContext(), countryInfo)
+        openingHoursAdapter = OpeningHoursAdapter(requireContext())
+        openingHoursAdapter.firstDayOfWorkweek = countryInfo.firstDayOfWorkweek
+        openingHoursAdapter.regularShoppingDays = countryInfo.regularShoppingDays
+        openingHoursAdapter.locale = countryInfo.userPreferredLocale
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -105,8 +113,8 @@ class AddOpeningHoursForm : AbstractQuestFormAnswerFragment<OpeningHoursAnswer>(
     }
 
     private fun initStateFromTags() {
-        val oh = osmElement!!.tags["opening_hours"]
-        val rows = oh?.toOpeningHoursRules()?.toOpeningHoursRows()
+        val oh = element.tags["opening_hours"]
+        val rows = oh?.toOpeningHoursOrNull(lenient = true)?.toOpeningHoursRows()
         if (rows != null) {
             openingHoursAdapter.rows = rows.toMutableList()
             setAsResurvey(true)

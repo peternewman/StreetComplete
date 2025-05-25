@@ -6,9 +6,10 @@
     <color name="attribution_text">#ccc</color>
 
     <color name="inverted_background">#aaa</color>
-    <color name="background">#000</color>
-    <color name="background_transparent">#0000</color>
+    <color name="background">#121212</color>
+    <color name="background_transparent">#00121212</color>
     <color name="text">#fff</color>
+    <color name="text_based_on_main_colors">@color/accent</color>
     <color name="monochrome_icon">#ccc</color>
 
     <color name="hint_text">#999</color>
@@ -16,10 +17,9 @@
     <color name="title_text_next_to_image">#fff</color>
     <color name="description_text_next_to_image">#fff</color>
 
-    <color name="smoothness_vehicle_tyre">#70808b</color>
+    <color name="matched_search_text">#6fff</color>
 
-    <!-- because on dark background, normal blue doesn't work well -->
-    <color name="star_of_david">#44f</color>
+    <color name="smoothness_vehicle_tyre">#70808b</color>
 
     <!-- for fading out images -->
     <color name="fade_out">#303030</color>

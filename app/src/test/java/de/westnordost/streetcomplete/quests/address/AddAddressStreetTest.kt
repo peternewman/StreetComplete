@@ -6,9 +6,9 @@ import de.westnordost.streetcomplete.testutils.member
 import de.westnordost.streetcomplete.testutils.node
 import de.westnordost.streetcomplete.testutils.rel
 import de.westnordost.streetcomplete.testutils.way
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class AddAddressStreetTest {
 
@@ -25,6 +25,26 @@ class AddAddressStreetTest {
         val addr = node(tags = mapOf(
             "addr:housenumber" to "123",
             "addr:street" to "onetwothree",
+        ))
+        val mapData = TestMapDataWithGeometry(listOf(addr))
+        assertEquals(0, questType.getApplicableElements(mapData).toList().size)
+        assertEquals(false, questType.isApplicableTo(addr))
+    }
+
+    @Test fun `not applicable to place with substreet name`() {
+        val addr = node(tags = mapOf(
+            "addr:housenumber" to "123",
+            "addr:substreet" to "onetwothree",
+        ))
+        val mapData = TestMapDataWithGeometry(listOf(addr))
+        assertEquals(0, questType.getApplicableElements(mapData).toList().size)
+        assertEquals(false, questType.isApplicableTo(addr))
+    }
+
+    @Test fun `not applicable to place with parentstreet name`() {
+        val addr = node(tags = mapOf(
+            "addr:housenumber" to "123",
+            "addr:parentstreet" to "onetwothree",
         ))
         val mapData = TestMapDataWithGeometry(listOf(addr))
         assertEquals(0, questType.getApplicableElements(mapData).toList().size)

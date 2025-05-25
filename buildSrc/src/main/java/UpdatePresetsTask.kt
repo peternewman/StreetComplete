@@ -7,8 +7,10 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.io.StringWriter
 import java.net.URL
+import java.util.Locale
 
-/** Update the presets metadata and its translations for use with the de.westnordost:osmfeatures library */
+/** Update the presets metadata and its translations for use with the de.westnordost:osmfeatures
+ *  library */
 open class UpdatePresetsTask : DefaultTask() {
     @get:Input var languageCodes: Collection<String>? = null
     @get:Input var targetDir: String? = null
@@ -16,31 +18,67 @@ open class UpdatePresetsTask : DefaultTask() {
 
     @TaskAction fun run() {
         val targetDir = targetDir ?: return
-        val exportLangs = languageCodes
+        /* eagerly also fetch different variants of a language (e.g. "en-NZ" also when just "en"
+           is specified as well as "sr" if just "sr-Cyrl" is specified). Hence, we only look at the
+           language code */
+        val exportLanguages = languageCodes?.map { Locale(Locale.forLanguageTag(it).language) }
         val version = version ?: return
 
-        // copy the presets.json 1:1
+        // copy and reduce the presets.json
         val presetsFile = File("$targetDir/presets.json")
-        presetsFile.writeText(fetchPresets(version))
+        presetsFile.writeText(fetchAndReducePresets(version))
 
         // download each language
-        for (localizationMetadata in fetchLocalizationMetadata()) {
-            val language = localizationMetadata.languageCode
+        val localizationMetadataList = fetchLocalizationMetadata()
+        for (localizationMetadata in localizationMetadataList) {
+            val locale = localizationMetadata.locale
+            val languageLocale = Locale(locale.language)
+            if (exportLanguages != null && !exportLanguages.any { it == languageLocale }) continue
 
-            if (exportLangs != null && !exportLangs.contains(language)) continue
+            val javaLanguageTag = locale.toLanguageTag()
+            println(javaLanguageTag)
 
-            println(localizationMetadata.languageCode)
+            val presetsLocalization = fetchAndReducePresetsLocalizations(localizationMetadata)
+            File("$targetDir/$javaLanguageTag.json").writeText(presetsLocalization)
+        }
 
-            val presetsLocalization = fetchPresetsLocalizations(localizationMetadata)
-            val javaLanguage = bcp47LanguageTagToJavaLanguageTag(language)
-            File("$targetDir/$javaLanguage.json").writeText(presetsLocalization)
+        // Norway has two languages, one of them is called Bokmål
+        // coded "no" in iD presets, but "nb" is also expected by Android.
+        // https://github.com/streetcomplete/StreetComplete/issues/3890
+        if ("no" in languageCodes.orEmpty()) {
+            val bokmalFile = File("$targetDir/no.json")
+            bokmalFile.copyTo(File("$targetDir/nb.json"), overwrite = true)
         }
     }
 
     /** Fetch iD presets */
-    private fun fetchPresets(version: String): String {
+    private fun fetchAndReducePresets(version: String): String {
         val presetsUrl = "https://raw.githubusercontent.com/openstreetmap/id-tagging-schema/$version/dist/presets.json"
-        return URL(presetsUrl).readText()
+        val json = Parser.default().parse(URL(presetsUrl).openStream()) as JsonObject
+        // remove unused presets
+        json.entries.removeAll { (key, value) ->
+            // we don't need them templates
+            key.startsWith("@templates")
+            // remove presets specific to certain countries (these are very likely just tweaks
+            // which fields are displayed etc), see https://github.com/ideditor/schema-builder/issues/94#issuecomment-2416796047
+            || (value as JsonObject).obj("locationSet")?.array<String>("include") != null
+            // remove "disused" presets. We deal with disused stuff ourselves, in a more detailed manner, i.e.
+            // say what kind of thing it is that is disused
+            || key.startsWith("disused/")
+        }
+        // strip unused fields
+        for (value in json.values) {
+            val preset = value as JsonObject
+            preset.remove("fields")
+            preset.remove("moreFields")
+            preset.remove("reference")
+            // after the locationSet->include presets are removed (see above), what remains are
+            // locationSet->exclude presets (preset available in all countries except X). These
+            // are usually the counterpart of the tweaks made for different countries, so with the
+            // tweaks removed, the locationSet->exclude field can be removed, too
+            preset.remove("locationSet")
+        }
+        return json.toJsonString(prettyPrint = true)
     }
 
     /** Fetch relevant meta-infos for localizations from iD */
@@ -50,23 +88,32 @@ open class UpdatePresetsTask : DefaultTask() {
         val languagesJson = Parser.default().parse(URL(contentsUrl).openStream()) as JsonArray<JsonObject>
 
         return languagesJson.mapNotNull {
-            if (it["type"] == "file") {
-                val name = it["name"] as String
-                val languageCode = name.subSequence(0, name.lastIndexOf(".")).toString()
+            if (it["type"] != "file") return@mapNotNull null
+            val name = it["name"] as String
+            if (name.endsWith(".min.json")) return@mapNotNull null
 
-                LocalizationMetadata(languageCode, it["download_url"] as String)
-            } else null
+            val filename = name.subSequence(0, name.indexOf(".")).toString()
+            val locale = Locale.forLanguageTag(filename.replace('@', '-'))
+            LocalizationMetadata(locale, it["download_url"] as String)
         }
     }
 
-    /** Download and pick the localization for only the presets from iD localizations
-     *  (the iD localizations contain everything, such as localizations of iD UI etc)*/
-    private fun fetchPresetsLocalizations(localization: LocalizationMetadata): String {
-        return URL(localization.downloadUrl).openStream().bufferedReader().use { it.readText() }.unescapeUnicode()
+    /** Download and pick the localization for only the preset features because the other things
+     *  are not used (currently) */
+    private fun fetchAndReducePresetsLocalizations(localization: LocalizationMetadata): String {
+        val json = Parser.default().parse(URL(localization.downloadUrl).openStream()) as JsonObject
+        for (value in json.values) {
+            val language = value as JsonObject
+            val presets = language.obj("presets")
+            // translations of preset categories and preset fields not used, so let's delete them
+            presets?.remove("categories")
+            presets?.remove("fields")
+        }
+        return json.toJsonString(prettyPrint = true).unescapeUnicode()
     }
 }
 
-private data class LocalizationMetadata(val languageCode: String, val downloadUrl: String)
+private data class LocalizationMetadata(val locale: Locale, val downloadUrl: String)
 
 private fun String.unescapeUnicode(): String {
     val out = StringWriter(length)
@@ -86,8 +133,9 @@ private fun String.unescapeUnicode(): String {
             }
         } else if (hadSlash) {
             hadSlash = false
-            if (ch == 'u') inUnicode = true
-            else {
+            if (ch == 'u') {
+                inUnicode = true
+            } else {
                 out.write(92)
                 out.write(ch.toString())
             }

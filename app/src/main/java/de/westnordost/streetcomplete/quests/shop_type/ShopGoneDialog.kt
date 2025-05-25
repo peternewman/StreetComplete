@@ -6,32 +6,33 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.ConfigurationCompat
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
-import de.westnordost.osmfeatures.GeometryType
-import de.westnordost.osmfeatures.StringUtils
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.data.osm.mapdata.Node
+import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.databinding.DialogShopGoneBinding
 import de.westnordost.streetcomplete.databinding.ViewShopTypeBinding
-import de.westnordost.streetcomplete.ktx.isSomeKindOfShop
-import de.westnordost.streetcomplete.ktx.toTypedArray
+import de.westnordost.streetcomplete.osm.POPULAR_PLACE_FEATURE_IDS
+import de.westnordost.streetcomplete.osm.isPlace
+import de.westnordost.streetcomplete.osm.toElement
+import de.westnordost.streetcomplete.osm.toPrefixedFeature
+import de.westnordost.streetcomplete.util.getLanguagesForFeatureDictionary
+import de.westnordost.streetcomplete.util.ktx.geometryType
+import de.westnordost.streetcomplete.view.controller.FeatureViewController
+import de.westnordost.streetcomplete.view.dialogs.SearchFeaturesDialog
 
 class ShopGoneDialog(
     context: Context,
-    private val geometryType: GeometryType?,
+    private val element: Element,
     private val countryCode: String?,
     private val featureDictionary: FeatureDictionary,
-    private val onSelectedFeature: (Map<String, String>) -> Unit,
-    private val onLeaveNote: () -> Unit
-) : AlertDialog(context, R.style.Theme_Bubble_Dialog) {
+    private val onSelectedFeatureFn: (Feature) -> Unit,
+    private val onLeaveNoteFn: () -> Unit
+) : AlertDialog(context) {
 
     private val binding: ViewShopTypeBinding
-
     private val radioButtons: List<RadioButton>
-
+    private val featureCtrl: FeatureViewController
     private var selectedRadioButtonId: Int = 0
 
     init {
@@ -40,16 +41,27 @@ class ShopGoneDialog(
 
         radioButtons = listOf(binding.vacantRadioButton, binding.replaceRadioButton, binding.leaveNoteRadioButton)
         for (radioButton in radioButtons) {
-            radioButton.setOnClickListener {
-                selectRadioButton(it)
-                binding.presetsEditText.error = null
-            }
+            radioButton.setOnClickListener { selectRadioButton(it) }
         }
 
-        binding.presetsEditText.setAdapter(SearchAdapter(context, { term -> getFeatures(term) }, { it.name }))
-        binding.presetsEditText.setOnClickListener { selectRadioButton(binding.replaceRadioButton) }
-        binding.presetsEditText.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) selectRadioButton(binding.replaceRadioButton)
+        featureCtrl = FeatureViewController(featureDictionary, binding.featureView.textView, binding.featureView.iconView)
+        featureCtrl.countryOrSubdivisionCode = countryCode
+
+        binding.featureView.root.background = null
+        binding.featureContainer.setOnClickListener {
+            selectRadioButton(binding.replaceRadioButton)
+
+            SearchFeaturesDialog(
+                context,
+                featureDictionary,
+                element.geometryType,
+                countryCode,
+                featureCtrl.feature?.name,
+                { it.toElement().isPlace() },
+                ::onSelectedFeature,
+                POPULAR_PLACE_FEATURE_IDS,
+                true
+            ).show()
         }
 
         setButton(
@@ -60,6 +72,13 @@ class ShopGoneDialog(
 
         setTitle(context.getString(R.string.quest_shop_gone_title))
         setView(dialogBinding.root)
+
+        updateOkButtonEnablement()
+    }
+
+    private fun onSelectedFeature(feature: Feature) {
+        featureCtrl.feature = feature
+        updateOkButtonEnablement()
     }
 
     override fun show() {
@@ -68,24 +87,33 @@ class ShopGoneDialog(
         getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
             when (selectedRadioButtonId) {
                 R.id.vacantRadioButton -> {
-                    onSelectedFeature(mapOf("disused:shop" to "yes"))
-                    dismiss()
+                    val languages = getLanguagesForFeatureDictionary(context.resources.configuration)
+                    val vacantShop = featureDictionary
+                        .getByTags(element.tags)
+                        .firstOrNull { it.toElement().isPlace() }
+                        ?.toPrefixedFeature("disused")
+                        ?: featureDictionary.getById("shop/vacant", languages)!!
+                    onSelectedFeatureFn(vacantShop)
                 }
                 R.id.replaceRadioButton -> {
-                    val feature = getSelectedFeature()
-                    if (feature == null) {
-                        binding.presetsEditText.error = context.resources.getText(R.string.quest_shop_gone_replaced_answer_error2)
-                    } else {
-                        onSelectedFeature(feature.addTags)
-                        dismiss()
-                    }
+                    onSelectedFeatureFn(featureCtrl.feature!!)
                 }
                 R.id.leaveNoteRadioButton -> {
-                    onLeaveNote()
-                    dismiss()
+                    onLeaveNoteFn()
                 }
             }
+            dismiss()
         }
+    }
+
+    private fun updateOkButtonEnablement() {
+        getButton(BUTTON_POSITIVE)?.isEnabled =
+            when (selectedRadioButtonId) {
+                R.id.vacantRadioButton,
+                R.id.leaveNoteRadioButton -> true
+                R.id.replaceRadioButton ->   featureCtrl.feature != null
+                else ->                      false
+            }
     }
 
     private fun selectRadioButton(radioButton: View) {
@@ -93,24 +121,6 @@ class ShopGoneDialog(
         for (b in radioButtons) {
             b.isChecked = selectedRadioButtonId == b.id
         }
-    }
-
-    private fun getSelectedFeature(): Feature? {
-        val input = binding.presetsEditText.text.toString()
-        return getFeatures(input).first { it.canonicalName == StringUtils.canonicalize(input) }
-    }
-
-    private fun getFeatures(startsWith: String): List<Feature> {
-        val localeList = ConfigurationCompat.getLocales(context.resources.configuration)
-        return featureDictionary
-            .byTerm(startsWith.trim())
-            .forGeometry(geometryType)
-            .inCountry(countryCode)
-            .forLocale(*localeList.toTypedArray())
-            .find()
-            .filter { feature ->
-                val fakeElement = Node(-1L, LatLon(0.0, 0.0), feature.tags, 0)
-                fakeElement.isSomeKindOfShop()
-            }
+        updateOkButtonEnablement()
     }
 }

@@ -35,5 +35,4 @@
         android:layout_toEndOf="@+id/countMultiplierLabel"
         android:id="@+id/capacityBikeImage"
         android:background="@drawable/ic_step"/>
-
 </RelativeLayout>

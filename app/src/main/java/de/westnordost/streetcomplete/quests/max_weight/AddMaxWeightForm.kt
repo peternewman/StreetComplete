@@ -8,18 +8,18 @@ import android.widget.Spinner
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.meta.WeightMeasurementUnit
 import de.westnordost.streetcomplete.databinding.QuestMaxweightBinding
-import de.westnordost.streetcomplete.ktx.allowOnlyNumbers
-import de.westnordost.streetcomplete.ktx.numberOrNull
-import de.westnordost.streetcomplete.ktx.showKeyboard
-import de.westnordost.streetcomplete.quests.AbstractQuestFormAnswerFragment
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
-import de.westnordost.streetcomplete.util.TextChangedWatcher
+import de.westnordost.streetcomplete.util.ktx.numberOrNull
+import de.westnordost.streetcomplete.util.ktx.showKeyboard
 import de.westnordost.streetcomplete.view.image_select.ImageListPickerDialog
+import de.westnordost.streetcomplete.view.inputfilter.acceptDecimalDigits
 
-class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
+class AddMaxWeightForm : AbstractOsmQuestForm<MaxWeightAnswer>() {
 
     override val contentLayoutResId = R.layout.quest_maxweight
     private val binding by contentViewBinding(QuestMaxweightBinding::bind)
@@ -66,8 +66,8 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
     private fun initMaxWeightInput() {
         val maxWeightInput = maxWeightInput ?: return
 
-        maxWeightInput.addTextChangedListener(TextChangedWatcher { checkIsFormComplete() })
-        maxWeightInput.allowOnlyNumbers()
+        maxWeightInput.doAfterTextChanged { checkIsFormComplete() }
+        maxWeightInput.filters = arrayOf(acceptDecimalDigits(6, 2))
         binding.inputSignContainer.setOnClickListener { focusMaxWeightInput() }
 
         val units = weightLimitUnits.map { it.displayString }
@@ -84,7 +84,9 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
 
     private fun showSignSelectionDialog() {
         val ctx = context ?: return
-        val items = MaxWeightSign.values().map { it.asItem(layoutInflater) }
+        val items = MaxWeightSign.entries.map {
+            it.asItem(layoutInflater, countryInfo.countryCode)
+        }
         ImageListPickerDialog(ctx, items, R.layout.cell_labeled_icon_select, 2) { selected ->
             selected.value?.let { setMaxWeightSign(it) }
             checkIsFormComplete()
@@ -97,7 +99,8 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
         binding.selectSignButton.isInvisible = true
         binding.inputSignContainer.removeAllViews()
 
-        layoutInflater.inflate(sign.layoutResourceId, binding.inputSignContainer)
+        val layoutResourceId = sign.getLayoutResourceId(countryInfo.countryCode)
+        layoutInflater.inflate(layoutResourceId, binding.inputSignContainer)
         initMaxWeightInput()
         focusMaxWeightInput()
 
@@ -117,7 +120,7 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
     private fun userSelectedUnrealisticWeight(): Boolean {
         val weight = getWeightFromInput() ?: return false
         val w = weight.toMetricTons()
-        return w > 25 || w < 2
+        return w > 30 || w < 2
     }
 
     private fun applyMaxWeightFormAnswer() {
@@ -128,9 +131,9 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
         val input = maxWeightInput?.numberOrNull ?: return null
         val unit = weightLimitUnits[weightUnitSelect?.selectedItemPosition ?: 0]
         return when (unit) {
-            WeightMeasurementUnit.SHORT_TON -> ShortTons(input)
-            WeightMeasurementUnit.POUND     -> ImperialPounds(input.toInt())
-            WeightMeasurementUnit.TON       -> MetricTons(input)
+            WeightMeasurementUnit.SHORT_TON  -> ShortTons(input)
+            WeightMeasurementUnit.POUND      -> ImperialPounds(input.toInt())
+            WeightMeasurementUnit.METRIC_TON -> MetricTons(input)
         }
     }
 
@@ -138,7 +141,7 @@ class AddMaxWeightForm : AbstractQuestFormAnswerFragment<MaxWeightAnswer>() {
         activity?.let { AlertDialog.Builder(it)
             .setMessage(R.string.quest_maxweight_unsupported_sign_request_photo)
             .setPositiveButton(android.R.string.ok) { _, _ -> composeNote() }
-            .setNegativeButton(R.string.quest_leave_new_note_no) { _, _ -> skipQuest() }
+            .setNegativeButton(R.string.quest_leave_new_note_no) { _, _ -> hideQuest() }
             .show()
         }
     }

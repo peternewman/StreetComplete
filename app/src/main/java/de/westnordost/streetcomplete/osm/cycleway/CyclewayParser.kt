@@ -1,142 +1,146 @@
 package de.westnordost.streetcomplete.osm.cycleway
 
-import de.westnordost.streetcomplete.ktx.containsAny
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.ADVISORY_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.BUSWAY
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.DUAL_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.DUAL_TRACK
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.EXCLUSIVE_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.INVALID
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.NONE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.NONE_NO_ONEWAY
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.PICTOGRAMS
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.SEPARATE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.SIDEWALK_EXPLICIT
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.SUGGESTION_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.TRACK
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.UNKNOWN
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.UNKNOWN_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.UNKNOWN_SHARED_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.UNSPECIFIED_LANE
-import de.westnordost.streetcomplete.osm.cycleway.Cycleway.UNSPECIFIED_SHARED_LANE
+import de.westnordost.streetcomplete.osm.Direction
+import de.westnordost.streetcomplete.osm.cycleway.Cycleway.*
+import de.westnordost.streetcomplete.osm.expandSidesTags
 import de.westnordost.streetcomplete.osm.isForwardOneway
+import de.westnordost.streetcomplete.osm.isNotOnewayForCyclists
 import de.westnordost.streetcomplete.osm.isReversedOneway
-
-data class LeftAndRightCycleway(val left: Cycleway?, val right: Cycleway?)
+import de.westnordost.streetcomplete.util.ktx.containsAny
 
 /** Returns the Cycleway values for the left and right side using the given tags */
-fun createCyclewaySides(tags: Map<String, String>, isLeftHandTraffic: Boolean): LeftAndRightCycleway? {
-    if (!tags.keys.containsAny(KNOWN_CYCLEWAY_KEYS)) return null
+fun parseCyclewaySides(tags: Map<String, String>, isLeftHandTraffic: Boolean): LeftAndRightCycleway? {
+    if (!tags.keys.containsAny(KNOWN_CYCLEWAY_AND_RELATED_KEYS)) return null
 
     val isForwardOneway = isForwardOneway(tags)
     val isReversedOneway = isReversedOneway(tags)
     val isOneway = isReversedOneway || isForwardOneway
     val isReverseSideRight = isReversedOneway xor isLeftHandTraffic
-
-    // any unambiguous opposite tagging implies oneway:bicycle = no
     val isOpposite = tags["cycleway"]?.startsWith("opposite") == true
-    val isUnambiguousOppositeSide = tags[if (isReverseSideRight) "cycleway:right" else "cycleway:left"]?.startsWith("opposite") == true
-    val isAnyUnambiguousOppositeTagging = isOpposite || isUnambiguousOppositeSide
-    val isOnewayNotForCyclists = isOneway && (tags["oneway:bicycle"] == "no" || isAnyUnambiguousOppositeTagging)
+    val isOnewayButNotForCyclists = isOneway && isNotOnewayForCyclists(tags, isLeftHandTraffic)
 
-    // opposite tagging implies a oneway. So tagging is not understand if tags seem to contradict each other
-    val isAnyOppositeTagging = tags.filterKeys { it in KNOWN_CYCLEWAY_KEYS }.values.any { it.startsWith("opposite") }
-    if (!isOneway && isAnyOppositeTagging) return null
+    var left: Cycleway? = null
+    var right: Cycleway? = null
 
-    var left: Cycleway?
-    var right: Cycleway?
+    // first expand cycleway:both etc into cycleway:left + cycleway:right etc
+    val expandedTags = expandRelevantSidesTags(tags)
 
     /* For oneways, the naked "cycleway"-keys should be interpreted differently:
-    *  E.g. a cycleway=lane in a oneway=yes probably means that only in the flow direction, there
-    *  is a lane. E.g. cycleway=opposite_lane means that there is a lane in opposite traffic flow
-    *  direction.
-    *  Whether there is anything each in the other direction, is not defined, so we have to treat
-    *  it that way. */
-    val cycleway = createCyclewayForSide(tags, null)
-    if (isOneway && cycleway != null && cycleway != NONE) {
-        if (isOpposite) {
-            if (isReverseSideRight) {
-                left = null
-                right = cycleway
-            } else {
-                left = cycleway
-                right = null
-            }
+     * E.g. a cycleway=lane in a oneway=yes probably means that only in the flow direction, there
+     * is a lane. E.g. cycleway=opposite_lane means that there is a lane in opposite traffic flow
+     * direction.
+     * Whether there is anything each in the other direction, is not defined, so we have to treat
+     * it that way. */
+    val nakedCycleway = parseCyclewayForSide(expandedTags, null)
+    if (isOneway && nakedCycleway != null && nakedCycleway != NONE) {
+        if (isOpposite == isReverseSideRight) {
+            right = nakedCycleway
         } else {
-            if (isReverseSideRight) {
-                left = cycleway
-                right = null
-            } else {
-                left = null
-                right = cycleway
-            }
+            left = nakedCycleway
         }
     } else {
-        // first expand cycleway:both etc into cycleway:left + cycleway:right etc
-        val expandedTags = expandRelevantSidesTags(tags)
-        // then get the values for left and right
-        left = createCyclewayForSide(expandedTags, "left")
-        right = createCyclewayForSide(expandedTags, "right")
+        left = parseCyclewayForSide(expandedTags, false)
+        right = parseCyclewayForSide(expandedTags, true)
     }
+
+    val leftDir = parseDirectionForSide(expandedTags, false, isLeftHandTraffic)
+    val rightDir = parseDirectionForSide(expandedTags, true, isLeftHandTraffic)
 
     /* if there is no cycleway in a direction but it is a oneway in the other direction but not
        for cyclists, we have a special selection for that */
-    if (isOnewayNotForCyclists) {
-        if ((left == NONE || left == null) && !isReverseSideRight) left = NONE_NO_ONEWAY
-        if ((right == NONE || right == null) && isReverseSideRight) right = NONE_NO_ONEWAY
+    if (isOnewayButNotForCyclists) {
+        if ((left == NONE || left == null) && !isReverseSideRight && rightDir != Direction.BOTH) {
+            left = NONE_NO_ONEWAY
+        }
+        if ((right == NONE || right == null) && isReverseSideRight && leftDir != Direction.BOTH) {
+            right = NONE_NO_ONEWAY
+        }
     }
 
-    if (left == null && right == null) return null
+    // use fallback only if no side is defined
+    if (left == null && right == null) {
+        left = parseCyclewayForSideFallback(tags, false, isLeftHandTraffic)
+        right = parseCyclewayForSideFallback(tags, true, isLeftHandTraffic)
+    }
 
-    return LeftAndRightCycleway(left, right)
+    if (left == null && right == null) {
+        return null
+    }
+
+    return LeftAndRightCycleway(
+        left?.let { CyclewayAndDirection(it, leftDir) },
+        right?.let { CyclewayAndDirection(it, rightDir) }
+    )
 }
 
-/** Returns the Cycleway value using the given tags, for the given side (left or right).
+/** Returns the Cycleway value using the given tags, for the given side.
  *  Returns null if nothing (understood) is tagged */
-private fun createCyclewayForSide(tags: Map<String, String>, side: String?): Cycleway? {
-    val sideVal = if (side != null) ":$side" else ""
+private fun parseCyclewayForSide(
+    tags: Map<String, String>,
+    isRight: Boolean?
+): Cycleway? {
+    val sideVal = when (isRight) {
+        true -> ":right"
+        false -> ":left"
+        null -> ""
+    }
     val cyclewayKey = "cycleway$sideVal"
 
     val cycleway = tags[cyclewayKey]
     val cyclewayLane = tags["$cyclewayKey:lane"]
-
-    val isDual = tags["$cyclewayKey:oneway"] == "no"
     val isSegregated = tags["$cyclewayKey:segregated"] != "no"
+    val isCyclingOkOnSidewalk = tags["sidewalk$sideVal:bicycle"] == "yes" && tags["sidewalk$sideVal:bicycle:signed"] == "yes"
+    val isCyclingDesignatedOnSidewalk = tags["sidewalk$sideVal:bicycle"] == "designated"
 
     val result = when (cycleway) {
-        "lane", "opposite_lane" -> {
+        "lane" -> {
             when (cyclewayLane) {
-                "exclusive", "exclusive_lane", "mandatory" -> {
-                    if (isDual) DUAL_LANE
-                    else        EXCLUSIVE_LANE
-                }
-                null -> {
-                    if (isDual) DUAL_LANE
-                    else        UNSPECIFIED_LANE
-                }
-                "advisory", "advisory_lane", "soft_lane", "dashed" -> ADVISORY_LANE
-                else                                               -> UNKNOWN_LANE
+                "exclusive" -> EXCLUSIVE_LANE
+                null ->        UNSPECIFIED_LANE
+                "advisory" ->  ADVISORY_LANE
+                "yes", "right", "left", "both", "shoulder", "soft_lane", "mandatory",
+                "advisory_lane", "exclusive_lane" -> INVALID
+                "pictogram" -> INVALID
+                else        -> UNKNOWN_LANE
             }
         }
         "shared_lane" -> {
             when (cyclewayLane) {
-                "advisory", "advisory_lane", "soft_lane", "dashed" -> SUGGESTION_LANE
-                "pictogram"                                        -> PICTOGRAMS
-                null                                               -> UNSPECIFIED_SHARED_LANE
-                else                                               -> UNKNOWN_SHARED_LANE
+                "advisory"  -> SUGGESTION_LANE
+                "pictogram" -> PICTOGRAMS
+                null        -> UNSPECIFIED_SHARED_LANE
+                "yes", "right", "left", "both", "shoulder", "soft_lane", "mandatory",
+                "advisory_lane", "exclusive_lane" -> INVALID
+                "exclusive" -> INVALID
+                else        -> UNKNOWN_SHARED_LANE
             }
         }
-        "track", "opposite_track" -> {
-            when {
-                !isSegregated -> SIDEWALK_EXPLICIT
-                isDual        -> DUAL_TRACK
-                else          -> TRACK
-            }
+        "track" -> {
+            if (isSegregated) TRACK else SIDEWALK_EXPLICIT
         }
         "separate" -> SEPARATE
-        "no", "none", "opposite" -> NONE
-        "share_busway", "opposite_share_busway" -> BUSWAY
-        "yes", "right", "left", "both", "shared" -> INVALID
+        "no" -> when {
+            isCyclingOkOnSidewalk -> SIDEWALK_OK
+            isCyclingDesignatedOnSidewalk -> SIDEWALK_EXPLICIT
+            else -> NONE
+        }
+        "share_busway" -> BUSWAY
+        "shoulder" -> SHOULDER
+        // values known to be invalid, ambiguous or obsolete:
+        // deprecated opposite_* tags
+        "opposite_lane", "opposite_track", "opposite", "opposite_share_busway",
+        // 1.2% - ambiguous: there are more precise tags
+        "yes", "right", "left", "both",
+        "on_street", "segregated", "shared", // segregated from, shared with what?
+        "sidewalk", "share_sidewalk", // allowed on sidewalk or mandatory on sidewalk?
+        "unmarked_lane", // I don't even...
+        // 0.4% - invalid: maybe synonymous(?) to valid tag or tag combination but never documented
+        "none", // no
+        "sidepath", "use_sidepath", // separate?
+        "buffered_lane", "buffered", "soft_lane", "doorzone", // lane + subtags?
+        // 0.1% - troll tags
+        "proposed", "construction",
+            -> INVALID
         null -> null
         else -> UNKNOWN
     }
@@ -144,27 +148,61 @@ private fun createCyclewayForSide(tags: Map<String, String>, side: String?): Cyc
     return result
 }
 
+private fun parseDirectionForSide(
+    tags: Map<String, String>,
+    isRight: Boolean,
+    isLeftHandTraffic: Boolean
+): Direction {
+    val sideVal = if (isRight) ":right" else ":left"
+    val cyclewayKey = "cycleway$sideVal"
+    val sidewalkKey = "sidewalk$sideVal"
+    val explicitDirection = when (tags["$cyclewayKey:oneway"]) {
+        "yes" -> Direction.FORWARD
+        "-1" ->  Direction.BACKWARD
+        "no" ->  Direction.BOTH
+        else ->  when (tags["$sidewalkKey:oneway:bicycle"]) {
+            "yes" -> Direction.FORWARD
+            "-1" ->  Direction.BACKWARD
+            "no" ->  when (tags["$sidewalkKey:bicycle:signed"]) {
+                "yes" -> Direction.BOTH
+                else -> null
+            }
+            else -> null
+        }
+    }
+    return explicitDirection ?: Direction.getDefault(isRight, isLeftHandTraffic)
+}
+
+/** Returns the cycleway value using the given tags for the given side using other tags that imply
+ *  that a cycleway may be there (or not there) */
+private fun parseCyclewayForSideFallback(
+    tags: Map<String, String>,
+    isRight: Boolean?,
+    isLeftHandTraffic: Boolean
+): Cycleway? {
+    // fall back to bicycle=use_sidepath if set because it implies there is a separate cycleway
+    if (isRight != null) {
+        val direction = if (isLeftHandTraffic xor isRight) "forward" else "backward"
+        if (tags["bicycle:$direction"] == "use_sidepath") return SEPARATE
+    }
+    if (tags["bicycle"] == "use_sidepath") return SEPARATE
+
+    return null
+}
+
 private fun expandRelevantSidesTags(tags: Map<String, String>): Map<String, String> {
     val result = tags.toMutableMap()
-    expandSidesTag("cycleway", "", result)
-    expandSidesTag("cycleway", "lane", result)
-    expandSidesTag("cycleway", "oneway", result)
-    expandSidesTag("cycleway", "segregated", result)
-    expandSidesTag("sidewalk", "bicycle", result)
+    result.expandSidesTags("cycleway", "", true)
+    result.expandSidesTags("cycleway", "lane", true)
+    result.expandSidesTags("cycleway", "oneway", true)
+    result.expandSidesTags("cycleway", "segregated", true)
+    result.expandSidesTags("sidewalk", "bicycle", true)
+    result.expandSidesTags("sidewalk", "bicycle:signed", true)
+    result.expandSidesTags("sidewalk", "oneway:bicycle", true)
     return result
 }
 
-/** Expand my_tag:both and my_tag into my_tag:left and my_tag:right etc */
-private fun expandSidesTag(keyPrefix: String, keyPostfix: String, tags: MutableMap<String, String>) {
-    val pre = keyPrefix
-    val post = if (keyPostfix.isEmpty()) "" else ":$keyPostfix"
-    val value = tags["$pre:both$post"] ?: tags["$pre$post"]
-    if (value != null) {
-        if (!tags.containsKey("$pre:left$post")) tags["$pre:left$post"] = value
-        if (!tags.containsKey("$pre:right$post")) tags["$pre:right$post"] = value
-    }
-}
-
-private val KNOWN_CYCLEWAY_KEYS = listOf(
-    "cycleway", "cycleway:left", "cycleway:right", "cycleway:both"
+private val KNOWN_CYCLEWAY_AND_RELATED_KEYS = listOf(
+    "cycleway", "cycleway:left", "cycleway:right", "cycleway:both",
+    "bicycle", "bicycle:forward", "bicycle:backward"
 )

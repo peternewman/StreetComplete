@@ -1,6 +1,8 @@
 package de.westnordost.streetcomplete.quests.shop_type
 
-sealed class ShopTypeAnswer
+import de.westnordost.osmfeatures.Feature
 
-object IsShopVacant : ShopTypeAnswer()
-data class ShopType(val tags: Map<String, String>) : ShopTypeAnswer()
+sealed interface ShopTypeAnswer
+
+data object IsShopVacant : ShopTypeAnswer
+data class ShopType(val feature: Feature) : ShopTypeAnswer

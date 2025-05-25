@@ -1,43 +1,45 @@
 package de.westnordost.streetcomplete.data.osm.edits
 
-import de.westnordost.streetcomplete.data.osm.edits.upload.LastEditTimeStore
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
-import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
-import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import java.lang.System.currentTimeMillis
-import java.util.concurrent.CopyOnWriteArrayList
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import de.westnordost.streetcomplete.util.logs.Log
 
 class ElementEditsController(
     private val editsDB: ElementEditsDao,
+    private val editElementsDB: EditElementsDao,
     private val elementIdProviderDB: ElementIdProviderDao,
-    private val lastEditTimeStore: LastEditTimeStore
-) : ElementEditsSource {
+    private val prefs: Preferences
+) : ElementEditsSource, AddElementEditsController {
     /* Must be a singleton because there is a listener that should respond to a change in the
      * database table */
 
-    private val listeners: MutableList<ElementEditsSource.Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<ElementEditsSource.Listener>()
 
     /* ----------------------- Unsynced edits and syncing them -------------------------------- */
 
     /** Add new unsynced edit to the to-be-uploaded queue */
-    fun add(
-        questType: OsmElementQuestType<*>,
-        element: Element,
+    override fun add(
+        type: ElementEditType,
         geometry: ElementGeometry,
         source: String,
-        action: ElementEditAction
+        action: ElementEditAction,
+        isNearUserLocation: Boolean
     ) {
-        add(ElementEdit(0, questType, element.type, element.id, element, geometry, source, currentTimeMillis(), false, action))
+        Log.d(TAG, "Add ${type.name} for ${action.elementKeys.joinToString()}")
+        add(ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation))
     }
 
-    fun get(id: Long): ElementEdit? =
+    override fun get(id: Long): ElementEdit? =
         editsDB.get(id)
 
-    fun getAll(): List<ElementEdit> =
+    override fun getAll(): List<ElementEdit> =
         editsDB.getAll()
 
-    fun getAllUnsynced(): List<ElementEdit> =
+    override fun getAllUnsynced(): List<ElementEdit> =
         editsDB.getAllUnsynced()
 
     fun getOldestUnsynced(): ElementEdit? =
@@ -54,9 +56,14 @@ class ElementEditsController(
         synchronized(this) {
             deleteEdits = editsDB.getSyncedOlderThan(timestamp)
             if (deleteEdits.isEmpty()) return 0
-            deletedCount = editsDB.deleteAll(deleteEdits.map { it.id })
+            val ids = deleteEdits.map { it.id }
+            deletedCount = editsDB.deleteAll(ids)
+            editElementsDB.deleteAll(ids)
         }
         onDeletedEdits(deleteEdits)
+        /* must be deleted after the callback because the callback might want to get the id provider
+           for that edit */
+        elementIdProviderDB.deleteAll(deleteEdits.map { it.id })
         return deletedCount
     }
 
@@ -69,18 +76,26 @@ class ElementEditsController(
     }
 
     fun markSynced(edit: ElementEdit, elementUpdates: MapDataUpdates) {
+        val idUpdatesMap = elementUpdates.idUpdates.associate {
+            ElementKey(it.elementType, it.oldElementId) to it.newElementId
+        }
         val syncSuccess: Boolean
         synchronized(this) {
-            for (update in elementUpdates.idUpdates) {
-                editsDB.updateElementId(update.elementType, update.oldElementId, update.newElementId)
+            val editIdsToUpdate = elementUpdates.idUpdates.flatMapTo(HashSet()) {
+                editElementsDB.getAllByElement(it.elementType, it.oldElementId)
+            }
+            for (id in editIdsToUpdate) {
+                val oldEdit = editsDB.get(id) ?: continue
+                val updatedEdit = oldEdit.copy(action = oldEdit.action.idsUpdatesApplied(idUpdatesMap))
+                editsDB.put(updatedEdit)
+                // must clear first because the element ids associated with this id are different now
+                editElementsDB.delete(id)
+                editElementsDB.put(id, updatedEdit.action.elementKeys)
             }
             syncSuccess = editsDB.markSynced(edit.id)
         }
-        if (syncSuccess) onSyncedEdit(edit)
-
-        /* must be deleted after the callback because the callback might want to get the id provider
-           for that edit */
-        elementIdProviderDB.delete(edit.id)
+        if (syncSuccess) onSyncedEdit(edit.copy(isSynced = true))
+        elementIdProviderDB.updateIds(elementUpdates.idUpdates)
     }
 
     fun markSyncFailed(edit: ElementEdit) {
@@ -92,17 +107,20 @@ class ElementEditsController(
     /** Undo edit with the given id. If unsynced yet, will delete the edit if it is undoable. If
      *  already synced, will add a revert of that edit as a new edit, if possible */
     fun undo(edit: ElementEdit): Boolean {
-        // already uploaded
         if (edit.isSynced) {
+            // already uploaded
             val action = edit.action
             if (action !is IsActionRevertable) return false
+            // first create the revert action, as ElementIdProvider will be deleted when deleting the edit
+            val reverted = action.createReverted(getIdProvider(edit.id))
+            Log.d(TAG, "Add revert ${edit.type.name} for ${edit.action.elementKeys.joinToString()}")
             // need to delete the original edit from history because this should not be undoable anymore
             delete(edit)
             // ... and add a new revert to the queue
-            add(edit.questType, edit.originalElement, edit.originalGeometry, edit.source, action.createReverted())
-        }
-        // not uploaded yet
-        else {
+            add(ElementEdit(0, edit.type, edit.originalGeometry, edit.source, nowAsEpochMilliseconds(), false, reverted, edit.isNearUserLocation))
+        } else {
+            // not uploaded yet
+            Log.d(TAG, "Undo ${edit.type.name} for ${edit.action.elementKeys.joinToString()}")
             delete(edit)
         }
         return true
@@ -112,11 +130,11 @@ class ElementEditsController(
 
     private fun add(edit: ElementEdit) {
         synchronized(this) {
-            editsDB.add(edit)
-            val id = edit.id
+            editsDB.put(edit)
+            editElementsDB.put(edit.id, edit.action.elementKeys)
             val createdElementsCount = edit.action.newElementsCount
             elementIdProviderDB.assign(
-                id,
+                edit.id,
                 createdElementsCount.nodes,
                 createdElementsCount.ways,
                 createdElementsCount.relations
@@ -130,11 +148,11 @@ class ElementEditsController(
         val ids: List<Long>
         synchronized(this) {
             edits.addAll(getEditsBasedOnElementsCreatedByEdit(edit))
-            edits.add(edit)
 
             ids = edits.map { it.id }
 
             editsDB.deleteAll(ids)
+            editElementsDB.deleteAll(ids)
         }
 
         onDeletedEdits(edits)
@@ -148,12 +166,16 @@ class ElementEditsController(
         val result = mutableListOf<ElementEdit>()
 
         val createdElementKeys = elementIdProviderDB.get(edit.id).getAll()
-        val editsBasedOnThese = createdElementKeys.flatMap { editsDB.getByElement(it.type, it.id) }
+        val editsBasedOnThese = createdElementKeys
+            .flatMapTo(HashSet()) { editElementsDB.getAllByElement(it.type, it.id) }
+            .mapNotNull { editsDB.get(it) }
+            .filter { it.id != edit.id }
+
+        // deep first
         for (e in editsBasedOnThese) {
             result += getEditsBasedOnElementsCreatedByEdit(e)
         }
-        // deep first
-        result += editsBasedOnThese
+        result += edit
 
         return result
     }
@@ -168,7 +190,7 @@ class ElementEditsController(
     }
 
     private fun onAddedEdit(edit: ElementEdit) {
-        lastEditTimeStore.touch()
+        prefs.lastEditTime = nowAsEpochMilliseconds()
         listeners.forEach { it.onAddedEdit(edit) }
     }
 
@@ -178,5 +200,9 @@ class ElementEditsController(
 
     private fun onDeletedEdits(edits: List<ElementEdit>) {
         listeners.forEach { it.onDeletedEdits(edits) }
+    }
+
+    companion object {
+        private const val TAG = "ElementEditsController"
     }
 }

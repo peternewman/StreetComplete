@@ -2,16 +2,16 @@ package de.westnordost.streetcomplete.quests.tactile_paving
 
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
-import de.westnordost.streetcomplete.data.meta.updateWithCheckDate
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.BLIND
-import de.westnordost.streetcomplete.ktx.toYesNo
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.BLIND
+import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.isCrossing
+import de.westnordost.streetcomplete.osm.updateWithCheckDate
 
-class AddTactilePavingCrosswalk : OsmElementQuestType<Boolean> {
+class AddTactilePavingCrosswalk : OsmElementQuestType<TactilePavingCrosswalkAnswer> {
 
     private val crossingFilter by lazy { """
         nodes with
@@ -22,8 +22,8 @@ class AddTactilePavingCrosswalk : OsmElementQuestType<Boolean> {
           and (
             !tactile_paving
             or tactile_paving = unknown
-            or tactile_paving = no and tactile_paving older today -4 years
-            or tactile_paving = yes and tactile_paving older today -8 years
+            or tactile_paving ~ no|partial|incorrect and tactile_paving older today -8 years
+            or tactile_paving = yes and tactile_paving older today -12 years
           )
     """.toElementFilterExpression() }
 
@@ -34,12 +34,18 @@ class AddTactilePavingCrosswalk : OsmElementQuestType<Boolean> {
           or highway and access ~ private|no
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Add tactile pavings on crosswalks"
+    override val changesetComment = "Specify whether crosswalks have tactile paving"
     override val wikiLink = "Key:tactile_paving"
     override val icon = R.drawable.ic_quest_blind_pedestrian_crossing
     override val enabledInCountries = COUNTRIES_WHERE_TACTILE_PAVING_IS_COMMON
+    override val achievements = listOf(BLIND)
 
-    override val questTypeAchievements = listOf(BLIND)
+    override val hint = R.string.quest_generic_looks_like_this
+    override val hintImages = listOf(
+        R.drawable.tactile_paving1,
+        R.drawable.tactile_paving2,
+        R.drawable.tactile_paving3
+    )
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_tactilePaving_title_crosswalk
 
@@ -47,10 +53,9 @@ class AddTactilePavingCrosswalk : OsmElementQuestType<Boolean> {
         getMapData().filter { it.isCrossing() }.asSequence()
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
-        val excludedWayNodeIds = mutableSetOf<Long>()
-        mapData.ways
+        val excludedWayNodeIds = mapData.ways
             .filter { excludedWaysFilter.matches(it) }
-            .flatMapTo(excludedWayNodeIds) { it.nodeIds }
+            .flatMapTo(HashSet()) { it.nodeIds }
 
         return mapData.nodes
             .filter { crossingFilter.matches(it) && it.id !in excludedWayNodeIds }
@@ -59,9 +64,9 @@ class AddTactilePavingCrosswalk : OsmElementQuestType<Boolean> {
     override fun isApplicableTo(element: Element): Boolean? =
         if (!crossingFilter.matches(element)) false else null
 
-    override fun createForm() = TactilePavingForm()
+    override fun createForm() = TactilePavingCrosswalkForm()
 
-    override fun applyAnswerTo(answer: Boolean, tags: Tags, timestampEdited: Long) {
-        tags.updateWithCheckDate("tactile_paving", answer.toYesNo())
+    override fun applyAnswerTo(answer: TactilePavingCrosswalkAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags.updateWithCheckDate("tactile_paving", answer.osmValue)
     }
 }

@@ -1,42 +1,54 @@
 package de.westnordost.streetcomplete.quests.surface
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmFilterQuestType
-import de.westnordost.streetcomplete.data.osm.osmquests.Tags
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.BICYCLIST
-import de.westnordost.streetcomplete.data.user.achievements.QuestTypeAchievement.OUTDOORS
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.BICYCLIST
+import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.OUTDOORS
+import de.westnordost.streetcomplete.osm.Tags
+import de.westnordost.streetcomplete.osm.surface.INVALID_SURFACES
+import de.westnordost.streetcomplete.osm.surface.Surface
+import de.westnordost.streetcomplete.osm.surface.applyTo
+import de.westnordost.streetcomplete.osm.surface.updateCommonSurfaceFromFootAndCyclewaySurface
 
-class AddCyclewayPartSurface : OsmFilterQuestType<SurfaceAnswer>() {
+class AddCyclewayPartSurface : OsmFilterQuestType<Surface>() {
 
     override val elementFilter = """
         ways with (
           highway = cycleway
-          or (highway ~ path|footway and bicycle != no)
+          or (highway ~ path|footway and bicycle and bicycle != no)
           or (highway = bridleway and bicycle ~ designated|yes)
         )
         and segregated = yes
-        and !sidewalk
+        and !(sidewalk or sidewalk:left or sidewalk:right or sidewalk:both)
         and (
           !cycleway:surface
-          or cycleway:surface older today -8 years
+          or cycleway:surface ~ ${INVALID_SURFACES.joinToString("|")}
           or (
             cycleway:surface ~ paved|unpaved
             and !cycleway:surface:note
-            and !note:cycleway:surface
+            and !check_date:cycleway:surface
           )
+          or cycleway:surface older today -8 years
         )
+        and (
+          access !~ private|no
+          or (foot and foot !~ private|no)
+          or (bicycle and bicycle !~ private|no)
+        )
+        and ~path|footway|cycleway|bridleway !~ link
     """
-    override val changesetComment = "Add path surfaces"
+    override val changesetComment = "Specify cycleway path surfaces"
     override val wikiLink = "Key:surface"
     override val icon = R.drawable.ic_quest_bicycleway_surface
-    override val isSplitWayEnabled = true
-    override val questTypeAchievements = listOf(BICYCLIST, OUTDOORS)
+    override val achievements = listOf(BICYCLIST, OUTDOORS)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_cyclewayPartSurface_title
 
     override fun createForm() = AddPathPartSurfaceForm()
 
-    override fun applyAnswerTo(answer: SurfaceAnswer, tags: Tags, timestampEdited: Long) {
-        answer.applyTo(tags, "cycleway:surface")
+    override fun applyAnswerTo(answer: Surface, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        answer.applyTo(tags, "cycleway")
+        updateCommonSurfaceFromFootAndCyclewaySurface(tags)
     }
 }

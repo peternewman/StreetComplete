@@ -5,28 +5,26 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import android.util.Log
 import androidx.core.content.getSystemService
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
-import de.westnordost.streetcomplete.Prefs
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import de.westnordost.streetcomplete.data.UnsyncedChangesCountSource
 import de.westnordost.streetcomplete.data.download.DownloadController
-import de.westnordost.streetcomplete.data.download.DownloadProgressListener
 import de.westnordost.streetcomplete.data.download.DownloadProgressSource
-import de.westnordost.streetcomplete.data.download.MobileDataAutoDownloadStrategy
-import de.westnordost.streetcomplete.data.download.WifiAutoDownloadStrategy
-import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesDao
+import de.westnordost.streetcomplete.data.download.strategy.MobileDataAutoDownloadStrategy
+import de.westnordost.streetcomplete.data.download.strategy.WifiAutoDownloadStrategy
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.preferences.Autosync
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.upload.UploadController
-import de.westnordost.streetcomplete.data.user.UserLoginStatusSource
+import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.data.visiblequests.TeamModeQuestFilter
-import de.westnordost.streetcomplete.ktx.format
-import de.westnordost.streetcomplete.ktx.toLatLon
-import de.westnordost.streetcomplete.location.FineLocationManager
+import de.westnordost.streetcomplete.util.ktx.format
+import de.westnordost.streetcomplete.util.ktx.toLatLon
+import de.westnordost.streetcomplete.util.location.FineLocationManager
+import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -45,11 +43,11 @@ class QuestAutoSyncer(
     private val context: Context,
     private val unsyncedChangesCountSource: UnsyncedChangesCountSource,
     private val downloadProgressSource: DownloadProgressSource,
-    private val userLoginStatusSource: UserLoginStatusSource,
-    private val prefs: SharedPreferences,
+    private val userLoginSource: UserLoginSource,
+    private val prefs: Preferences,
     private val teamModeQuestFilter: TeamModeQuestFilter,
-    private val downloadedTilesDao: DownloadedTilesDao
-) : LifecycleObserver {
+    private val downloadedTilesController: DownloadedTilesController
+) : DefaultLifecycleObserver {
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + CoroutineName("QuestAutoSyncer"))
 
@@ -86,13 +84,13 @@ class QuestAutoSyncer(
     }
 
     // on download finished, should recheck conditions for download
-    private val downloadProgressListener = object : DownloadProgressListener {
+    private val downloadProgressListener = object : DownloadProgressSource.Listener {
         override fun onSuccess() {
             triggerAutoDownload()
         }
     }
 
-    private val userLoginStatusListener = object : UserLoginStatusSource.Listener {
+    private val userLoginStatusListener = object : UserLoginSource.Listener {
         override fun onLoggedIn() {
             triggerAutoUpload()
         }
@@ -104,28 +102,28 @@ class QuestAutoSyncer(
         override fun onTeamModeChanged(enabled: Boolean) {
             if (!enabled) {
                 // because other team members will have solved some of the quests already
-                downloadedTilesDao.removeAll()
+                downloadedTilesController.invalidateAll()
                 triggerAutoDownload()
             }
         }
     }
 
-    val isAllowedByPreference: Boolean
-        get() {
-            val p = Prefs.Autosync.valueOf(prefs.getString(Prefs.AUTOSYNC, "ON")!!)
-            return p == Prefs.Autosync.ON || p == Prefs.Autosync.WIFI && isWifi
-        }
+    val isAllowedByPreference: Boolean get() = when (prefs.autosync) {
+        Autosync.ON -> true
+        Autosync.WIFI -> isWifi
+        Autosync.OFF -> false
+    }
 
     /* ---------------------------------------- Lifecycle --------------------------------------- */
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE) fun onCreate() {
+    override fun onCreate(owner: LifecycleOwner) {
         unsyncedChangesCountSource.addListener(unsyncedChangesListener)
-        downloadProgressSource.addDownloadProgressListener(downloadProgressListener)
-        userLoginStatusSource.addListener(userLoginStatusListener)
+        downloadProgressSource.addListener(downloadProgressListener)
+        userLoginSource.addListener(userLoginStatusListener)
         teamModeQuestFilter.addListener(teamModeChangeListener)
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME) fun onResume() {
+    override fun onResume(owner: LifecycleOwner) {
         updateConnectionState()
         if (isConnected) {
             triggerAutoDownload()
@@ -134,22 +132,22 @@ class QuestAutoSyncer(
         context.registerReceiver(connectivityReceiver, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE) fun onPause() {
+    override fun onPause(owner: LifecycleOwner) {
         stopPositionTracking()
         context.unregisterReceiver(connectivityReceiver)
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY) fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
         unsyncedChangesCountSource.removeListener(unsyncedChangesListener)
-        downloadProgressSource.removeDownloadProgressListener(downloadProgressListener)
-        userLoginStatusSource.removeListener(userLoginStatusListener)
+        downloadProgressSource.removeListener(downloadProgressListener)
+        userLoginSource.removeListener(userLoginStatusListener)
         teamModeQuestFilter.removeListener(teamModeChangeListener)
         coroutineScope.coroutineContext.cancelChildren()
     }
 
     @SuppressLint("MissingPermission")
     fun startPositionTracking() {
-        locationManager.requestUpdates(30 * 1000L, 250f)
+        locationManager.requestUpdates(30 * 1000L, 30 * 1000L, 250f)
     }
 
     fun stopPositionTracking() {
@@ -161,7 +159,7 @@ class QuestAutoSyncer(
     private fun triggerAutoDownload() {
         val pos = pos ?: return
         if (!isConnected) return
-        if (downloadController.isDownloadInProgress) return
+        if (downloadProgressSource.isDownloadInProgress) return
 
         Log.i(TAG, "Checking whether to automatically download new quests at ${pos.latitude.format(7)},${pos.longitude.format(7)}")
 
@@ -183,11 +181,11 @@ class QuestAutoSyncer(
     private fun triggerAutoUpload() {
         if (!isAllowedByPreference) return
         if (!isConnected) return
-        if (!userLoginStatusSource.isLoggedIn) return
+        if (!userLoginSource.isLoggedIn) return
 
         coroutineScope.launch {
             try {
-                uploadController.upload()
+                uploadController.upload(isUserInitiated = false)
             } catch (e: IllegalStateException) {
                 // The Android 9 bug described here should not result in a hard crash of the app
                 // https://stackoverflow.com/questions/52013545/android-9-0-not-allowed-to-start-service-app-is-in-background-after-onresume

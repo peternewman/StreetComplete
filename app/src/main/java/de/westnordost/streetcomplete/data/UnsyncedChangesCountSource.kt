@@ -4,9 +4,9 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
+import de.westnordost.streetcomplete.util.Listeners
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.concurrent.CopyOnWriteArrayList
 
 /** Access and listen to how many unsynced (=uploadable) changes there are */
 class UnsyncedChangesCountSource(
@@ -18,7 +18,7 @@ class UnsyncedChangesCountSource(
         fun onDecreased()
     }
 
-    private val listeners = CopyOnWriteArrayList<Listener>()
+    private val listeners = Listeners<Listener>()
 
     suspend fun getCount(): Int = withContext(Dispatchers.IO) {
         elementEditsSource.getUnsyncedCount() + noteEditsSource.getUnsyncedCount()
@@ -26,9 +26,8 @@ class UnsyncedChangesCountSource(
 
     /** count of unsynced changes that count towards the statistics. That is, unsynced note stuff
      *  doesn't count and reverts of changes count negative */
-    suspend fun getSolvedCount(): Int = withContext(Dispatchers.IO) {
+    fun getSolvedCount(): Int =
         elementEditsSource.getPositiveUnsyncedCount()
-    }
 
     private val noteEditsListener = object : NoteEditsSource.Listener {
         override fun onAddedEdit(edit: NoteEdit) { if (!edit.isSynced) onUpdate(+1) }
@@ -48,8 +47,11 @@ class UnsyncedChangesCountSource(
     }
 
     private fun onUpdate(diff: Int) {
-        if (diff > 0) listeners.forEach { it.onIncreased() }
-        else if (diff < 0) listeners.forEach { it.onDecreased() }
+        if (diff > 0) {
+            listeners.forEach { it.onIncreased() }
+        } else if (diff < 0) {
+            listeners.forEach { it.onDecreased() }
+        }
     }
 
     fun addListener(listener: Listener) {

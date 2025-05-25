@@ -1,55 +1,44 @@
 package de.westnordost.streetcomplete.data.user
 
-import android.content.SharedPreferences
-import androidx.core.content.edit
-import de.westnordost.osmapi.user.UserDetails
-import de.westnordost.streetcomplete.Prefs
-import java.util.concurrent.CopyOnWriteArrayList
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.util.Listeners
 
 /** Controller that handles user login, logout, auth and updated data */
 class UserDataController(
-    private val prefs: SharedPreferences,
-    private val userLoginStatusSource: UserLoginStatusSource
+    private val prefs: Preferences,
+    private val userLoginSource: UserLoginSource,
 ) : UserDataSource {
 
-    private val userLoginStatusListener = object : UserLoginStatusSource.Listener {
+    private val userLoginListener = object : UserLoginSource.Listener {
         override fun onLoggedIn() {}
-        override fun onLoggedOut() {
-            clear()
-        }
+        override fun onLoggedOut() { clear() }
     }
 
-    private val listeners: MutableList<UserDataSource.Listener> = CopyOnWriteArrayList()
+    private val listeners = Listeners<UserDataSource.Listener>()
 
-    override val userId: Long get() = prefs.getLong(Prefs.OSM_USER_ID, -1)
-    override val userName: String? get() = prefs.getString(Prefs.OSM_USER_NAME, null)
+    override val userId: Long get() = prefs.userId
+    override val userName: String? get() = prefs.userName
 
     override var unreadMessagesCount: Int
-        get() = prefs.getInt(Prefs.OSM_UNREAD_MESSAGES, 0)
+        get() = prefs.userUnreadMessages
         set(value) {
-            prefs.edit(true) { putInt(Prefs.OSM_UNREAD_MESSAGES, value) }
+            prefs.userUnreadMessages = value
             listeners.forEach { it.onUpdated() }
         }
 
     init {
-        userLoginStatusSource.addListener(userLoginStatusListener)
+        userLoginSource.addListener(userLoginListener)
     }
 
-    fun setDetails(userDetails: UserDetails) {
-        prefs.edit(true) {
-            putLong(Prefs.OSM_USER_ID, userDetails.id)
-            putString(Prefs.OSM_USER_NAME, userDetails.displayName)
-            putInt(Prefs.OSM_UNREAD_MESSAGES, userDetails.unreadMessagesCount)
-        }
+    fun setDetails(userDetails: UserInfo) {
+        prefs.userId = userDetails.id
+        prefs.userName = userDetails.displayName
+        userDetails.unreadMessagesCount?.let { prefs.userUnreadMessages = it }
         listeners.forEach { it.onUpdated() }
     }
 
     private fun clear() {
-        prefs.edit(true) {
-            remove(Prefs.OSM_USER_ID)
-            remove(Prefs.OSM_USER_NAME)
-            remove(Prefs.OSM_UNREAD_MESSAGES)
-        }
+        prefs.clearUserData()
         listeners.forEach { it.onUpdated() }
     }
 

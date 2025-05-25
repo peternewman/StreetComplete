@@ -8,21 +8,16 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isGone
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.mapdata.Way
-import de.westnordost.streetcomplete.databinding.QuestGenericListBinding
-import de.westnordost.streetcomplete.ktx.asImageSpan
-import de.westnordost.streetcomplete.ktx.isArea
-import de.westnordost.streetcomplete.quests.AImageListQuestAnswerFragment
+import de.westnordost.streetcomplete.osm.surface.Surface
+import de.westnordost.streetcomplete.osm.surface.asItem
+import de.westnordost.streetcomplete.quests.AImageListQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
-import de.westnordost.streetcomplete.quests.surface.Surface
-import de.westnordost.streetcomplete.quests.surface.asItem
+import de.westnordost.streetcomplete.util.ktx.asImageSpan
+import de.westnordost.streetcomplete.util.ktx.couldBeSteps
 import de.westnordost.streetcomplete.view.image_select.ItemViewHolder
 
-class AddSmoothnessForm : AImageListQuestAnswerFragment<Smoothness, SmoothnessAnswer>() {
-
-    private val binding by contentViewBinding(QuestGenericListBinding::bind)
+class AddSmoothnessForm : AImageListQuestForm<Smoothness, SmoothnessAnswer>() {
 
     override val otherAnswers get() = listOfNotNull(
         AnswerItem(R.string.quest_smoothness_wrong_surface) { surfaceWrong() },
@@ -30,9 +25,9 @@ class AddSmoothnessForm : AImageListQuestAnswerFragment<Smoothness, SmoothnessAn
         AnswerItem(R.string.quest_smoothness_obstacle) { showObstacleHint() }
     )
 
-    private val surfaceTag get() = osmElement!!.tags["surface"]
+    private val surfaceTag get() = element.tags["surface"]
 
-    override val items get() = Smoothness.values().toItems(requireContext(), surfaceTag!!)
+    override val items get() = Smoothness.entries.toItems(requireContext(), surfaceTag!!)
 
     override val itemsPerRow = 1
 
@@ -50,9 +45,7 @@ class AddSmoothnessForm : AImageListQuestAnswerFragment<Smoothness, SmoothnessAn
         stringBuilder.replaceEmojiWithImageSpan(context, "🚲", R.drawable.ic_smoothness_city_bike)
         stringBuilder.replaceEmojiWithImageSpan(context, "🚗", R.drawable.ic_smoothness_car)
         stringBuilder.replaceEmojiWithImageSpan(context, "🚙", R.drawable.ic_smoothness_suv)
-
-        binding.descriptionLabel.isGone = false
-        binding.descriptionLabel.text = stringBuilder
+        setHint(stringBuilder)
     }
 
     override val moveFavoritesToFront = false
@@ -70,7 +63,7 @@ class AddSmoothnessForm : AImageListQuestAnswerFragment<Smoothness, SmoothnessAn
     }
 
     private fun surfaceWrong() {
-        val surfaceType = Surface.values().find { it.osmValue == surfaceTag }!!
+        val surfaceType = Surface.entries.find { it.osmValue == surfaceTag }!!
         showWrongSurfaceDialog(surfaceType)
     }
 
@@ -86,17 +79,14 @@ class AddSmoothnessForm : AImageListQuestAnswerFragment<Smoothness, SmoothnessAn
             .show()
     }
 
-    private fun createConvertToStepsAnswer(): AnswerItem? {
-        val way = osmElement as? Way ?: return null
-        if (way.isArea()) return null
-
-        // only in AddPathSmoothness quest
-        if (!ALL_PATHS_EXCEPT_STEPS.contains(way.tags["highway"])) return null
-
-        return AnswerItem(R.string.quest_generic_answer_is_actually_steps) {
-            applyAnswer(IsActuallyStepsAnswer)
+    private fun createConvertToStepsAnswer(): AnswerItem? =
+        if (element.couldBeSteps()) {
+            AnswerItem(R.string.quest_generic_answer_is_actually_steps) {
+                applyAnswer(IsActuallyStepsAnswer)
+            }
+        } else {
+            null
         }
-    }
 }
 
 private fun SpannableStringBuilder.replaceEmojiWithImageSpan(
